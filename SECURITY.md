@@ -18,7 +18,7 @@ ecosystem (`rettxweb`, `rettxadmin`, `rettxapi`, `rettxmutation`,
 will route it) or directly in the affected one.
 
 If you cannot use GitHub Security Advisories, email the maintainers at
-**security@rettx.eu** with as much detail as you can share. PGP is not
+**registry@rettx.eu** with as much detail as you can share. PGP is not
 required, but encrypted reports are welcome — request a key.
 
 ## What to include
@@ -96,4 +96,4 @@ We will not pursue civil or criminal action against researchers who:
 - Do not exploit the issue beyond what is necessary to demonstrate it.
 
 If in doubt about whether a planned activity falls under this
-safe-harbour, contact us at **security@rettx.eu** before you start.
+safe-harbour, contact us at **registry@rettx.eu** before you start.

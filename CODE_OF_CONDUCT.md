@@ -76,7 +76,7 @@ It also applies to all repositories in the rettX ecosystem (`rettx`,
 Instances of abusive, harassing, or otherwise unacceptable behaviour
 may be reported to the project maintainers at:
 
-**conduct@rettx.eu**
+**registry@rettx.eu**
 
 All complaints will be reviewed and investigated promptly and fairly.
 All project maintainers are obligated to respect the privacy and

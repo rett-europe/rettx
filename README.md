@@ -16,10 +16,11 @@
 ---
 
 This repository is the **public engineering and governance hub** for the
-rettX patient registry. It holds the program-level constitution, all
-cross-cutting specifications, the (forthcoming) public engineering docs
-site, and the intake/triage workflow that routes new issues to the right
-ecosystem repository.
+rettX patient registry, an initiative of
+[**Rett Syndrome Europe**](https://www.rettsyndrome.eu). It holds the
+program-level constitution, all cross-cutting specifications, the
+(forthcoming) public engineering docs site, and the intake/triage
+workflow that routes new issues to the right ecosystem repository.
 
 The patient-facing public landing for rettX is the WordPress site at
 [**rettx.eu**](https://www.rettx.eu) — that is *not* what this
