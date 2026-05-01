@@ -18,13 +18,13 @@ flowchart TD
     Caregivers(["👤 Caregivers"]):::actor
     Admins(["🏥 Admins / clinicians"]):::actor
 
-    rettxweb["**rettxweb**<br/>Angular PWA<br/><sub>app.rettx.eu</sub>"]:::surface
-    rettxadmin["**rettxadmin**<br/>web app"]:::surface
+    rettxweb["rettxweb<br/><small>Angular PWA · app.rettx.eu</small>"]:::surface
+    rettxadmin["rettxadmin<br/><small>admin web app</small>"]:::surface
 
-    rettxapi["**rettxapi**<br/>Python service<br/><sub>registry data · consent · access control</sub>"]:::backend
+    rettxapi["rettxapi<br/><small>Python service · consent · access control</small>"]:::backend
 
-    rettxmutation[["**rettxmutation**<br/><sub>PyPI · HGVS parsing</sub>"]]:::lib
-    rettxid[["**rettxid**<br/><sub>PyPI · pseudonymous IDs</sub>"]]:::lib
+    rettxmutation[["rettxmutation<br/><small>PyPI · HGVS parsing</small>"]]:::lib
+    rettxid[["rettxid<br/><small>PyPI · pseudonymous IDs</small>"]]:::lib
 
     Caregivers --> rettxweb
     Admins --> rettxadmin

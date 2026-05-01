@@ -70,6 +70,10 @@
   max-width: min(640px, 100%);
   width: 100%;
   height: auto;
+  /* Astro's <Image> emits width=400 height=400 for SVGs, which forces a
+     1:1 aspect-ratio in modern browsers and squashes the wide wordmark.
+     Restore the SVG's intrinsic aspect ratio. */
+  aspect-ratio: auto;
 }
 
 .hero h1 {
