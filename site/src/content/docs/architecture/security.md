@@ -316,7 +316,7 @@ files below are the source of truth for each component's specifics.
 | `rettxweb` | Caregiver web app (Angular PWA) | <https://github.com/rett-europe/rettxweb/blob/main/SECURITY.md> |
 | `rettxadmin` | Admin web app | <https://github.com/rett-europe/rettxadmin/blob/main/SECURITY.md> |
 | `rettxapi` | API and data services (Python) | <https://github.com/rett-europe/rettxapi/blob/main/SECURITY.md> |
-| `rettxmutation` | HGVS parsing library (PyPI) | _Pending — tracked in [rettxmutation#50](https://github.com/rett-europe/rettxmutation/issues/50)_ |
+| `rettxmutation` | HGVS parsing library (PyPI) | <https://github.com/rett-europe/rettxmutation/blob/main/SECURITY.md> |
 | `rettxid` | Pseudonymous identifier library (PyPI) | <https://github.com/rett-europe/rettxid/blob/main/SECURITY.md> |
 
 The five ecosystem repositories are currently private, in line with
