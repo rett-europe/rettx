@@ -113,9 +113,17 @@ credentials are stored. All bot actions are publicly attributable to
 
 ### Public documentation site
 
-The site lives in `site/` and is built with **Astro Starlight**, deployed
-to **GitHub Pages** via Actions from the `main` branch (no `gh-pages`
-branch). A custom domain (e.g. `docs.rettx.eu`) may be wired later.
+The patient-facing landing for rettX is the existing WordPress site at
+**rettx.eu** (and the caregiver app at `app.rettx.eu`). This control
+plane is *not* a replacement for that landing.
+
+The site delivered by this repository is an **engineering and
+governance** surface, aimed at contributors, clinical partners, and
+community members who want to inspect how rettX is built and operated.
+It will live on a separate subdomain (recommendation: `docs.rettx.eu`,
+to be confirmed). The site source lives in `site/` and is built with
+**Astro Starlight**, deployed to **GitHub Pages** via Actions from the
+`main` branch (no `gh-pages` branch).
 
 ## Alternatives considered
 
@@ -174,6 +182,9 @@ scalability and accountability.
 - Add a back-link from each downstream repo's
   `.specify/memory/constitution.md` to this program constitution.
 - Reconcile the i18n language-code divergence noted in `patterns.md`.
-- Decide on a custom domain for the docs site.
+- Confirm subdomain for the engineering docs site (recommendation:
+  `docs.rettx.eu`).
+- Revisit visibility of `rettxweb` / `rettxadmin` / `rettxapi` periodically
+  per program constitution Principle VII.
 - Evaluate whether to publish a weekly cross-repo digest as an issue
   here.

@@ -16,22 +16,22 @@ program constitution but differ in lifecycle and deployment model.
 
 ### Control plane
 
-| Repo | Stack |
-|---|---|
-| [`rettx`](https://github.com/rett-europe/rettx) | Markdown, Astro Starlight, GitHub Actions |
+| Repo | Visibility | Stack |
+|---|---|---|
+| [`rettx`](https://github.com/rett-europe/rettx) | 🌍 Public | Markdown, Astro Starlight, GitHub Actions |
 
 ### Surfaces (deployed user-facing applications)
 
-| Repo | Stack |
-|---|---|
-| [`rettxweb`](https://github.com/rett-europe/rettxweb) | Angular 18+ standalone PWA, ngx-translate, Auth0, Firebase Cloud Messaging |
-| [`rettxadmin`](https://github.com/rett-europe/rettxadmin) | Angular 18+ standalone, Angular Material, Microsoft Entra ID (MSAL) |
+| Repo | Visibility | Stack |
+|---|---|---|
+| `rettxweb` | 🔒 Private | Angular 18+ standalone PWA, ngx-translate, Auth0, Firebase Cloud Messaging |
+| `rettxadmin` | 🔒 Private | Angular 18+ standalone, Angular Material, Microsoft Entra ID (MSAL) |
 
 ### Backend (deployed service)
 
-| Repo | Stack |
-|---|---|
-| [`rettxapi`](https://github.com/rett-europe/rettxapi) | Python 3.11+, FastAPI, Azure Functions v4, Cosmos DB, Blob Storage |
+| Repo | Visibility | Stack |
+|---|---|---|
+| `rettxapi` | 🔒 Private | Python 3.11+, FastAPI, Azure Functions v4, Cosmos DB, Blob Storage |
 
 ### Libraries (Python packages consumed by the backend)
 
@@ -39,10 +39,10 @@ These are **stateless reusable libraries** released to PyPI. They contain
 no deployment, no persistence, and no API endpoints of their own — those
 responsibilities belong to `rettxapi`.
 
-| Repo | Purpose | PyPI |
-|---|---|---|
-| [`rettxmutation`](https://github.com/rett-europe/rettxmutation) | Agentic extraction & HGVS validation of genetic mutations from clinical reports (multi-language, dual-assembly GRCh37/GRCh38) | `rettxmutation` |
-| [`rettxid`](https://github.com/rett-europe/rettxid) | Reference implementation of the pseudonymous rettX ID format (`rettx-XXXX-XXXX-XXXX`) | `rettxid` |
+| Repo | Visibility | Purpose | PyPI |
+|---|---|---|---|
+| [`rettxmutation`](https://github.com/rett-europe/rettxmutation) | 🌍 Public | Agentic extraction & HGVS validation of genetic mutations from clinical reports (multi-language, dual-assembly GRCh37/GRCh38) | `rettxmutation` |
+| [`rettxid`](https://github.com/rett-europe/rettxid) | 🌍 Public | Reference implementation of the pseudonymous rettX ID format (`rettx-XXXX-XXXX-XXXX`) | `rettxid` |
 
 Library lifecycle differs from the surfaces and backend:
 

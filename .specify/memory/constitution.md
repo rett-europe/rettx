@@ -190,6 +190,13 @@ public.
   reviewer, expected revisit date) — privacy is not a default; it is a
   considered exception.
 
+**Current state**: this control-plane repo and the reusable libraries
+(`rettxmutation`, `rettxid`) are public. The surface and backend
+repositories (`rettxweb`, `rettxadmin`, `rettxapi`) are currently
+private — a deliberate position reflecting the registry's risk posture
+for code that directly handles patient data. This position is intended
+to be revisited as the project matures, in line with this principle.
+
 **Rationale**: The bias toward openness is what makes the project credible.
 Each closed door requires a reason that holds up to scrutiny.
 
