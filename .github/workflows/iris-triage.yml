@@ -1,0 +1,167 @@
+name: Iris — triage
+
+# Iris is the rettX program triage bot.
+# Trigger: a new issue is opened on this repo, OR an existing issue is
+#          (re-)labeled `needs-triage`.
+# What it does:
+#   1. Asks GitHub Models to classify which of the 6 ecosystem repos the
+#      issue affects (rettxweb, rettxadmin, rettxapi, rettxmutation,
+#      rettxid, or this control plane), whether it is cross-cutting, and
+#      to write a 1-2 line summary + routing rationale.
+#   2. Posts the classification as a comment on the issue.
+#   3. Applies `route:*` labels + `triaged` (and removes `needs-triage`).
+# What it does NOT do:
+#   - Open issues in the downstream repos. That's `iris-route.yml`,
+#     guarded by a `/route confirm` from a repo collaborator. Triage is
+#     a proposal; routing is a human-confirmed action.
+on:
+  issues:
+    types: [opened, labeled]
+
+permissions:
+  contents: read
+  issues: write
+  models: read  # for GitHub Models (free on public repos)
+
+concurrency:
+  group: iris-triage-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    # Only run for `opened` (always) or for the moment `needs-triage` is added.
+    # Skip Iris's own comments / labels by checking the actor isn't the bot.
+    if: >-
+      github.event_name == 'issues' && (
+        github.event.action == 'opened' ||
+        (github.event.action == 'labeled' && github.event.label.name == 'needs-triage')
+      ) && github.actor != 'rettx-iris[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint Iris app token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.IRIS_APP_ID }}
+          private-key: ${{ secrets.IRIS_PRIVATE_KEY }}
+
+      - name: Write prompt to file
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY:  ${{ github.event.issue.body }}
+        run: |
+          {
+            echo "Issue title: $ISSUE_TITLE"
+            echo
+            echo "Issue body:"
+            echo "${ISSUE_BODY:-(no body)}"
+          } > prompt.txt
+
+      - name: Classify the issue
+        id: classify
+        uses: actions/ai-inference@v2
+        with:
+          model: openai/gpt-4o-mini
+          max-tokens: 600
+          system-prompt: |
+            You are Iris, the triage assistant for the rettX patient registry program.
+            The program spans 6 GitHub repositories in the rett-europe organisation:
+
+              - rettx           — control plane (this repo). Constitution, cross-cutting specs, ADRs, docs.
+              - rettxweb        — caregiver-facing Angular PWA (app.rettx.eu).
+              - rettxadmin      — admin / clinician web app.
+              - rettxapi        — Python backend service. The ONLY component that touches identifiable patient data at rest. Owns consent, access control, audit.
+              - rettxmutation   — Python library (PyPI). HGVS mutation parsing & normalisation. Used by rettxapi.
+              - rettxid         — Python library (PyPI). Pseudonymous patient identifiers. Used by rettxapi.
+
+            Given an issue title and body, decide which repositories are affected and whether the change crosses trust
+            boundaries (anything touching identifiable data, consent, authZ, or affecting more than one runtime
+            component is "cross-cutting" and needs a spec in `specs/` before code lands).
+
+            Respond with strict minified JSON, no prose, no markdown fences:
+              {
+                "routes":        ["web"|"admin"|"api"|"mutation"|"id"|"control-plane", ...],
+                "cross_cutting": boolean,
+                "needs_spec":    boolean,
+                "summary":       "one short sentence",
+                "rationale":     "2-3 sentences explaining the routing decision"
+              }
+            Use "control-plane" if the work belongs in this repo (docs, governance, cross-cutting spec).
+            If unsure about a route, omit it rather than guessing.
+          prompt-file: prompt.txt
+
+      - name: Post triage plan and apply labels
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_REPO: ${{ github.repository }}
+          CLASSIFY_OUTPUT: ${{ steps.classify.outputs.response }}
+        run: |
+          set -euo pipefail
+
+          # Strip any accidental code fences from the model output.
+          payload=$(printf '%s' "$CLASSIFY_OUTPUT" | sed -E 's/^```(json)?//; s/```$//')
+
+          # Validate JSON; fall back to a no-op comment if the model misbehaved.
+          if ! echo "$payload" | jq empty 2>/dev/null; then
+            gh issue comment "$ISSUE_NUMBER" --repo "$ISSUE_REPO" --body \
+              "🤖 Iris could not parse the classification output. Please re-label \`needs-triage\` to retry."
+            exit 0
+          fi
+
+          routes=$(echo "$payload"        | jq -r '.routes // [] | .[]')
+          cross_cutting=$(echo "$payload" | jq -r '.cross_cutting // false')
+          needs_spec=$(echo "$payload"    | jq -r '.needs_spec // false')
+          summary=$(echo "$payload"       | jq -r '.summary // ""')
+          rationale=$(echo "$payload"     | jq -r '.rationale // ""')
+
+          # Map route keys → label names and human names.
+          declare -A label_for=( [web]=route:web [admin]=route:admin [api]=route:api [mutation]=route:mutation [id]=route:id )
+          declare -A name_for=(  [web]=rettxweb  [admin]=rettxadmin  [api]=rettxapi  [mutation]=rettxmutation  [id]=rettxid )
+
+          labels_to_add=("triaged")
+          targets=()
+          for r in $routes; do
+            if [[ -n "${label_for[$r]:-}" ]]; then
+              labels_to_add+=("${label_for[$r]}")
+              targets+=("- \`${name_for[$r]}\`")
+            fi
+          done
+          if [[ "$cross_cutting" == "true" ]]; then
+            labels_to_add+=("cross-cutting")
+          fi
+
+          # Build the comment body.
+          {
+            echo "🤖 **Iris triage proposal**"
+            echo
+            echo "**Summary.** $summary"
+            echo
+            if (( ${#targets[@]} > 0 )); then
+              echo "**Proposed routing:**"
+              printf '%s\n' "${targets[@]}"
+            else
+              echo "**Proposed routing:** _(no downstream repos identified — this looks like a control-plane / docs issue)_"
+            fi
+            echo
+            if [[ "$cross_cutting" == "true" ]]; then
+              echo "⚠️ Marked **cross-cutting** — affects more than one component or crosses a trust boundary."
+            fi
+            if [[ "$needs_spec" == "true" ]]; then
+              echo "📜 A spec in [\`specs/\`](https://github.com/${ISSUE_REPO}/tree/main/specs) is recommended before code lands."
+            fi
+            echo
+            echo "**Rationale.** $rationale"
+            echo
+            echo "---"
+            echo
+            echo "If this looks right, a repo collaborator can comment **\`/route confirm\`** to fan this issue out as sub-issues in the target repos (each labeled \`squad\`)."
+            echo "To re-run triage, remove and re-add the \`needs-triage\` label."
+          } > comment.md
+
+          gh issue comment "$ISSUE_NUMBER" --repo "$ISSUE_REPO" --body-file comment.md
+
+          # Apply labels (one call; gh accepts repeated --add-label).
+          add_args=()
+          for l in "${labels_to_add[@]}"; do add_args+=(--add-label "$l"); done
+          gh issue edit "$ISSUE_NUMBER" --repo "$ISSUE_REPO" "${add_args[@]}" --remove-label needs-triage || true

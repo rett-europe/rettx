@@ -1,0 +1,118 @@
+name: Iris — route
+
+# Triggered by `/route confirm` in an issue comment.
+# Authorised commenters: anyone with write access to this repo
+# (author_association in {OWNER, MEMBER, COLLABORATOR}).
+#
+# What it does:
+#   1. Verifies the commenter is authorised.
+#   2. Reads the parent issue's `route:*` labels.
+#   3. Mints an Iris app token scoped to all 6 ecosystem repos.
+#   4. Opens a sub-issue in each target repo with the `squad` label and a
+#      back-link to the parent.
+#   5. Comments on the parent with the list of created issues, applies
+#      the `routed` label.
+#
+# Idempotency: if the parent already has the `routed` label, the workflow
+# refuses to run again. Re-routing requires manually removing `routed`.
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: iris-route-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  route:
+    if: >-
+      github.event.issue.pull_request == null &&
+      contains(github.event.comment.body, '/route confirm') &&
+      (github.event.comment.author_association == 'OWNER' ||
+       github.event.comment.author_association == 'MEMBER' ||
+       github.event.comment.author_association == 'COLLABORATOR')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint Iris app token (multi-repo)
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.IRIS_APP_ID }}
+          private-key: ${{ secrets.IRIS_PRIVATE_KEY }}
+          owner: rett-europe
+          repositories: rettx,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid
+
+      - name: Fan out sub-issues
+        env:
+          GH_TOKEN:    ${{ steps.app-token.outputs.token }}
+          ISSUE_REPO:  ${{ github.repository }}
+          ISSUE_NUM:   ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_URL:   ${{ github.event.issue.html_url }}
+          ISSUE_BODY:  ${{ github.event.issue.body }}
+        run: |
+          set -euo pipefail
+
+          # Refuse if already routed.
+          existing=$(gh issue view "$ISSUE_NUM" --repo "$ISSUE_REPO" --json labels --jq '[.labels[].name] | join(",")')
+          if [[ ",$existing," == *",routed,"* ]]; then
+            gh issue comment "$ISSUE_NUM" --repo "$ISSUE_REPO" --body \
+              "🤖 Iris: this issue is already \`routed\`. Remove the label to re-route."
+            exit 0
+          fi
+
+          declare -A repo_for=( [route:web]=rettxweb [route:admin]=rettxadmin [route:api]=rettxapi [route:mutation]=rettxmutation [route:id]=rettxid )
+
+          # Collect the route:* labels actually present on the parent.
+          mapfile -t parent_labels < <(echo "$existing" | tr ',' '\n')
+          targets=()
+          for l in "${parent_labels[@]}"; do
+            if [[ -n "${repo_for[$l]:-}" ]]; then
+              targets+=("${repo_for[$l]}")
+            fi
+          done
+
+          if (( ${#targets[@]} == 0 )); then
+            gh issue comment "$ISSUE_NUM" --repo "$ISSUE_REPO" --body \
+              "🤖 Iris: no \`route:*\` labels on this issue — nothing to route. Re-label \`needs-triage\` to re-classify."
+            exit 0
+          fi
+
+          # Build the sub-issue body (same for every target).
+          {
+            echo "Routed from **${ISSUE_REPO}#${ISSUE_NUM}** by Iris."
+            echo
+            echo "**Parent:** $ISSUE_URL"
+            echo
+            echo "---"
+            echo
+            echo "$ISSUE_BODY"
+            echo
+            echo "---"
+            echo
+            echo "_The squad in this repo owns triage and execution. When done, link the merge commit / PR back to the parent issue so Iris can mark it complete._"
+          } > subissue.md
+
+          created=()
+          for repo in "${targets[@]}"; do
+            url=$(gh issue create \
+              --repo "rett-europe/${repo}" \
+              --title "[$ISSUE_REPO#$ISSUE_NUM] $ISSUE_TITLE" \
+              --label squad \
+              --body-file subissue.md)
+            created+=("- \`${repo}\` → ${url}")
+          done
+
+          # Comment back on parent with the list, mark as routed.
+          {
+            echo "🤖 **Iris routed this issue.** Sub-issues opened:"
+            echo
+            printf '%s\n' "${created[@]}"
+          } > routed-comment.md
+
+          gh issue comment "$ISSUE_NUM" --repo "$ISSUE_REPO" --body-file routed-comment.md
+          gh issue edit "$ISSUE_NUM" --repo "$ISSUE_REPO" --add-label routed
