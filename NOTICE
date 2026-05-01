@@ -1,0 +1,115 @@
+rettX — control plane repository
+Copyright (c) Rett Syndrome Europe and the rettX contributors.
+
+This repository contains material under multiple licenses. Please read
+this NOTICE before reusing anything from it.
+
+================================================================================
+1. Source code, configuration, workflows, and scripts
+================================================================================
+
+Licensed under the Apache License, Version 2.0 (the "License"). See the
+file LICENSE for the full text. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
+This covers, non-exhaustively:
+
+  - Anything under .github/ (workflows, actions, issue templates,
+    configuration)
+  - Anything under scripts/
+  - Anything under site/ (the Astro Starlight documentation site
+    sources, except where third-party content is otherwise marked)
+  - YAML, JSON, TypeScript, JavaScript, Python, and shell files
+    elsewhere in the repository
+
+Files contributed under Apache-2.0 should carry the SPDX identifier:
+
+    SPDX-License-Identifier: Apache-2.0
+
+================================================================================
+2. Documentation, specifications, and other prose
+================================================================================
+
+Licensed under the Creative Commons Attribution 4.0 International
+License (CC-BY-4.0). See the file LICENSE-docs for the full text, or
+visit:
+
+    https://creativecommons.org/licenses/by/4.0/
+
+This covers, non-exhaustively:
+
+  - README.md and other top-level Markdown files
+  - Anything under .specify/ (constitution, patterns, memory)
+  - Anything under specs/ (cross-cutting specifications and templates)
+  - Anything under docs/ (architecture decision records and other
+    program documentation)
+  - Rendered prose published to https://docs.rettx.eu
+
+When reusing this material, please attribute "Rett Syndrome Europe —
+rettX" with a link to https://github.com/rett-europe/rettx (or to the
+specific document on https://docs.rettx.eu).
+
+Files contributed under CC-BY-4.0 should carry the SPDX identifier:
+
+    SPDX-License-Identifier: CC-BY-4.0
+
+================================================================================
+3. Brand assets and the rettX name
+================================================================================
+
+The rettX wordmark, logo, and associated visual identity (including all
+files under assets/brand/) are owned by Rett Syndrome Europe and are
+NOT licensed under Apache-2.0 or CC-BY-4.0.
+
+The names "rettX" and "Rett Syndrome Europe" are used to identify the
+patient registry and its operating organisation. They may not be used
+to endorse or promote products or services derived from this software
+or documentation, and they may not be used in a way that suggests an
+affiliation with Rett Syndrome Europe that does not exist.
+
+Permitted uses:
+
+  - Linking to https://www.rettx.eu, https://docs.rettx.eu, or to
+    Rett Syndrome Europe content using the wordmark unmodified.
+  - Quoting the marks in editorial, journalistic, academic, or
+    factual references to the rettX registry.
+  - Reproducing the wordmark in unmodified form in screenshots of
+    rettX surfaces or documentation.
+
+Other uses — including incorporating the wordmark into a derivative
+product, modifying the marks, or using them in a way that implies
+endorsement — require prior written permission from Rett Syndrome
+Europe.
+
+See assets/brand/README.md for additional usage guidance.
+
+================================================================================
+4. Third-party content
+================================================================================
+
+Where this repository contains third-party content (for example, code
+or text imported from another project), the original license applies to
+that content and is preserved in-place. Such content is marked at the
+file or directory level.
+
+================================================================================
+5. Contributions
+================================================================================
+
+By submitting a contribution to this repository (a pull request, an
+issue, a comment, or any other content), you agree that your
+contribution will be licensed under the license that applies to the
+relevant part of the repository, as described in sections 1–3 above.
+
+  - Code contributions are licensed under Apache-2.0.
+  - Documentation, specification, and prose contributions are licensed
+    under CC-BY-4.0.
+  - Contributions to brand assets are made with the understanding that
+    the resulting work is owned by Rett Syndrome Europe.
+
+If you cannot agree to these terms, please do not contribute.

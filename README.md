@@ -112,11 +112,20 @@ defined here.
 
 ## License
 
-The contents of this repository are licensed under the terms of the
-[LICENSE](./LICENSE) file. Linked libraries are individually licensed
-(currently MIT) — see each library repository for details.
+This repository uses **split licensing** because it holds three kinds
+of content. The full terms are in [`NOTICE`](./NOTICE); a quick
+summary:
 
-The **rettX** name, logo, and brand assets are owned by Rett Syndrome
-Europe; see [`assets/brand/README.md`](./assets/brand/README.md) for
-usage rules.
+| Content | License | File |
+|---|---|---|
+| Code, workflows, scripts, the Astro site sources | **Apache-2.0** | [`LICENSE`](./LICENSE) |
+| Documentation, specs, ADRs, constitution, prose | **CC-BY-4.0** | [`LICENSE-docs`](./LICENSE-docs) |
+| `rettX` name, logo, brand assets in `assets/brand/` | © Rett Syndrome Europe — not open-licensed | [`assets/brand/README.md`](./assets/brand/README.md) |
+
+When reusing prose from this repository, please attribute *"Rett Syndrome
+Europe — rettX"* with a link to this repository or to the specific
+document on `docs.rettx.eu`.
+
+Linked libraries are individually licensed (currently MIT) — see each
+library repository for details.
 
