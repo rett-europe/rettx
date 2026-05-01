@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: rettX website
+    url: https://www.rettx.eu
+    about: Public information about the rettX patient registry.
+  - name: Security disclosure
+    url: https://github.com/rett-europe/rettx/security/advisories/new
+    about: Report a security vulnerability privately. Do not open a public issue.

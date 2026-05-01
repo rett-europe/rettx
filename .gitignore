@@ -1,0 +1,36 @@
+# Node / Astro Starlight (site/)
+node_modules/
+.astro/
+dist/
+.cache/
+.env
+.env.*
+!.env.example
+
+# Build output
+build/
+out/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Spec-kit scratch
+.specify/cache/
+.specify/scratch/
+
+# Squad (if ever used here) — externalized state
+.squad/
+.ai-team/

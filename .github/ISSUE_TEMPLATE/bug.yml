@@ -1,0 +1,70 @@
+name: 🐛 Bug report
+description: Something is broken or behaving unexpectedly in any part of rettX.
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. **Iris** (our intake bot) will read this
+        and suggest which repository should handle it. A maintainer will then
+        confirm the routing.
+
+        **Do not include personally identifiable information (PII)** about
+        patients, caregivers, or yourself. If the bug involves real data,
+        describe the behaviour without the data.
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where did you see the bug?
+      description: If you're not sure, leave it blank — Iris will help triage.
+      options:
+        - Caregiver web app (rettx.eu)
+        - Admin dashboard
+        - Public docs / website
+        - API behaviour
+        - Mutation extraction (rettxmutation library)
+        - rettX ID generation/validation (rettxid library)
+        - Not sure
+    validations:
+      required: false
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the unexpected behaviour.
+      placeholder: When I clicked X, I expected Y, but Z happened instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to ...
+        2. Click ...
+        3. See error ...
+    validations:
+      required: false
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment (optional)
+      description: Browser, device, OS, language. No PII.
+      placeholder: e.g. Chrome 124 on macOS, Spanish locale
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have not included any patient or personal identifiable information.
+          required: true
+        - label: I have searched existing issues to avoid duplicates.
+          required: false

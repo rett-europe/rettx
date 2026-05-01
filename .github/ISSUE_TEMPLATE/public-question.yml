@@ -1,0 +1,36 @@
+name: ❓ Public question
+description: Ask a general question about rettX, the registry, or how it works.
+title: "[Question] "
+labels: ["question", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for general questions about the rettX project — the
+        registry's mission, how data is handled, how to participate, etc.
+
+        For technical bugs use the **Bug report** template. For feature
+        proposals use the **Spec proposal** template.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context (optional)
+      description: Anything that helps us answer accurately. No personal data.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have not included any personal or patient data in this question.
+          required: true

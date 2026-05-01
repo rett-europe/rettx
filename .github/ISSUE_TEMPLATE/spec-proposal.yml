@@ -1,0 +1,70 @@
+name: 💡 Spec proposal
+description: Propose a new feature, change, or improvement to rettX.
+title: "[Spec] "
+labels: ["spec-proposal", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template to propose something new. Focus on the **what** and
+        **why** — not the technical implementation. Iris will help triage and
+        a maintainer will decide whether to promote this to a formal spec
+        in `/specs`.
+
+        Specs that touch multiple repos are authored here. The execution
+        plan is then carried out in the appropriate downstream repo(s).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the user / caregiver / clinician problem, not the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: who-benefits
+    attributes:
+      label: Who benefits?
+      description: Caregivers, patients, clinicians, admins, the registry as a whole?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change (high-level)
+      description: A short description of what should change. Avoid prescribing implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: success
+    attributes:
+      label: How will we know it worked?
+      description: What does success look like? What would we measure?
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: surfaces
+    attributes:
+      label: Likely affected surfaces (best guess — Iris will refine)
+      options:
+        - label: Caregiver web app
+        - label: Admin dashboard
+        - label: Backend API
+        - label: Mutation extraction library (rettxmutation)
+        - label: rettX ID library (rettxid)
+        - label: Public documentation site
+        - label: Cross-cutting / not sure
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: This proposal does not contain personally identifiable information.
+          required: true
+        - label: I have searched existing issues and specs for duplicates.
+          required: false
