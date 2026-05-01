@@ -8,7 +8,7 @@
 #   - Custom domain (docs.rettx.eu) is wired via site/public/CNAME, which
 #     is copied verbatim into the build output. Make sure the same value
 #     is set in repo Settings -> Pages -> Custom domain.
-#   - The build pulls Node 20 (Astro 5 supports >= 18.20) and uses
+#   - The build pulls Node 22 (Astro 6 requires >= 22.12) and uses
 #     `npm ci` with cache for reproducible installs.
 
 name: Docs site
@@ -47,7 +47,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: site/package-lock.json
 
