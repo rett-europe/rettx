@@ -131,6 +131,8 @@ jobs:
             fi
 
             spec_url="https://github.com/${REPO_FULL}/blob/${MERGE_SHA}/${spec_path}"
+            raw_url="https://raw.githubusercontent.com/${REPO_FULL}/${MERGE_SHA}/${spec_path}"
+            spec_dir=$(dirname "$spec_path")
 
             # Each entry: { repo, summary }
             count=$(jq '.frontmatter.fanout | length // 0' /tmp/spec.json)
@@ -180,15 +182,40 @@ jobs:
                 echo
                 echo "${summary}"
                 echo
-                echo "## Squad next steps"
+                echo "## How to take this on"
                 echo
-                echo "1. Read the full spec at the link above."
-                echo "2. Run \`/plan\` and \`/tasks\` in this repo against the spec to break the work down."
-                echo "3. Implement, PR back, and link this issue from the PR so Iris can mark the spec complete."
+                echo "Pick **one** of the two paths below — both are valid. The brief above is the source of truth either way."
+                echo
+                echo "### Path A — Direct (recommended for narrow / docs-only work)"
+                echo
+                echo "Open the spec link, do the work in this repo, PR back and link this issue. No spec-kit ceremony required."
+                echo
+                echo "> **GitHub Copilot Coding Agent**: take this path. Read the spec at the link above, treat the brief in *What this repo owns* as your scope, and open a PR that addresses it."
+                echo
+                echo "### Path B — Spec-driven (recommended for feature work spanning multiple files / surfaces)"
+                echo
+                echo "Bootstrap the program spec into this repo, then run the local spec-kit flow. Copy-paste this block from the repo root:"
+                echo
+                echo '```bash'
+                echo "git checkout -b ${slug}"
+                echo "mkdir -p ${spec_dir} .specify"
+                echo "curl -fsSL ${raw_url} -o ${spec_dir}/spec.md"
+                echo "printf '%s' '{\"feature_directory\":\"${spec_dir}\"}' > .specify/feature.json"
+                echo '```'
+                echo
+                echo "Then in your editor:"
+                echo
+                echo "1. \`/speckit.plan\` — derive the plan in this repo's terms."
+                echo "2. \`/speckit.tasks\` — generate the task list."
+                echo "3. \`/speckit.implement\` — execute (or hand to a Copilot Coding Agent on the resulting branch)."
+                echo
+                echo "## When you're done"
+                echo
+                echo "Open the PR, link this issue from the PR description (\`Closes #<this-issue>\`), and the squad lead will review."
                 echo
                 echo "---"
                 echo
-                echo "_This issue was generated automatically. If the spec is no longer relevant to this repo, close the issue and optionally remove the matching entry from the spec's \`fanout:\` block._"
+                echo "_This issue was generated automatically by Iris. If the spec is no longer relevant to this repo, close the issue and optionally remove the matching entry from the spec's \`fanout:\` block._"
               } > /tmp/issue-body.md
 
               # Ensure squad label exists in target (idempotent).
