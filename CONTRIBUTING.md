@@ -49,17 +49,24 @@ downstream repository as a tracked sub-issue.
 
 ### 2. Contributing to a specification
 
-Cross-cutting specifications live under `specs/<NNNN>-<slug>/` and
-follow the templates in `specs/template/`. The flow is:
+Cross-cutting specifications live under `specs/<NNNN>-<slug>/`. The
+canonical template is `.specify/templates/spec-template.md`, which the
+spec-kit `/speckit.specify` slash command uses to scaffold a new spec.
+The flow is:
 
 1. Open a **Spec proposal** issue describing the problem and the
    intended outcome.
-2. After triage and a constitution check, a maintainer (or you, with
-   guidance) opens a draft PR adding `specs/<NNNN>-<slug>/spec.md`.
-3. The spec is iterated on until it is "Ready".
-4. On merge, Iris fans the spec out as `squad`-labeled issues in the
-   relevant downstream repositories, where each squad authors its own
-   plan and tasks and executes the work.
+2. After triage and a constitution check, run `/speckit.specify` from
+   your editor (or hand-create `specs/<NNNN>-<slug>/spec.md` from the
+   template) on a feature branch.
+3. The spec is iterated on until it is "Ready". Set the frontmatter
+   `status: ready` and fill the `fanout:` block with one entry per
+   downstream repo that needs to act, each with a per-repo `summary:`.
+4. On merge to `main`, the `Iris — spec fanout` workflow reads the
+   frontmatter and opens a `[spec/<slug>] <title>` issue with the
+   `squad` label in each fanout target. Each downstream squad then
+   runs its own `/speckit.plan` and `/speckit.tasks` against the spec
+   link in their repo and executes the work.
 
 Please do not start writing code in a downstream repository for a
 cross-cutting change before the spec here is at least at "Draft —
@@ -67,20 +74,22 @@ ready for review". This avoids wasted work.
 
 #### Spec-kit on this repo
 
-The downstream repos use the full [spec-kit](https://github.com/github/spec-kit)
-flow (`/constitution` → `/specify` → `/plan` → `/tasks` → `/implement`).
-This control-plane repo only runs the **first half**:
+This repo has [spec-kit](https://github.com/github/spec-kit) installed
+(via `specify init --here --ai copilot`), but only the **first half**
+of the flow runs here. Implementation happens in the downstream repos.
 
 | Command | Use here? | Why |
 |---|---|---|
-| `/constitution` | ✅ | Program constitution lives at `.specify/memory/constitution.md` |
-| `/specify` | ✅ | Drafts a new program-level spec into `specs/<NNNN>-<slug>/` |
-| `/plan`, `/tasks`, `/implement` | ❌ | Implementation happens in the downstream repos. Iris fans the merged spec out as squad issues; each downstream squad runs its own `/plan` and `/tasks` against the spec link in their repo. |
+| `/speckit.constitution` | ✅ | Program constitution lives at `.specify/memory/constitution.md` |
+| `/speckit.specify` | ✅ | Drafts a new program-level spec into `specs/<NNNN>-<slug>/spec.md` from `.specify/templates/spec-template.md`, including the `fanout:` frontmatter block. |
+| `/speckit.plan`, `/speckit.tasks`, `/speckit.implement` | ❌ | Implementation happens in the downstream repos. Iris fans the merged spec out as squad issues; each downstream squad runs `/speckit.plan` and `/speckit.tasks` against the spec link in their repo. |
 
-If you want to author a spec from your editor, install spec-kit per
-[its README](https://github.com/github/spec-kit) and run only
-`/specify` here. Treat `/plan`, `/tasks`, `/implement` as "not for this
-repo" — they should be invoked downstream after the spec merges.
+If you want to author a spec from your editor, open this repo in an
+editor that supports GitHub Copilot slash commands, and run
+`/speckit.specify "<short feature description>"`. The generated
+`spec.md` will already contain the `fanout:` frontmatter — fill the
+per-repo `summary:` entries (and remove the ones that don't apply)
+before you flip `status:` to `ready` and merge.
 
 ### 3. Contributing to documentation or ADRs
 

@@ -60,3 +60,8 @@ this repo's context**. Instead:
 Before merging any non-trivial change, verify alignment with the
 program constitution. NON-NEGOTIABLE principles (I, II, III) cannot be
 weakened without an explicit, ratified amendment.
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
