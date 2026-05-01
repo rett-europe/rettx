@@ -129,3 +129,12 @@ document on `docs.rettx.eu`.
 Linked libraries are individually licensed (currently MIT) — see each
 library repository for details.
 
+## Community
+
+- [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) — how we behave with
+  each other (Contributor Covenant 2.1).
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — what this repo is for and
+  how to open issues, specs, and PRs.
+- [`SECURITY.md`](./SECURITY.md) — how to report a vulnerability
+  privately.
+

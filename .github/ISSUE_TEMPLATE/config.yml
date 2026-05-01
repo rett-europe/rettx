@@ -3,6 +3,15 @@ contact_links:
   - name: rettX website
     url: https://www.rettx.eu
     about: Public information about the rettX patient registry.
+  - name: Engineering documentation
+    url: https://docs.rettx.eu
+    about: How rettX is built and operated (architecture, specs, ADRs).
   - name: Security disclosure
     url: https://github.com/rett-europe/rettx/security/advisories/new
     about: Report a security vulnerability privately. Do not open a public issue.
+  - name: Contributing guide
+    url: https://github.com/rett-europe/rettx/blob/main/CONTRIBUTING.md
+    about: Read this before opening an issue or PR.
+  - name: Code of Conduct
+    url: https://github.com/rett-europe/rettx/blob/main/CODE_OF_CONDUCT.md
+    about: All participation in the rettX community is bound by this.
