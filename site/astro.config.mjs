@@ -98,9 +98,9 @@ export default defineConfig({
       },
       favicon: '/favicon.svg',
       customCss: ['./src/styles/brand.css'],
-      social: {
-        github: 'https://github.com/rett-europe/rettx',
-      },
+      social: [
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/rett-europe/rettx' },
+      ],
       editLink: {
         baseUrl:
           'https://github.com/rett-europe/rettx/edit/main/site/',
