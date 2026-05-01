@@ -2,7 +2,7 @@
 ═══════════════════════════════════════════════════════════════════════════════
 SYNC IMPACT REPORT
 ═══════════════════════════════════════════════════════════════════════════════
-Version Change: Initial → 1.0.0
+Version Change: Initial → 1.0.0 → 1.0.1
 Action: Establish program-level constitution for the rettX patient registry,
         sitting above the per-repo technical constitutions in rettxweb,
         rettxadmin, and rettxapi.
@@ -190,15 +190,26 @@ public.
   reviewer, expected revisit date) — privacy is not a default; it is a
   considered exception.
 
-**Current state**: this control-plane repo and the reusable libraries
-(`rettxmutation`, `rettxid`) are public. The surface and backend
-repositories (`rettxweb`, `rettxadmin`, `rettxapi`) are currently
-private — a deliberate position reflecting the registry's risk posture
-for code that directly handles patient data. This position is intended
-to be revisited as the project matures, in line with this principle.
+**Current state**: this control-plane repo is public. All ecosystem
+repositories (`rettxweb`, `rettxadmin`, `rettxapi`, `rettxmutation`,
+`rettxid`) are currently private — a deliberate position reflecting
+the registry's risk posture for code that directly handles or supports
+patient data. This position is intended to be revisited as the project
+matures, in line with this principle.
+
+**Posture vs. gaps — applied to security and other reviews**:
+public-facing artefacts in this repo and on `docs.rettx.eu` (specs,
+ADRs, aggregate pages such as `architecture/security.md`) describe
+the controls and posture **in place**. Gap analyses, unmitigated risks,
+remediation backlog, scanner findings, and any content that would hand
+an attacker a roadmap stay in the originating private repo (typically
+in that repo's own `SECURITY.md` or an `INTERNAL.md`-style document)
+and are referenced from the public aggregate only as "see private
+repo" placeholders, never inlined.
 
 **Rationale**: The bias toward openness is what makes the project credible.
-Each closed door requires a reason that holds up to scrutiny.
+Each closed door requires a reason that holds up to scrutiny — and
+"would help an attacker" is one such reason that holds up.
 
 ### VIII. Sustainability and stewardship
 
@@ -305,4 +316,14 @@ for stack-specific technical principles within their own scope.
 This constitution evolves with the project. Maintainers SHOULD review it
 at least annually and after any major incident or scope change.
 
-**Version**: 1.0.0 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-05-01
+**Version**: 1.0.1 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-05-01
+
+<!--
+1.0.1 (PATCH): Clarified Principle VII to explicitly cover the
+*content* of public-facing posture artefacts (aggregate security page,
+docs.rettx.eu): controls in place are public; gap analyses and
+improvement backlogs stay in the originating private repo. Also
+updated the "Current state" paragraph to reflect that all ecosystem
+repos are currently private (rettxmutation and rettxid included).
+-->
+

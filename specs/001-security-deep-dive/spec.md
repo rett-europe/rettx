@@ -258,6 +258,17 @@ a docs page. No new infrastructure is invented.
   itself are reviewed during incident response and which during
   routine periodic review, so a maintainer reading it knows which
   parts are "load-bearing" in an incident.
+- **FR-010**: **Public / internal split.** The aggregate page on
+  the public rettx repo (and its rendering on `docs.rettx.eu`) MUST
+  describe **controls in place** only — what the program does to
+  protect the data. Improvement areas, unmitigated risks, scanner
+  findings, threat-model details that hand an attacker a roadmap, and
+  remediation backlog MUST NOT appear there. Each downstream repo is
+  currently private and MAY (and SHOULD) record its own gap analysis
+  in its `SECURITY.md` or an adjacent file; the rettx aggregate
+  references those repos but does not inline the gap content.
+  Constitution Principle VII (Open by default, private only when
+  justified) is the governing rule.
 - **FR-010**: All inapplicable answers MUST carry a one-line
   rationale ("Not applicable — this service handles no
   patient-identifying data") rather than being blank or omitted.
