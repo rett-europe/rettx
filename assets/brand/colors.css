@@ -1,0 +1,38 @@
+/*
+ * rettX brand colour tokens.
+ *
+ * Source of truth: assets/brand/README.md
+ * Master palette: AdobeColor-rettX (rettxweb repo).
+ *
+ * Consumed by site/ (Astro Starlight) — imported via
+ * site/src/styles/custom.css. Do not duplicate these values inline in
+ * components; reference the variables.
+ */
+
+:root {
+  /* Primary brand */
+  --rettx-pink: #ED3385;
+  --rettx-purple: #8B4EA6;
+  --rettx-purple-deep: #914DAA;
+
+  /* Secondary / supporting */
+  --rettx-indigo: #4E4BBF;
+  --rettx-blue: #435BD0;
+
+  /* Neutral */
+  --rettx-grey: #F2F2F2;
+
+  /* Signature gradient stops (DNA-helix gradient on the X glyph) */
+  --rettx-gradient-stop-1: #E87CD9;
+  --rettx-gradient-stop-2: #E967C1;
+  --rettx-gradient-stop-3: #ED3385;
+  --rettx-gradient-stop-4: #EE2A7B;
+
+  --rettx-gradient: linear-gradient(
+    90deg,
+    var(--rettx-gradient-stop-1) 0%,
+    var(--rettx-gradient-stop-2) 29%,
+    var(--rettx-gradient-stop-3) 90%,
+    var(--rettx-gradient-stop-4) 100%
+  );
+}

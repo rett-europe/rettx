@@ -1,6 +1,19 @@
-# rettX
+<div align="center">
 
-> The Rett Syndrome Europe patient registry — engineering & governance hub.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/brand/rettx-logo-dark.svg">
+  <img alt="rettX" src="./assets/brand/rettx-logo.svg" width="320">
+</picture>
+
+### _Unveiling hope for Rett Syndrome_
+
+**The Rett Syndrome Europe patient registry — engineering &amp; governance hub.**
+
+[rettx.eu](https://www.rettx.eu) · [docs.rettx.eu](https://docs.rettx.eu) _(soon)_ · [Issues](../../issues) · [Specs](./specs/)
+
+</div>
+
+---
 
 This repository is the **public engineering and governance hub** for the
 rettX patient registry. It holds the program-level constitution, all
@@ -102,4 +115,8 @@ defined here.
 The contents of this repository are licensed under the terms of the
 [LICENSE](./LICENSE) file. Linked libraries are individually licensed
 (currently MIT) — see each library repository for details.
+
+The **rettX** name, logo, and brand assets are owned by Rett Syndrome
+Europe; see [`assets/brand/README.md`](./assets/brand/README.md) for
+usage rules.
 
