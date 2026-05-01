@@ -1,0 +1,210 @@
+name: Iris — spec fanout
+
+# When a PR that touches specs/<slug>/spec.md is merged into main, read
+# the YAML frontmatter of each merged spec, and open one issue per
+# entry in the spec's `fanout:` block in the matching downstream repo.
+#
+# Each downstream issue:
+#   - is titled `[spec/<slug>] <spec title>`,
+#   - carries the `squad` label,
+#   - links back to the merged spec on GitHub,
+#   - includes the per-repo `summary` from the frontmatter as the
+#     starting brief for the squad.
+#
+# Idempotency: if the target repo already has an open or closed issue
+# whose title starts with `[spec/<slug>]`, that target is skipped.
+# Re-running fanout on an amended spec therefore won't duplicate.
+#
+# Skips:
+#   - specs/template/spec.md (it's the scaffold, not a real spec)
+#   - specs whose status is not `ready` or `accepted`
+on:
+  pull_request:
+    types: [closed]
+    paths:
+      - 'specs/**/spec.md'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+concurrency:
+  group: spec-fanout-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  fanout:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mint Iris token (all ecosystem repos)
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.IRIS_APP_ID }}
+          private-key: ${{ secrets.IRIS_PRIVATE_KEY }}
+          owner: rett-europe
+          repositories: rettx,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid
+
+      - name: Check out rettx at the merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 1
+
+      - name: Identify merged spec files
+        id: specs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUM:   ${{ github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          # All spec.md files touched by the PR (added or modified).
+          gh pr view "$PR_NUM" --json files --jq \
+            '.files[].path | select(test("^specs/[^/]+/spec\\.md$"))' \
+            | grep -v '^specs/template/' \
+            > /tmp/spec-files.txt || true
+
+          if [[ ! -s /tmp/spec-files.txt ]]; then
+            echo "No real spec.md files in this PR (template-only or unrelated)."
+          fi
+          echo "Spec files to process:"
+          cat /tmp/spec-files.txt || true
+
+      - name: Fan out to downstream repos
+        env:
+          GH_TOKEN:    ${{ steps.app-token.outputs.token }}
+          PR_NUM:      ${{ github.event.pull_request.number }}
+          PR_URL:      ${{ github.event.pull_request.html_url }}
+          PR_AUTHOR:   ${{ github.event.pull_request.user.login }}
+          REPO_FULL:   ${{ github.repository }}
+          MERGE_SHA:   ${{ github.event.pull_request.merge_commit_sha }}
+        run: |
+          set -euo pipefail
+          python -m pip install --quiet "PyYAML==6.0.2"
+
+          ALLOWED_REPOS="rettxweb rettxadmin rettxapi rettxmutation rettxid"
+
+          while IFS= read -r spec_path; do
+            [[ -z "$spec_path" ]] && continue
+            echo "::group::Processing $spec_path"
+
+            python - "$spec_path" <<'PY' > /tmp/spec.json
+          import json, sys, yaml, re
+          from pathlib import Path
+          path = Path(sys.argv[1])
+          text = path.read_text(encoding="utf-8")
+          # Find the first balanced --- ... --- frontmatter block. It may not
+          # be the very first line because the template has an HTML comment
+          # above it.
+          m = re.search(r'(?ms)^---\s*\n(.*?)\n---\s*$', text)
+          if not m:
+              print(json.dumps({"error": "no frontmatter found"})); sys.exit(0)
+          try:
+              fm = yaml.safe_load(m.group(1)) or {}
+          except yaml.YAMLError as e:
+              print(json.dumps({"error": f"frontmatter YAML error: {e}"})); sys.exit(0)
+          print(json.dumps({"ok": True, "frontmatter": fm}))
+          PY
+
+            if jq -e '.error' /tmp/spec.json >/dev/null; then
+              echo "::warning file=$spec_path::$(jq -r '.error' /tmp/spec.json)"
+              echo "::endgroup::"
+              continue
+            fi
+
+            slug=$(jq -r '.frontmatter.slug // empty' /tmp/spec.json)
+            title=$(jq -r '.frontmatter.title // empty' /tmp/spec.json)
+            status=$(jq -r '.frontmatter.status // "draft"' /tmp/spec.json)
+
+            if [[ -z "$slug" || -z "$title" ]]; then
+              echo "::warning file=$spec_path::missing slug or title in frontmatter; skipping"
+              echo "::endgroup::"
+              continue
+            fi
+
+            if [[ "$status" != "ready" && "$status" != "accepted" ]]; then
+              echo "Spec '$slug' is status='$status' — fanout only runs for ready/accepted. Skipping."
+              echo "::endgroup::"
+              continue
+            fi
+
+            spec_url="https://github.com/${REPO_FULL}/blob/${MERGE_SHA}/${spec_path}"
+
+            # Each entry: { repo, summary }
+            count=$(jq '.frontmatter.fanout | length // 0' /tmp/spec.json)
+            if [[ "$count" == "0" ]]; then
+              echo "Spec '$slug' has empty fanout — nothing to route. Skipping."
+              echo "::endgroup::"
+              continue
+            fi
+
+            for i in $(seq 0 $((count - 1))); do
+              target=$(jq -r ".frontmatter.fanout[$i].repo // empty"    /tmp/spec.json)
+              summary=$(jq -r ".frontmatter.fanout[$i].summary // \"\"" /tmp/spec.json)
+
+              if [[ -z "$target" ]]; then
+                echo "::warning::fanout[$i] in $spec_path missing 'repo'; skipping entry"
+                continue
+              fi
+
+              if ! [[ " $ALLOWED_REPOS " == *" $target "* ]]; then
+                echo "::warning::fanout[$i] in $spec_path: '$target' is not in the allowed repo list; skipping"
+                continue
+              fi
+
+              issue_title="[spec/${slug}] ${title}"
+
+              # Idempotency: skip if any issue with this title prefix already exists.
+              existing=$(gh issue list \
+                --repo "rett-europe/${target}" \
+                --search "in:title \"[spec/${slug}]\"" \
+                --state all \
+                --json number,title \
+                --jq '.[] | select(.title | startswith("[spec/'"${slug}"']")) | .number' \
+                | head -n1)
+
+              if [[ -n "$existing" ]]; then
+                echo "Target ${target}: issue #${existing} already exists for spec '${slug}'. Skipping."
+                continue
+              fi
+
+              {
+                echo "Routed by Iris from the merged spec **${slug}** in [\`${REPO_FULL}\`](https://github.com/${REPO_FULL})."
+                echo
+                echo "**Spec:** ${spec_url}"
+                echo "**Source PR:** ${PR_URL} (by @${PR_AUTHOR})"
+                echo
+                echo "## What this repo owns"
+                echo
+                echo "${summary}"
+                echo
+                echo "## Squad next steps"
+                echo
+                echo "1. Read the full spec at the link above."
+                echo "2. Run \`/plan\` and \`/tasks\` in this repo against the spec to break the work down."
+                echo "3. Implement, PR back, and link this issue from the PR so Iris can mark the spec complete."
+                echo
+                echo "---"
+                echo
+                echo "_This issue was generated automatically. If the spec is no longer relevant to this repo, close the issue and optionally remove the matching entry from the spec's \`fanout:\` block._"
+              } > /tmp/issue-body.md
+
+              # Ensure squad label exists in target (idempotent).
+              gh label create squad \
+                --repo "rett-europe/${target}" \
+                --color 9B8FCC \
+                --description "Squad triage inbox — Lead will assign to a member" \
+                --force >/dev/null 2>&1 || true
+
+              url=$(gh issue create \
+                --repo "rett-europe/${target}" \
+                --title "${issue_title}" \
+                --label squad \
+                --body-file /tmp/issue-body.md)
+              echo "Opened: ${url}"
+            done
+
+            echo "::endgroup::"
+          done < /tmp/spec-files.txt

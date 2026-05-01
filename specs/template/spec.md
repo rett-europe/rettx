@@ -1,3 +1,34 @@
+<!--
+  Frontmatter below is machine-read by .github/workflows/spec-fanout.yml
+  when this spec is merged. The `fanout` array drives which downstream
+  repos get an issue, and what each one owns. Delete entries that don't
+  apply.
+-->
+---
+spec_id: NNNN
+slug: short-slug
+title: <Concise feature name>
+status: draft   # draft | ready | accepted | superseded
+authored: YYYY-MM-DD
+author: <github-handle>
+fanout:
+  - repo: rettxweb
+    summary: |
+      One-paragraph description of what rettxweb owns for this spec.
+  - repo: rettxadmin
+    summary: |
+      One-paragraph description of what rettxadmin owns for this spec.
+  - repo: rettxapi
+    summary: |
+      One-paragraph description of what rettxapi owns for this spec.
+  - repo: rettxmutation
+    summary: |
+      Drop this entry if rettxmutation is not affected.
+  - repo: rettxid
+    summary: |
+      Drop this entry if rettxid is not affected.
+---
+
 # Spec: <Concise feature name>
 
 > **Spec ID**: NNNN  ·  **Status**: draft / accepted / superseded
