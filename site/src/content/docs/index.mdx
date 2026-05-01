@@ -1,0 +1,79 @@
+---
+title: rettX
+description: The Rett Syndrome Europe patient registry — engineering and governance documentation.
+template: splash
+hero:
+  tagline: Unveiling hope for Rett Syndrome.
+  image:
+    file: ../../assets/logo.svg
+  actions:
+    - text: Explore the architecture
+      link: /architecture/overview/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/rett-europe/rettx
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## What is rettX?
+
+**rettX** is the patient registry of
+[Rett Syndrome Europe](https://www.rettsyndrome.eu) — a European
+network of Rett Syndrome associations. The registry collects, with
+full consent, structured information about people living with Rett
+Syndrome so that researchers, clinicians, and patient organisations
+can better understand the condition and accelerate therapies.
+
+This site documents *how* rettX is built: its architecture, the
+governance constitution that all of its repositories share, the
+specifications that drive new work, and the decisions we have made
+along the way.
+
+The patient-facing public site lives at
+[**rettx.eu**](https://www.rettx.eu). The caregiver app lives at
+[**app.rettx.eu**](https://app.rettx.eu).
+
+<CardGrid>
+  <LinkCard
+    title="Architecture"
+    description="The six-repository ecosystem and how data flows through it."
+    href="/architecture/overview/"
+  />
+  <LinkCard
+    title="Governance"
+    description="The program constitution that governs every rettX repository."
+    href="/governance/constitution/"
+  />
+  <LinkCard
+    title="Specifications"
+    description="Cross-cutting specs that drive new features across the stack."
+    href="/specs/"
+  />
+  <LinkCard
+    title="Decisions"
+    description="Architecture decision records (ADRs) capturing why we built it this way."
+    href="/decisions/"
+  />
+</CardGrid>
+
+## Three things to know
+
+<CardGrid>
+  <Card title="Patient-first" icon="heart">
+    Every decision is anchored in a constitution that puts patient
+    well-being, consent, and dignity ahead of engineering convenience.
+  </Card>
+  <Card title="Open by default" icon="open-book">
+    This site, the program governance, and our libraries are public.
+    Application code that touches patient data is private — see the
+    [ecosystem map](/welcome/ecosystem/).
+  </Card>
+  <Card title="Built in the open" icon="github">
+    All work is tracked in GitHub. Cross-cutting changes flow through
+    a public spec process before any code is written.
+  </Card>
+</CardGrid>

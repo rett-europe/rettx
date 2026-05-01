@@ -1,0 +1,21 @@
+{
+  "name": "rettx-docs",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "rettX engineering documentation site (docs.rettx.eu) — Astro + Starlight.",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/check": "^0.9.4",
+    "@astrojs/starlight": "^0.32.0",
+    "astro": "^5.5.0",
+    "sharp": "^0.33.5",
+    "typescript": "^5.7.3"
+  }
+}

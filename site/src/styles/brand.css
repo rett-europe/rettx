@@ -1,0 +1,62 @@
+/*
+ * rettX brand styles for the docs site.
+ *
+ * Source of truth for the colour palette is assets/brand/colors.css
+ * at the repository root. Keep these tokens in sync. Starlight CSS
+ * variables (sl-color-*) are mapped to the brand tokens below.
+ */
+
+:root,
+:root[data-theme='light'],
+:root[data-theme='dark'] {
+  /* rettX brand tokens */
+  --rettx-pink: #ed3385;
+  --rettx-purple: #8b4ea6;
+  --rettx-purple-deep: #914daa;
+  --rettx-indigo: #4e4bbf;
+  --rettx-blue: #435bd0;
+  --rettx-grey: #f2f2f2;
+
+  --rettx-gradient: linear-gradient(
+    90deg,
+    #e87cd9 0%,
+    #e967c1 29%,
+    #ed3385 90%,
+    #ee2a7b 100%
+  );
+}
+
+/* ---- Light theme: purple-led accents ---- */
+:root[data-theme='light'] {
+  --sl-color-accent-low: #f3e8f7;
+  --sl-color-accent: var(--rettx-purple-deep);
+  --sl-color-accent-high: #5e2f73;
+
+  --sl-color-text-accent: var(--rettx-purple-deep);
+}
+
+/* ---- Dark theme: pink-led accents (better contrast on dark) ---- */
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #3a1a2c;
+  --sl-color-accent: var(--rettx-pink);
+  --sl-color-accent-high: #f8a6cf;
+
+  --sl-color-text-accent: #f9c0db;
+}
+
+/* ---- Hero treatment: gradient accent under the wordmark ---- */
+.hero .actions a[data-variant='primary'] {
+  background: var(--rettx-gradient);
+  border: none;
+  color: #fff;
+}
+
+.hero .actions a[data-variant='primary']:hover {
+  filter: brightness(1.05);
+}
+
+/* ---- Site title: ensure the SVG logo has breathing room ---- */
+.site-title img {
+  max-height: 2.4rem;
+  width: auto;
+}
