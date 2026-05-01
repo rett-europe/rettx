@@ -99,6 +99,13 @@ jobs:
 
           created=()
           for repo in "${targets[@]}"; do
+            # Ensure the squad label exists in the target repo (idempotent).
+            gh label create squad \
+              --repo "rett-europe/${repo}" \
+              --color 9B8FCC \
+              --description "Squad triage inbox — Lead will assign to a member" \
+              --force >/dev/null 2>&1 || true
+
             url=$(gh issue create \
               --repo "rett-europe/${repo}" \
               --title "[$ISSUE_REPO#$ISSUE_NUM] $ISSUE_TITLE" \
