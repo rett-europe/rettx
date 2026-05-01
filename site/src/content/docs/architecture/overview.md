@@ -13,27 +13,30 @@ under the **Architecture** section as they are written.
 rettX is intentionally small for a healthcare system. There are three
 runtime layers and two supporting libraries:
 
-```
-                      ┌─────────────────────────────┐
-   Caregivers         │  rettxweb  (Angular PWA)    │
-                      │  app.rettx.eu               │
-                      └──────────────┬──────────────┘
-                                     │
-   Admins / clinicians ┌─────────────▼──────────────┐
-                       │  rettxadmin  (web app)     │
-                       └─────────────┬──────────────┘
-                                     │
-                                     ▼
-                       ┌────────────────────────────┐
-                       │  rettxapi  (Python)        │
-                       │  registry data model,      │
-                       │  consent, access control   │
-                       └─────┬───────────┬──────────┘
-                             │           │
-                  ┌──────────▼──┐    ┌───▼─────────────┐
-                  │ rettxmutation│    │   rettxid       │
-                  │ (PyPI lib)  │    │   (PyPI lib)    │
-                  └─────────────┘    └─────────────────┘
+```mermaid
+flowchart TD
+    Caregivers(["👤 Caregivers"]):::actor
+    Admins(["🏥 Admins / clinicians"]):::actor
+
+    rettxweb["**rettxweb**<br/>Angular PWA<br/><sub>app.rettx.eu</sub>"]:::surface
+    rettxadmin["**rettxadmin**<br/>web app"]:::surface
+
+    rettxapi["**rettxapi**<br/>Python service<br/><sub>registry data · consent · access control</sub>"]:::backend
+
+    rettxmutation[["**rettxmutation**<br/><sub>PyPI · HGVS parsing</sub>"]]:::lib
+    rettxid[["**rettxid**<br/><sub>PyPI · pseudonymous IDs</sub>"]]:::lib
+
+    Caregivers --> rettxweb
+    Admins --> rettxadmin
+    rettxweb --> rettxapi
+    rettxadmin --> rettxapi
+    rettxapi --> rettxmutation
+    rettxapi --> rettxid
+
+    classDef actor fill:#f2f2f2,stroke:#8b4ea6,stroke-width:1.5px,color:#333
+    classDef surface fill:#fdf0f7,stroke:#ed3385,stroke-width:1.5px,color:#333
+    classDef backend fill:#f3e8f7,stroke:#8b4ea6,stroke-width:2px,color:#333
+    classDef lib fill:#eaeaff,stroke:#4e4bbf,stroke-width:1.5px,color:#333
 ```
 
 ## Trust boundaries

@@ -55,6 +55,31 @@
   filter: brightness(1.05);
 }
 
+/* ---- Splash homepage: centre the tagline-logo, no side image ---- */
+/* Stack the splash hero so the (tagline) logo sits above the actions   */
+/* rather than to the side. Hide the empty H1 placeholder.              */
+.hero {
+  grid-template-columns: 1fr !important;
+  text-align: center;
+}
+
+.hero > img,
+.hero > .hero-html {
+  order: -1;
+  margin-inline: auto;
+  max-width: min(640px, 100%);
+  width: 100%;
+  height: auto;
+}
+
+.hero h1 {
+  display: none;
+}
+
+.hero .actions {
+  justify-content: center;
+}
+
 /* ---- Site title: ensure the SVG logo has breathing room ---- */
 .site-title img {
   max-height: 2.4rem;
