@@ -10,8 +10,9 @@ ecosystem repository.
 
 The patient-facing public landing for rettX is the WordPress site at
 [**rettx.eu**](https://www.rettx.eu) — that is *not* what this
-repository serves. The forthcoming docs site here will live on a
-separate subdomain (e.g. `docs.rettx.eu`) and is aimed at engineering
+repository serves. The engineering docs site delivered by this
+repository is published at
+[**docs.rettx.eu**](https://docs.rettx.eu) and is aimed at engineering
 contributors, clinical partners, and the wider community who want to
 inspect *how* rettX is built and operated.
 

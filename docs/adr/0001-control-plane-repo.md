@@ -120,10 +120,12 @@ plane is *not* a replacement for that landing.
 The site delivered by this repository is an **engineering and
 governance** surface, aimed at contributors, clinical partners, and
 community members who want to inspect how rettX is built and operated.
-It will live on a separate subdomain (recommendation: `docs.rettx.eu`,
-to be confirmed). The site source lives in `site/` and is built with
-**Astro Starlight**, deployed to **GitHub Pages** via Actions from the
-`main` branch (no `gh-pages` branch).
+It is published at **`docs.rettx.eu`**. The site source lives in
+`site/` and is built with **Astro Starlight**, deployed to **GitHub
+Pages** via Actions from the `main` branch (no `gh-pages` branch). DNS
+is configured as a CNAME from `docs.rettx.eu` to the GitHub Pages
+target; the `CNAME` file in the deployed site enforces the custom
+domain.
 
 ## Alternatives considered
 
@@ -182,8 +184,8 @@ scalability and accountability.
 - Add a back-link from each downstream repo's
   `.specify/memory/constitution.md` to this program constitution.
 - Reconcile the i18n language-code divergence noted in `patterns.md`.
-- Confirm subdomain for the engineering docs site (recommendation:
-  `docs.rettx.eu`).
+- Wire DNS for `docs.rettx.eu` to GitHub Pages (CNAME) when the site is
+  ready to publish.
 - Revisit visibility of `rettxweb` / `rettxadmin` / `rettxapi` periodically
   per program constitution Principle VII.
 - Evaluate whether to publish a weekly cross-repo digest as an issue
