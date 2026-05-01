@@ -56,15 +56,31 @@ follow the templates in `specs/template/`. The flow is:
    intended outcome.
 2. After triage and a constitution check, a maintainer (or you, with
    guidance) opens a draft PR adding `specs/<NNNN>-<slug>/spec.md`.
-3. The spec is iterated on until it is "Ready". `plan.md` and
-   `tasks.md` follow.
-4. On merge, Iris fans the tasks out as issues in the relevant
-   downstream repositories with the `squad` label, where the work is
-   actually executed.
+3. The spec is iterated on until it is "Ready".
+4. On merge, Iris fans the spec out as `squad`-labeled issues in the
+   relevant downstream repositories, where each squad authors its own
+   plan and tasks and executes the work.
 
 Please do not start writing code in a downstream repository for a
 cross-cutting change before the spec here is at least at "Draft —
 ready for review". This avoids wasted work.
+
+#### Spec-kit on this repo
+
+The downstream repos use the full [spec-kit](https://github.com/github/spec-kit)
+flow (`/constitution` → `/specify` → `/plan` → `/tasks` → `/implement`).
+This control-plane repo only runs the **first half**:
+
+| Command | Use here? | Why |
+|---|---|---|
+| `/constitution` | ✅ | Program constitution lives at `.specify/memory/constitution.md` |
+| `/specify` | ✅ | Drafts a new program-level spec into `specs/<NNNN>-<slug>/` |
+| `/plan`, `/tasks`, `/implement` | ❌ | Implementation happens in the downstream repos. Iris fans the merged spec out as squad issues; each downstream squad runs its own `/plan` and `/tasks` against the spec link in their repo. |
+
+If you want to author a spec from your editor, install spec-kit per
+[its README](https://github.com/github/spec-kit) and run only
+`/specify` here. Treat `/plan`, `/tasks`, `/implement` as "not for this
+repo" — they should be invoked downstream after the spec merges.
 
 ### 3. Contributing to documentation or ADRs
 
