@@ -298,7 +298,9 @@ still retrievable via an archived filter, and still present for audit/retention.
 - **Duplicate/double-submit of a send**: idempotency prevents creating duplicate messages or
   duplicate email deliveries for the same logical send.
 - **Very large cohort**: bulk sends respect a cohort size limit (aligned with existing campaign
-  limits) and persist-then-deliver asynchronously so the request does not block on delivery.
+  limits) and persist each recipient's message before delivering synchronously within the
+  request (no durable async infrastructure in v1, per D2); the persisted messages are the
+  durable record even if individual deliveries fail.
 - **Concurrent read + admin view**: read-state updates are last-write-wins and never block.
 - **Reply received by mailbox**: the email carries the message reference ID so a human can
   manually correlate a reply to the original message; no automatic ingestion.
@@ -345,8 +347,11 @@ still retrievable via an archived filter, and still present for audit/retention.
 
 - **FR-015**: The system MUST model **delivery** as a per-channel attempt attached to a message;
   v1 MUST support the **email** channel only while keeping the model channel-agnostic.
-- **FR-016**: The system MUST persist the message first and then trigger delivery
-  **asynchronously**, so the create/send request does not block on the email provider.
+- **FR-016**: The system MUST persist the message first and then deliver it **synchronously
+  within the create/send request** in v1 (no durable async infrastructure exists — see D2), so
+  the persisted message is the durable record even if the provider send fails. A durable async
+  worker MAY replace the synchronous path in a later phase without changing the persisted-first
+  guarantee.
 - **FR-017**: Each email delivery MUST record a status (e.g. `pending`, `sent`, `failed`,
   `not_attempted`) with timestamps and, on failure, an error reason.
 - **FR-018**: The system MUST support **retry/resend** of a failed email delivery against the
@@ -357,7 +362,7 @@ still retrievable via an archived filter, and still present for audit/retention.
   policy** (e.g. reply-to support mailbox / open rettX for details).
 - **FR-021**: The system SHOULD be able to incorporate provider delivery signals (e.g. bounce)
   if/when available, but provider webhook ingestion is NOT required for v1 (send-time status is
-  acceptable for v1). *(See Open Question Q3.)*
+  acceptable for v1). *(Resolved — send-time status only for v1; see Q3.)*
 
 ### Functional Requirements — Caregiver-facing API
 
@@ -390,7 +395,7 @@ still retrievable via an archived filter, and still present for audit/retention.
   added, MUST be generic (e.g. "You have a new message in rettX").
 - **FR-031**: The system MUST define **retention** expectations for messages and deliveries and
   honor **GDPR** data-subject handling (export/erasure) for caregiver communications.
-  *(See Open Question Q1.)*
+  *(Resolved — erasure redacts content but keeps an audit-safe tombstone; see Q1.)*
 
 ### Key Entities *(include if feature involves data)*
 
@@ -486,8 +491,8 @@ not diverge:
   messages.
 - The existing **campaign lifecycle** (`027`) and **email send/templating** (`010`) are the
   foundation; the Message Center wraps and extends them rather than replacing them.
-- Delivery is **asynchronous** (persist first, then deliver); send-time delivery status is
-  acceptable for v1 (provider webhooks optional/future).
+- Delivery is **persist-first, then synchronous within the request** in v1 (per D2); send-time
+  delivery status is acceptable for v1 (provider webhooks optional/future).
 - A new Cosmos container is acceptable for messages; partition strategy favors per-caregiver
   read performance (finalized in `plan.md`).
 - Email remains the **only** delivery channel in v1; the model is channel-agnostic for future
@@ -517,8 +522,8 @@ repo's own derived plan and its local constitution.*
   remain visible even when email delivery fails. ✅
 - **II. Privacy by design (NON-NEGOTIABLE)** — caregiver-only + patient-level authorization
   (FR-027); clinical detail kept out of email/push with sensitive context behind authentication
-  (FR-030); messages kept distinct from the audit log (FR-028); GDPR retention/erasure addressed
-  (FR-031, Q1). ✅
+  (FR-030);   messages kept distinct from the audit log (FR-028); GDPR retention/erasure resolved as
+  redact-content-with-audit-safe-tombstone (FR-031, Q1). ✅
 - **III. Transparency above all (NON-NEGOTIABLE)** — a reproducible content snapshot records
   exactly what was communicated, even after templates change (FR-006); message lifecycle is
   audited (FR-029); a stable reference ID supports traceability of replies (FR-004). ✅
@@ -533,13 +538,21 @@ repo's own derived plan and its local constitution.*
   campaign, audit and patient-access machinery rather than standing up new infrastructure; the
   channel-agnostic model avoids re-architecting when push is added later. ✅
 
-## Open Questions *(max 3 — resolve during research)*
+## Resolved Decisions *(Q1–Q3, resolved via provider planning on `rettxapi` #299)*
 
-- **Q1 [NEEDS CLARIFICATION]**: Retention policy for messages/deliveries and the GDPR
-  export/erasure behavior — does erasure redact content while retaining an audit-safe tombstone,
-  or remove the message entirely? (Drives FR-031 and storage design.)
-- **Q2 [NEEDS CLARIFICATION]**: For patient-linked messages, when a caregiver later loses
-  patient access, should the message be fully hidden or shown with patient-specific content
-  redacted? (Drives FR-027 and US1 scenario 5.)
-- **Q3 [NEEDS CLARIFICATION]**: Is send-time email status sufficient for v1, or is at least
-  bounce handling (provider webhook) required before launch? (Drives FR-021 scope.)
+- **Q1 — Retention / GDPR erasure (RESOLVED → redact content + audit-safe tombstone).** Erasure
+  blanks the content snapshot and patient specifics and sets a redaction flag, but **retains the
+  message envelope** (id, reference ID, category code, timestamps, delivery status) so the proof
+  that a communication occurred survives for traceability (Constitution III/IV) and reference-ID
+  reply correlation. Content follows the STANDARD retention tier (≥12 months); the tombstone
+  follows the audit LONG tier. Hard-delete is **not** used. *(Resolves FR-031.)*
+- **Q2 — Patient-access-loss (RESOLVED → redact patient specifics at read time, keep the
+  message).** When a caregiver later loses access to a linked patient, the message is **retained**
+  and its envelope stays visible, but `patient_ref` and patient-specific content are **withheld at
+  read time**; the content snapshot is preserved at rest. The message is **not** hidden entirely.
+  Both API contracts state this so the frontends render only what the backend returns. *(Resolves
+  FR-027 and US1 scenario 5.)*
+- **Q3 — Delivery fidelity (RESOLVED → send-time status only for v1).** Delivery status is recorded
+  from the provider (SendGrid) send response (`sent` / `failed` / `not_attempted`) and
+  `provider_ref` is retained for later correlation; provider bounce/delivery **webhook ingestion
+  is deferred** to a post-v1 phase. *(Resolves FR-021; consistent with D2.)*
