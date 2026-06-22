@@ -44,11 +44,14 @@ issues in each downstream repository.
 2. The **Iris** automation classifies the issue and labels it with the
    target route (`route:web`, `route:admin`, `route:api`,
    `route:mutation`, `route:id`, or `cross-cutting`).
-3. A maintainer with `write` permission or above confirms the routing
-   with a `/route confirm` comment.
-4. For point fixes, Iris opens a linked issue in the target
-   repository. For cross-cutting changes, a specification is written
-   here first and then fanned out on merge.
+3. **For point fixes** (a single repo), a maintainer with `write`
+   permission or above confirms the routing with a `/route confirm`
+   comment, and Iris opens a linked issue in that repository.
+4. **For cross-cutting changes**, we don't fan the raw issue out. A
+   maintainer first runs a *gap analysis* across the affected
+   repositories, then writes a single specification here — including the
+   shared API contract. When that spec is merged, it is fanned out as a
+   grounded, tracked issue in each affected repository.
 
 See the [contributing guide](https://github.com/rett-europe/rettx/blob/main/CONTRIBUTING.md)
 for the human-facing version of this flow.

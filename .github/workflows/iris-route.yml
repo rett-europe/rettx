@@ -13,6 +13,10 @@ name: Iris — route
 #   5. Comments on the parent with the list of created issues, applies
 #      the `routed` label.
 #
+# Scope: single-repo work only. If the parent issue is labelled
+# `cross-cutting`, the workflow refuses and points to the gap-analysis →
+# spec → spec-fanout pipeline (see docs/adr/0002).
+#
 # Idempotency: if the parent already has the `routed` label, the workflow
 # refuses to run again. Re-routing requires manually removing `routed`.
 on:
@@ -62,6 +66,14 @@ jobs:
           if [[ ",$existing," == *",routed,"* ]]; then
             gh issue comment "$ISSUE_NUM" --repo "$ISSUE_REPO" --body \
               "🤖 Iris: this issue is already \`routed\`. Remove the label to re-route."
+            exit 0
+          fi
+
+          # Refuse on cross-cutting issues: those do NOT get a raw fan-out.
+          # They go through gap analysis → umbrella spec → spec-fanout (ADR 0002).
+          if [[ ",$existing," == *",cross-cutting,"* ]]; then
+            gh issue comment "$ISSUE_NUM" --repo "$ISSUE_REPO" --body \
+              "🤖 Iris: this issue is labelled \`cross-cutting\`, so it does **not** get a raw \`/route confirm\` fan-out. It goes through gap analysis → an umbrella spec in [\`specs/\`](https://github.com/${ISSUE_REPO}/tree/main/specs) → \`spec-fanout\` (see [ADR 0002](https://github.com/${ISSUE_REPO}/blob/main/docs/adr/0002-cross-cutting-gap-analysis-pipeline.md)). If this is genuinely single-repo work, remove the \`cross-cutting\` label and comment \`/route confirm\` again."
             exit 0
           fi
 

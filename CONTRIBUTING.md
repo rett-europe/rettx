@@ -56,9 +56,15 @@ The flow is:
 
 1. Open a **Spec proposal** issue describing the problem and the
    intended outcome.
-2. After triage and a constitution check, run `/speckit.specify` from
-   your editor (or hand-create `specs/<NNNN>-<slug>/spec.md` from the
-   template) on a feature branch.
+2. After triage and a constitution check, run a **gap analysis** across
+   the affected repositories — one read-only session per repo, driven
+   from this control plane (see
+   [ADR 0002](docs/adr/0002-cross-cutting-gap-analysis-pipeline.md)) — to
+   ground the work in what each repo already has. Then run
+   `/speckit.specify` from your editor (or hand-create
+   `specs/<NNNN>-<slug>/spec.md` from the template) on a feature branch,
+   writing it from those findings and hosting any shared API contract
+   under `contracts/`.
 3. The spec is iterated on until it is "Ready". Set the frontmatter
    `status: ready` and fill the `fanout:` block with one entry per
    downstream repo that needs to act, each with a per-repo `summary:`.
