@@ -10,7 +10,7 @@
 spec_id: "032"
 slug: "message-center"
 title: "rettX Message Center"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-06-22"
 author: "perocha"
 source_issue: "rett-europe/rettx#10"
@@ -24,7 +24,8 @@ fanout:
       stable reference ID, reproducible content snapshot) and a per-channel
       **Delivery** (email only in v1) with retry/resend. Evolve the blob email
       templates into **versioned communication templates** (in-app + email +
-      reserved push fields). Add caregiver v2 endpoints (list/detail/unread-
+      reserved push fields), rendered/selected by the **caregiver's profile
+      language code** — the canonical source (D1) — with English fallback. Add caregiver v2 endpoints (list/detail/unread-
       count/read/archive) and admin endpoints (send individual + bulk, preview,
       list/filter, resend) with bulk idempotency. Add a MESSAGE audit domain
       (distinct from the audit log). New Cosmos container `messages` partitioned
@@ -46,26 +47,29 @@ fanout:
       the `care-profile.service` pattern. Add chrome i18n keys across all
       language files; treat the message **body** as backend-localized opaque
       content (sanitize if HTML). For patient-linked messages, render only what
-      the backend returns — never infer patient access client-side. Mind the
-      canonical language-code decision (D1).
+      the backend returns — never infer patient access client-side. For language,
+      pass the caregiver's profile language (from principal info via `rettxapi`)
+      straight through to the API — do not map or substitute it (D1).
   - repo: rettxadmin
     summary: |
       Admin dashboard (§10) — evolve the EXISTING individual-send and bulk
       email-campaign UIs to route through the new persist-first message
       creation. Surface the message **reference ID** and per-message delivery +
       read status, clearly distinguishing a persisted rettX message from its
-      email delivery. Add a content **preview** (new) and a language/template-
-      version selector (new); add a filterable **message index** screen; rely on
-      backend idempotency for bulk (keep the existing 100-cap, dedupe, and
-      "recently emailed" safeguards). Preserve current workflows — mind the
-      entangled forkJoin file-validation flow in `genetic-files-section`. CONSUME
-      `contracts/admin-api-contract.md`. Reconcile the language-code naming
-      mismatch (admin i18n uses ISO 3166-1 country codes) per decision D1.
+      email delivery. Add a content **preview** (new) and a template-version
+      selector (new); the send **language is derived from each recipient's
+      profile, not chosen per-send** (D1). Add a filterable **message index**
+      screen; rely on backend idempotency for bulk (keep the existing 100-cap,
+      dedupe, and "recently emailed" safeguards). Preserve current workflows —
+      mind the entangled forkJoin file-validation flow in `genetic-files-section`.
+      CONSUME `contracts/admin-api-contract.md`. The ISO 3166-1 country codes in
+      admin's own i18n files localize admin chrome only and are NOT the renderer
+      input (D1).
 ---
 
 # Feature Specification: rettX Message Center
 
-**Spec ID**: `032-message-center` · **Status**: Draft · **Created**: 2026-06-22
+**Spec ID**: `032-message-center` · **Status**: Ready · **Created**: 2026-06-22
 **Source issue**: [rett-europe/rettx#10](https://github.com/rett-europe/rettx/issues/10) (cross-cutting)
 **Owner**: rettX control plane (this repo) — authored and coordinated here; scoped work is fanned out to the affected repos via the `spec-fanout` workflow on merge.
 **Input**: "Introduce a centralized Message Center that persists caregiver communications inside rettX as the canonical user-facing record, with email as the first delivery channel and the architecture ready for future channels (push, etc.)."
@@ -451,13 +455,17 @@ existing send screens onto the new create-then-deliver endpoints while preservin
 
 ### Program-level cross-cutting decisions (from the control-plane gap analysis)
 
-Surfaced by reading all three repos together; each must be decided **once, here**, before the
-lanes diverge:
+Surfaced by reading all three repos together; each is decided **once, here**, so the lanes do
+not diverge:
 
-- **D1 — Canonical language codes.** `rettxweb` resolves caregiver language from Auth0
-  `preferences.language`; `rettxadmin` i18n files use **ISO 3166-1 country codes** (e.g. `se`,
-  `dk`, `cz`); `rettxapi` renders templates by `{language}`. The three MUST agree on one
-  canonical code set + mapping for the language passed to the renderer. *(Open — decision needed.)*
+- **D1 — Canonical language code (RESOLVED).** The single source of truth is the **caregiver's
+  language preference stored in their principal/profile, owned and served by `rettxapi`**. Both
+  frontends read it from the caregiver profile (`rettxweb` from principal info via `rettxapi`;
+  `rettxadmin` from the same caregiver profile) and **pass it through unchanged** to the
+  send/render call — neither maps nor substitutes it. `rettxapi` keys communication templates by
+  exactly that profile code, with **English fallback** when no template exists for the code. The
+  ISO 3166-1 country codes in `rettxadmin`'s own i18n files localize the **admin UI chrome only**
+  and are out of scope for the renderer input — so there is no real divergence to reconcile.
 - **D2 — Synchronous delivery in v1.** `rettxapi` has no durable async infrastructure (no
   queue / Service Bus / Durable Functions). v1 delivers **synchronously** within the request,
   with durability via the persisted message + `failed` delivery status + admin resend; a Storage
@@ -466,8 +474,9 @@ lanes diverge:
 - **D3 — Bulk model.** Each caregiver gets one independent persisted message; the existing
   `rettxapi` campaign engine and `rettxadmin` campaign UI are reused as the fan-out mechanism
   (one message per recipient), not replaced.
-- **D4 — Feature flag.** A program-reserved `messages` feature flag (surfaced in the caregiver
-  profile `app_metadata.features`) gates staged rollout of the caregiver surface.
+- **D4 — Feature flag.** Gate staged rollout of the caregiver surface behind a program-reserved
+  `messages` flag using the **existing feature-flag framework** (caregiver `app_metadata.features`,
+  the same `featureMatchGuard` mechanism already in `rettxweb`) — no new flag infrastructure.
 
 ## Assumptions
 
