@@ -2,7 +2,7 @@
 
 **Feature**: `032-message-center` | **Hosted by**: rettX control plane (this spec) · **Implemented + versioned by**: `rettxapi`
 **Consumer**: `rettxweb` caregiver app (§8)
-**Umbrella**: [rettx#10](https://github.com/rett-europe/rettx/issues/10) · **Contract version**: `v0.1 (draft)`
+**Umbrella**: [rettx#10](https://github.com/rett-europe/rettx/issues/10) · **Contract version**: `v0.2 (draft)`
 
 > **Scope of this document.** This is the **published interface** for the caregiver Messages
 > surface — the single source of truth all sides agree on, hosted in the control plane and
@@ -19,7 +19,7 @@ caregiver; cross-caregiver access returns 404 (never discloses existence).
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/v2/messages` | Paginated list of the caregiver's messages (filters: `unread`, `category`, `archived`). |
-| `GET` | `/v2/messages/{message_id}` | Message detail (optionally marks read; see Open Item O1). |
+| `GET` | `/v2/messages/{message_id}` | Message detail. Does **not** mark the message read (read is an explicit action — see O1). |
 | `GET` | `/v2/messages/unread-count` | Lightweight unread count for a nav badge. |
 | `POST` | `/v2/messages/{message_id}/read` | Mark a message read (idempotent). |
 | `POST` | `/v2/messages/{message_id}/archive` | Archive/hide (record retained). |
@@ -50,6 +50,12 @@ caregiver; cross-caregiver access returns 404 (never discloses existence).
 ## 3. Conventions
 
 - Timestamps: full UTC ISO-8601.
+- `reference_id` format is **`MSG-{yyyymmdd}-{short}`** (e.g. `MSG-20260622-AB12CD`): email-safe,
+  stable, and unique — used for reply correlation and support.
+- **Patient-access loss (umbrella Q2, resolved):** when the caregiver no longer has access to a
+  linked patient, the message is **retained and still listed**, but `patient_ref` is returned as
+  `null` and patient-specific content is omitted from `title`/`body`/`preview`. The frontend
+  renders exactly what the backend returns (it does not hide the message itself).
 - i18n: backend sends **structured codes** (`category_code`, separators are **hyphens** e.g.
   `survey-invitation`); the frontend maps codes → localized strings. The rendered in-app
   `title`/`body` come from the message **content snapshot** (already localized at send time).
@@ -63,10 +69,14 @@ caregiver; cross-caregiver access returns 404 (never discloses existence).
 
 ## 5. Open items needing a joint decision (rettxapi ↔ rettxweb)
 
-- **O1**: Mark-read on detail-open vs. explicit action (affects unread accuracy + analytics).
+- **O1 (RESOLVED → explicit read action).** `POST /{message_id}/read` is the **canonical** way to
+  mark a message read; `GET /{message_id}` is read-only and does **not** auto-mark-read. This keeps
+  reads idempotent and unread analytics clean. The frontend marks read on an explicit user action.
 - **O2**: Are links backend-provided (`links[]`) or frontend-derived from `category_code`?
-- **O3**: Patient-access-loss behavior (umbrella Q2): hide message entirely vs. show generic
-  record without patient specifics — must match the backend decision in [../spec.md](../spec.md).
+- **O3 (RESOLVED → redact, do not hide; umbrella Q2).** On patient-access loss the backend keeps
+  the message in the list and returns it with `patient_ref: null` and patient-specifics omitted
+  (see §3). The frontend MUST NOT independently hide patient-linked messages — it renders what the
+  backend returns.
 
 ## 6. Coordination
 
