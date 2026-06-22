@@ -14,6 +14,9 @@ name: Iris — triage
 #   - Open issues in the downstream repos. That's `iris-route.yml`,
 #     guarded by a `/route confirm` from a repo collaborator. Triage is
 #     a proposal; routing is a human-confirmed action.
+#   - For `cross-cutting` issues it does NOT recommend `/route confirm` at
+#     all: those go through gap analysis → umbrella spec → `spec-fanout`
+#     (see docs/adr/0002). `/route confirm` is for single-repo work only.
 on:
   issues:
     types: [opened, labeled]
@@ -155,7 +158,16 @@ jobs:
             echo
             echo "---"
             echo
-            echo "If this looks right, a repo collaborator can comment **\`/route confirm\`** to fan this issue out as sub-issues in the target repos (each labeled \`squad\`)."
+            if [[ "$cross_cutting" == "true" || "$needs_spec" == "true" ]]; then
+              echo "**Next step — this is cross-cutting, so it does _not_ get a raw \`/route confirm\` fan-out.**"
+              echo "It goes through the gap-analysis → spec pipeline instead (see [ADR 0002](https://github.com/${ISSUE_REPO}/blob/main/docs/adr/0002-cross-cutting-gap-analysis-pipeline.md)):"
+              echo
+              echo "1. A maintainer runs a **gap analysis** from the control plane — one read-only session per affected repo — to ground the work in what each repo already has."
+              echo "2. An **umbrella spec** is authored here under \`specs/NNNN-slug/\`, hosting the shared API contract under \`contracts/\` as the single source of truth."
+              echo "3. On merge, **\`spec-fanout\`** opens one grounded \`[spec/<slug>]\` issue (label \`squad\`) per repo listed in the spec's \`fanout:\` frontmatter."
+            else
+              echo "If this looks right, a repo collaborator can comment **\`/route confirm\`** to fan this single-repo issue out as a sub-issue in the target repo (label \`squad\`)."
+            fi
             echo "To re-run triage, remove and re-add the \`needs-triage\` label."
           } > comment.md
 

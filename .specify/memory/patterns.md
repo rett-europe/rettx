@@ -153,17 +153,43 @@ form the contract between intake and execution.
 In downstream repos, the `squad` label is the trigger for that repo's
 local Squad/Copilot agent to begin work.
 
+**Cross-cutting issues do not use the raw `/route confirm` fan-out.** The
+`route:*` + `/route confirm` path (`iris-route`) copies the issue text into a
+single downstream repo and is reserved for **single-repo, no-spec** work. When an
+issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
+`spec-fanout` instead (see §7 and [ADR 0002](../../docs/adr/0002-cross-cutting-gap-analysis-pipeline.md)).
+`iris-route` refuses to run on a `cross-cutting` issue.
+
 ## 7. Spec authoring
 
 - Cross-cutting specs live in `rettx/specs/NNNN-slug/` and follow the
-  spec-kit structure: `spec.md`, `plan.md`, `tasks.md`.
-- `tasks.md` MUST group tasks by target repo (front-matter or section per
-  repo) so the fanout action can scope downstream issues correctly.
+  spec-kit structure: `spec.md`, `plan.md`, plus supporting docs
+  (`research.md`, `contracts/`) as needed.
+- **Gap analysis first.** Before authoring a cross-cutting spec, run a
+  gap analysis from the control plane: one **read-only orchestrated session per
+  affected repo**, each reporting file-grounded findings (what exists, what's
+  missing, where new code lands, effort, and any cross-repo conflicts). The
+  umbrella spec is written from those findings, not from the issue text alone.
+  See [ADR 0002](../../docs/adr/0002-cross-cutting-gap-analysis-pipeline.md).
+  - *Precondition*: every target repo must be registered as a **main-checkout**
+    project. Spawning a session against a worktree-backed project fails
+    (`os error 267`).
+- **The umbrella spec hosts the shared API contract** under
+  `specs/NNNN-slug/contracts/`. The control plane owns the contract's location
+  as the single source of truth; `rettxapi` **implements and versions** it.
+  Frontends consume it and never redefine endpoint shapes.
+- **Fan-out is driven by the spec's YAML frontmatter, not `tasks.md`.** The
+  `spec-fanout` workflow reads the `fanout:` array in `spec.md` frontmatter —
+  each entry is `{ repo, summary }` — and opens one `[spec/<slug>]` squad issue
+  per listed repo on merge. Fan-out runs **only** when the spec's `status` is
+  `ready` or `accepted`; a `draft` spec never fans out. Allowed repos:
+  `rettxweb, rettxadmin, rettxapi, rettxmutation, rettxid`.
 - Single-repo work does not require a cross-cutting spec; it can flow
-  directly through the downstream repo's local spec-kit workflow.
+  directly through the downstream repo's local spec-kit workflow (reached via
+  the `/route confirm` path — see §6).
 - The line between "single-repo" and "cross-cutting" is whether the change
-  requires *coordinated* releases or schema changes across repos. When in
-  doubt, treat as cross-cutting.
+  requires *coordinated* releases or schema changes across repos, or hosts a
+  shared contract. When in doubt, treat as cross-cutting.
 
 ## 8. Documentation surfaces
 
@@ -195,3 +221,4 @@ local Squad/Copilot agent to begin work.
 | Date | Change |
 |---|---|
 | 2026-05-01 | Initial version (1.0.0). |
+| 2026-06-22 | §6/§7: cross-cutting work goes via gap-analysis → umbrella spec → `spec-fanout` (frontmatter `fanout:`, not `tasks.md`); `/route confirm` reserved for single-repo work (ADR 0002). |
