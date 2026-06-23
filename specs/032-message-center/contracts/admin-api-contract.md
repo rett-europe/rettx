@@ -23,7 +23,7 @@ the P7 cutover (FR-026).
 | Method | Path | Purpose | Freeze status |
 |---|---|---|---|
 | `POST` | `/admin/messages` | Create + deliver an individual message (persist first, deliver synchronously within the request — v1, per D2). Returns **`201 Created`**. | **FROZEN v1.0** (P3) |
-| `POST` | `/admin/messages/preview` | Render preview for a template + version + recipient-derived language (no send). | **FROZEN v1.0** (P3) |
+| `POST` | `/admin/messages/preview` | Render preview for a template + version (no send). Accepts an **optional `language`** for inspection only — see §3. | **FROZEN v1.0** (P3) |
 | `GET` | `/admin/messages/{message_id}` | Message detail incl. delivery + read status. | **FROZEN v1.0** (P3) |
 | `POST` | `/admin/messages/{message_id}/resend` | Resend a failed delivery by re-delivering the **stored content snapshot** (no re-render, SC-008); appends a new `Delivery`. | **FROZEN v1.0** (P3) |
 | `GET` | `/admin/messages` | List/filter sent messages (caregiver, patient, category, campaign, date, status, template) + pagination. | indicative (P5) |
@@ -49,10 +49,12 @@ the P7 cutover (FR-026).
   "idempotency_key": "…"
 }
 ```
-> **`language` is server-derived (D1), not a request field.** The send language is resolved by
-> `rettxapi` from the **recipient caregiver's profile language** (English fallback); admins do not
-> pass it per-send. An optional `language_override` MAY be added later for explicit admin override,
-> but is out of scope for v1.
+> **`language` is server-derived (D1), not a request field** on real sends. The send language is
+> resolved by `rettxapi` from the **recipient caregiver's profile language** (English fallback);
+> admins do not pass it on `POST /admin/messages`. **Exception:** `POST /admin/messages/preview`
+> accepts an **optional `language`** so an admin can inspect any localization before sending; this
+> is preview-only (never persists or sends) and does not affect D1 for real sends. An optional send
+> `language_override` MAY be added later but is out of scope for v1.
 
 **Message + delivery (response)**:
 ```json
