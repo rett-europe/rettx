@@ -125,8 +125,8 @@ channel-aware, versioned communication templates (area 2). Everything else is re
   `log_email_event(...)` and domain helpers.
 - `app/repository/audit_event_repository.py` — append-only, container `audit_events`,
   partition `/patient_id`.
-- **Decision**: per FR-028, the Message Center is **separate** from audit. Add a communications
-  audit domain (e.g. `MESSAGES` / `COMMUNICATION`) and `log_message_event(...)` helper for
+- **Decision**: per FR-028, the Message Center is **separate** from audit. Add a MESSAGE
+  audit domain (`AuditDomain.MESSAGE`, enum value `message`) and `log_message_event(...)` helper for
   lifecycle events (created/delivered/read/resent/archived). Messages are user-facing records;
   audit stays internal. A message MAY carry an audit correlation id.
 
@@ -160,7 +160,7 @@ channel-aware, versioned communication templates (area 2). Everything else is re
   send time guarantees reproducibility (D-comply with i18n "structured codes" platform rule).
 - **D4 — Reuse campaign lifecycle for bulk** (FR-019): campaigns fan out to Messages, not raw
   emails; idempotency/retry already present.
-- **D5 — Audit stays separate** (FR-028): new comms audit domain; Message Center is not the
+- **D5 — Audit stays separate** (FR-028): new MESSAGE audit domain (`message`); Message Center is not the
   audit log.
 - **D6 — Channel-agnostic delivery**: email is the only v1 channel; push infra already exists and
   slots in later as a second channel with no message-model change.

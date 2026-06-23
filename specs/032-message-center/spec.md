@@ -389,7 +389,8 @@ still retrievable via an archived filter, and still present for audit/retention.
   user-facing communications; audit events store internal system/admin events. A message MAY be
   linked to an audit event but the two MUST remain distinct concepts.
 - **FR-029**: The system MUST emit audit events for message lifecycle (created, delivered,
-  read, resent, archived) under a communications audit domain, without storing PHI unnecessarily.
+  read, resent, archived) under a dedicated MESSAGE audit domain (`AuditDomain.MESSAGE`, enum
+  value `message`), without storing PHI unnecessarily.
 - **FR-030**: Email bodies (and future push payloads) MUST avoid unnecessary clinical detail;
   sensitive context SHOULD live behind authentication in the in-app message. A future push, when
   added, MUST be generic (e.g. "You have a new message in rettX").
