@@ -89,23 +89,44 @@ the P7 cutover (FR-026).
 `patient_ids` is 1–100 (aligned with the existing campaign cohort cap). **No `language`** (each
 resolved caregiver's send language is server-derived, D1).
 
-**Bulk create (response, `201`)**:
-```json
-{
-  "campaign_id": "comm_ab12cd34",
-  "created_count": 42,
-  "skipped_patients": ["patient-id-with-no-active-caregiver"],
-  "deliveries_summary": { "sent": 40, "failed": 2 }
-}
-```
-
-**Bulk rollup (response)** — `GET /admin/communications/{campaign_id}` (message-derived):
+**Bulk create (response, `201`)** — counters are flat and the full per-recipient list is inline:
 ```json
 {
   "campaign_id": "comm_ab12cd34",
   "category_code": "survey-invitation",
-  "template": { "id": "survey-invitation", "version": "1.2" },
-  "totals": { "recipients": 42, "sent": 40, "failed": 2, "read": 12 },
+  "total_patients": 45,
+  "total_recipients": 42,
+  "sent": 40,
+  "failed": 2,
+  "not_attempted": 0,
+  "recipients": [
+    {
+      "recipient_principal_id": "…",
+      "message_id": "…",
+      "reference_id": "MSG-20260623-AB12CD",
+      "delivery_status": "sent",
+      "is_read": false,
+      "error": null
+    }
+  ],
+  "skipped_patients": [
+    { "patient_id": "…", "reason": "no-active-caregiver" }
+  ],
+  "created_at": "…",
+  "created_by": "admin-user-id"
+}
+```
+
+**Bulk rollup (response)** — `GET /admin/communications/{campaign_id}` (message-derived; same flat
+counters as create, plus `read_count`):
+```json
+{
+  "campaign_id": "comm_ab12cd34",
+  "total_recipients": 42,
+  "sent": 40,
+  "failed": 2,
+  "not_attempted": 0,
+  "read_count": 12,
   "recipients": [
     {
       "recipient_principal_id": "…",
@@ -141,11 +162,11 @@ resolved caregiver's send language is server-derived, D1).
   `027` email-campaign `camp_` ids) and is opaque to the frontend — use it only as the rollup path
   parameter.
 - **Bulk v1 semantics (ratified):** (a) cohort patients with **no active caregiver** are returned
-  in the create response `skipped_patients[]` but do **not** appear in the persisted rollup
-  (the rollup is message-derived); persisting unresolved patients in the rollup is an **additive**
-  v1.x change if `rettxadmin` needs it. (b) Bulk messages set `patient_id = null` (caregiver-level),
-  because one caregiver may map to several cohort patients; per-message patient attribution for bulk
-  is out of scope for v1 (additive later if required).
+  in the create response `skipped_patients[]` (each `{ patient_id, reason }`) but do **not** appear in
+  the persisted rollup (the rollup is message-derived); persisting unresolved patients in the rollup
+  is an **additive** v1.x change if `rettxadmin` needs it. (b) Bulk messages set `patient_id = null`
+  (caregiver-level), because one caregiver may map to several cohort patients; per-message patient
+  attribution for bulk is out of scope for v1 (additive later if required).
 
 ## 4. Sequencing
 
