@@ -2,17 +2,17 @@
 
 **Feature**: `032-message-center` | **Hosted by**: rettX control plane (this spec) · **Implemented + versioned by**: `rettxapi`
 **Consumer**: `rettxadmin` dashboard (§10)
-**Umbrella**: [rettx#10](https://github.com/rett-europe/rettx/issues/10) · **Contract version**: `v0.4 — individual-send + bulk FROZEN v1.0 (rettxapi P3+P4 shipped); list/filter INDICATIVE pending P5`
+**Umbrella**: [rettx#10](https://github.com/rett-europe/rettx/issues/10) · **Contract version**: `v1.0 — FROZEN (rettxapi P3+P4+P5 shipped): individual-send + bulk + list/filter all frozen`
 
 > **Scope of this document.** This is the **published interface** for admin messaging — the
 > single source of truth all sides agree on, hosted in the control plane and implemented +
 > versioned by `rettxapi`. It defines *only the API the admin dashboard consumes*; the
 > admin-frontend UI is specified by the `rettxadmin` lane (parent issue §10 "Admin frontend
-> impact"). **Partial freeze:** the **individual-send** (create / preview / detail / resend) and
-> **bulk** (`/admin/communications/*`) endpoints are **frozen at v1.0** (backend P3 + P4 shipped +
-> verified) — `rettxadmin` may build against them now. Only the **list/filter** (`GET
-> /admin/messages`) endpoint remains **indicative** until it freezes at backend **P5**. Changes to
-> frozen shapes require a version bump (v1.1+) + a heads-up to the `rettxadmin` lane.
+> impact"). **Fully frozen at v1.0:** the **individual-send** (create / preview / detail / resend),
+> **bulk** (`/admin/communications/*`), and **list/filter** (`GET /admin/messages`) endpoints are
+> all **frozen at v1.0** (backend P3 + P4 + P5 shipped + verified) — `rettxadmin` may build against
+> the entire surface now. Changes to frozen shapes require a version bump (v1.1+) + a heads-up to the
+> `rettxadmin` lane.
 
 ## 1. Endpoints (admin-authenticated, `require_admin`)
 
@@ -26,7 +26,7 @@ the P7 cutover (FR-026).
 | `POST` | `/admin/messages/preview` | Render preview for a template + version (no send). Accepts an **optional `language`** for inspection only — see §3. | **FROZEN v1.0** (P3) |
 | `GET` | `/admin/messages/{message_id}` | Message detail incl. delivery + read status. | **FROZEN v1.0** (P3) |
 | `POST` | `/admin/messages/{message_id}/resend` | Resend a failed delivery by re-delivering the **stored content snapshot** (no re-render, SC-008); appends a new `Delivery`. | **FROZEN v1.0** (P3) |
-| `GET` | `/admin/messages` | List/filter sent messages (caregiver, patient, category, campaign, date, status, template) + pagination. | indicative (P5) |
+| `GET` | `/admin/messages` | List/filter sent messages (caregiver, patient, category, campaign, date, delivery status, template) + pagination. Compact row projection — see §2.5. | **FROZEN v1.0** (P5) |
 | `POST` | `/admin/communications/bulk` | Create a bulk communication: patient-cohort audience → resolved to **active caregivers** → **one persisted message per caregiver**, tagged with `campaign_id`. Returns **`201 Created`**. | **FROZEN v1.0** (P4) |
 | `GET` | `/admin/communications/{campaign_id}` | Bulk rollup + per-recipient delivery/read status (derived from messages by `campaign_id`). | **FROZEN v1.0** (P4) |
 | `POST` | `/admin/communications/{campaign_id}/retry` | Idempotent retry: re-delivers only the **failed** messages (never duplicates, SC-004). **`200`**; **`409`** if nothing failed. | **FROZEN v1.0** (P4) |
@@ -140,6 +140,60 @@ counters as create, plus `read_count`):
 }
 ```
 
+## 2.5 Shapes — list/filter (frozen at v1.0, P5)
+
+**List/filter (request)** — `GET /admin/messages`, all query params optional:
+
+| Param | Type | Notes |
+|---|---|---|
+| `page` | int ≥1 | default `1` |
+| `page_size` | int 1–100 | default `20` |
+| `recipient_principal_id` | string | exact match |
+| `patient_id` | string | exact match |
+| `category_code` | string | hyphenated code |
+| `campaign_id` | string | `comm_{uuid8}` |
+| `template_id` | string | exact match |
+| `delivery_status` | enum | `pending \| sent \| failed \| not_attempted` (matches denormalized `latest_delivery_status`) |
+| `is_read` | bool | |
+| `created_from` / `created_to` | ISO-8601 UTC | inclusive; compared lexicographically on `created_at` |
+
+Cross-partition, **newest-first**.
+
+**List/filter (response)** — `AdminMessageListResponse`, same pagination envelope as the caregiver
+contract (`{ messages[], total, page, page_size }`); each row is a **compact projection**:
+```json
+{
+  "messages": [
+    {
+      "id": "…",
+      "reference_id": "MSG-20260623-AB12CD",
+      "recipient_principal_id": "…",
+      "patient_id": "…",
+      "category_code": "survey-invitation",
+      "language": "pt",
+      "template": { "id": "survey-invitation", "version": "1.2" },
+      "is_read": false,
+      "read_at": null,
+      "latest_delivery_status": "sent",
+      "campaign_id": "comm_ab12cd34",
+      "created_at": "…",
+      "created_by": "admin-user-id"
+    }
+  ],
+  "total": 137,
+  "page": 1,
+  "page_size": 20
+}
+```
+> **Compact-row design (ratified):** the list row deliberately **omits the full embedded
+> `deliveries[]`** and surfaces `latest_delivery_status` (a denormalized summary of the most recent
+> attempt) instead. The full `deliveries[]` array remains available via the frozen
+> `GET /admin/messages/{id}` detail — the list is for scanning, the detail for drill-in.
+> `latest_delivery_status` is maintained on every send/resend; messages persisted **before** the P5
+> deploy (early P3/P4 test data) lack the field and will not match a `delivery_status` filter (no
+> backfill in v1). This is an acceptable v1 limitation (affects test data only) and is additive to
+> revisit later.
+
 ## 3. Conventions
 
 - Hyphenated codes; full UTC timestamps.
@@ -175,7 +229,8 @@ counters as create, plus `read_count`):
 2. ✅ Backend P4 shipped → **bulk** endpoints (`/admin/communications/*`) **frozen at `v1.0`**
    (2026-06-22). `rettxadmin` may build the bulk-communication screens (old `/bulk-email-campaigns`
    still live).
-3. Backend P5 (list/filter) ships → `GET /admin/messages` freezes to `v1.0` then.
+3. ✅ Backend P5 shipped → **list/filter** (`GET /admin/messages`) **frozen at `v1.0`** (2026-06-23).
+   `rettxadmin` may build the filterable message index. **Admin contract now fully frozen at v1.0.**
 4. Backend P7 routes existing admin email workflows through message creation (cutover).
 
 ## 5. Open items needing a joint decision (rettxapi ↔ rettxadmin)
