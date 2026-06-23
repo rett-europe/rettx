@@ -42,13 +42,34 @@ the P7 cutover (FR-026).
 {
   "recipient_principal_id": "…",
   "template_id": "survey-invitation",
-  "template_version": "1.2",
+  "template_version": null,
   "patient_id": "…",
   "category_code": "survey-invitation",
   "variables": { "…": "…" },
   "idempotency_key": "…"
 }
 ```
+> **Field semantics (verified against the live backend):**
+> - **`recipient_principal_id`** is the rettX **principal id** (the `id` in `principals_v2`), **not**
+>   the Auth0 `user_id` — a principal may hold several Auth0 identities. Admins should source it from
+>   the already-principal-keyed `GET /admin/patient-access?patient_id=<pid>` grants (preferred), or
+>   resolve a known `user_id` via `GET /admin/principals/search?q=<user_id>`.
+> - **`template_id`** is the existing email-template key / Blob folder (same keys `POST /send-email`
+>   uses today, e.g. `missing_name`, `welcome`); the renderer reads `{template_id}/{lang}.html` —
+>   byte-identical to the legacy path.
+> - **`template_version`** is **optional / nullable**. `null` (or omitting it) renders the **current
+>   unversioned** template (`{template_id}/{lang}.html` — exactly today's `/send-email` layout). A
+>   version is only used to select a future versioned template (`{template_id}/v{version}/{lang}.html`)
+>   and always falls back to the unversioned path. **For v1, send `null`.** (No template-list endpoint
+>   is required to send.)
+> - **`category_code`** is a fixed controlled-vocabulary **classification tag** (`MessageCategory`),
+>   independent of the template and **not** the admin's INFO_REQUEST code; it drives triage/filtering,
+>   not rendering. Valid values: `onboarding`, `diagnosis-validation`, `file-upload-request`,
+>   `missing-information-request`, `survey-invitation`, `consent-update`, `profile-update-request`,
+>   `research-invitation`, `system-announcement`, `support-operational`.
+> - **`variables`** use the **same keys as the existing templates** (no remap). **Do not** pass
+>   `name` — it is auto-injected server-side from the caregiver's profile `given_name`.
+
 > **`language` is server-derived (D1), not a request field** on real sends. The send language is
 > resolved by `rettxapi` from the **recipient caregiver's profile language** (English fallback);
 > admins do not pass it on `POST /admin/messages`. **Exception:** `POST /admin/messages/preview`
