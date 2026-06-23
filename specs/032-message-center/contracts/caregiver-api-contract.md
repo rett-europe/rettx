@@ -23,7 +23,7 @@ caregiver; cross-caregiver access returns 404 (never discloses existence).
 | `GET` | `/v2/messages/{message_id}` | Message detail. Does **not** mark the message read (read is an explicit action — see O1). |
 | `GET` | `/v2/messages/unread-count` | Lightweight unread count for a nav badge. |
 | `POST` | `/v2/messages/{message_id}/read` | Mark a message read (idempotent). Returns **`204 No Content`**. |
-| `POST` | `/v2/messages/{message_id}/archive` | Archive/hide (record retained). |
+| `POST` | `/v2/messages/{message_id}/archive` | Archive/hide (record retained); idempotent. Returns **`204 No Content`**. |
 
 ## 2. Shapes (frozen at v1.0)
 
@@ -58,6 +58,11 @@ see §3). `links` is present but MAY be empty (see O2).
 
 **Mark read** (`POST /v2/messages/{message_id}/read`): **`204 No Content`**, empty body; idempotent
 (repeating on an already-read message is a no-op `204`).
+
+**Archive** (`POST /v2/messages/{message_id}/archive`): **`204 No Content`**, empty body; idempotent
+(repeating on an already-archived message is a no-op `204`). The record is **retained** (archive
+hides it from the default list; `archived=true` on `GET /v2/messages` lists archived messages). Mirrors
+the `read` action shape. Cross-caregiver target → `404` (self-scoping, SC-007).
 
 ## 3. Conventions
 
