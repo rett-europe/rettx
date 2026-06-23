@@ -2,17 +2,17 @@
 
 **Feature**: `032-message-center` | **Hosted by**: rettX control plane (this spec) · **Implemented + versioned by**: `rettxapi`
 **Consumer**: `rettxadmin` dashboard (§10)
-**Umbrella**: [rettx#10](https://github.com/rett-europe/rettx/issues/10) · **Contract version**: `v0.3 — individual-send surface FROZEN (rettxapi P3 shipped 2026-06-22); bulk + list/filter INDICATIVE pending P4/P5`
+**Umbrella**: [rettx#10](https://github.com/rett-europe/rettx/issues/10) · **Contract version**: `v0.4 — individual-send + bulk FROZEN v1.0 (rettxapi P3+P4 shipped); list/filter INDICATIVE pending P5`
 
 > **Scope of this document.** This is the **published interface** for admin messaging — the
 > single source of truth all sides agree on, hosted in the control plane and implemented +
 > versioned by `rettxapi`. It defines *only the API the admin dashboard consumes*; the
 > admin-frontend UI is specified by the `rettxadmin` lane (parent issue §10 "Admin frontend
-> impact"). **Partial freeze:** the **individual-send** endpoints (create / preview / detail /
-> resend) are **frozen at v1.0** (backend P3 shipped + verified) — `rettxadmin` may build against
-> them now. The **bulk** (`/admin/communications/*`) and **list/filter** (`GET /admin/messages`)
-> endpoints remain **indicative** until they freeze at backend **P4 / P5**. Changes to frozen
-> shapes require a version bump (v1.1+) + a heads-up to the `rettxadmin` lane.
+> impact"). **Partial freeze:** the **individual-send** (create / preview / detail / resend) and
+> **bulk** (`/admin/communications/*`) endpoints are **frozen at v1.0** (backend P3 + P4 shipped +
+> verified) — `rettxadmin` may build against them now. Only the **list/filter** (`GET
+> /admin/messages`) endpoint remains **indicative** until it freezes at backend **P5**. Changes to
+> frozen shapes require a version bump (v1.1+) + a heads-up to the `rettxadmin` lane.
 
 ## 1. Endpoints (admin-authenticated, `require_admin`)
 
@@ -27,9 +27,9 @@ the P7 cutover (FR-026).
 | `GET` | `/admin/messages/{message_id}` | Message detail incl. delivery + read status. | **FROZEN v1.0** (P3) |
 | `POST` | `/admin/messages/{message_id}/resend` | Resend a failed delivery by re-delivering the **stored content snapshot** (no re-render, SC-008); appends a new `Delivery`. | **FROZEN v1.0** (P3) |
 | `GET` | `/admin/messages` | List/filter sent messages (caregiver, patient, category, campaign, date, status, template) + pagination. | indicative (P5) |
-| `POST` | `/admin/communications/bulk` | Create a bulk communication → one message per caregiver (reuses campaign lifecycle). | indicative (P4) |
-| `GET` | `/admin/communications/{campaign_id}` | Bulk send detail with per-recipient delivery status. | indicative (P4) |
-| `POST` | `/admin/communications/{campaign_id}/retry` | Idempotent retry of failed recipients. | indicative (P4) |
+| `POST` | `/admin/communications/bulk` | Create a bulk communication: patient-cohort audience → resolved to **active caregivers** → **one persisted message per caregiver**, tagged with `campaign_id`. Returns **`201 Created`**. | **FROZEN v1.0** (P4) |
+| `GET` | `/admin/communications/{campaign_id}` | Bulk rollup + per-recipient delivery/read status (derived from messages by `campaign_id`). | **FROZEN v1.0** (P4) |
+| `POST` | `/admin/communications/{campaign_id}/retry` | Idempotent retry: re-delivers only the **failed** messages (never duplicates, SC-004). **`200`**; **`409`** if nothing failed. | **FROZEN v1.0** (P4) |
 | `GET` | `/admin/communication-templates` | List versioned communication templates (selection/preview). | indicative |
 
 > Exact placement (new `admin/messages.py` vs. extending `admin/communications.py` /
@@ -72,6 +72,51 @@ the P7 cutover (FR-026).
 }
 ```
 
+### Bulk — frozen at v1.0 (P4)
+
+**Bulk create (request)** — `POST /admin/communications/bulk`:
+```json
+{
+  "template_id": "survey-invitation",
+  "template_version": "1.2",
+  "category_code": "survey-invitation",
+  "patient_ids": ["…"],
+  "variables": { "…": "…" }
+}
+```
+`patient_ids` is 1–100 (aligned with the existing campaign cohort cap). **No `language`** (each
+resolved caregiver's send language is server-derived, D1).
+
+**Bulk create (response, `201`)**:
+```json
+{
+  "campaign_id": "comm_ab12cd34",
+  "created_count": 42,
+  "skipped_patients": ["patient-id-with-no-active-caregiver"],
+  "deliveries_summary": { "sent": 40, "failed": 2 }
+}
+```
+
+**Bulk rollup (response)** — `GET /admin/communications/{campaign_id}` (message-derived):
+```json
+{
+  "campaign_id": "comm_ab12cd34",
+  "category_code": "survey-invitation",
+  "template": { "id": "survey-invitation", "version": "1.2" },
+  "totals": { "recipients": 42, "sent": 40, "failed": 2, "read": 12 },
+  "recipients": [
+    {
+      "recipient_principal_id": "…",
+      "message_id": "…",
+      "reference_id": "MSG-20260623-AB12CD",
+      "delivery_status": "sent",
+      "is_read": false,
+      "error": null
+    }
+  ]
+}
+```
+
 ## 3. Conventions
 
 - Hyphenated codes; full UTC timestamps.
@@ -90,20 +135,35 @@ the P7 cutover (FR-026).
   **existing** message and does **not** create a duplicate or re-send.
 - **Resend** (`POST /admin/messages/{id}/resend`) re-delivers the **stored content snapshot**
   (no re-render — SC-008) and appends a new `Delivery` entry rather than mutating the prior one.
+- **Bulk `campaign_id`** is formatted **`comm_{uuid8}`** (a distinct namespace from the
+  `027` email-campaign `camp_` ids) and is opaque to the frontend — use it only as the rollup path
+  parameter.
+- **Bulk v1 semantics (ratified):** (a) cohort patients with **no active caregiver** are returned
+  in the create response `skipped_patients[]` but do **not** appear in the persisted rollup
+  (the rollup is message-derived); persisting unresolved patients in the rollup is an **additive**
+  v1.x change if `rettxadmin` needs it. (b) Bulk messages set `patient_id = null` (caregiver-level),
+  because one caregiver may map to several cohort patients; per-message patient attribution for bulk
+  is out of scope for v1 (additive later if required).
 
 ## 4. Sequencing
 
-1. ✅ Backend P3 shipped → **individual-send** endpoints (create / preview / detail / resend) are
-   **frozen at `v1.0`** (2026-06-22). `rettxadmin` may migrate the individual-send + status screens
-   now (old `/send-email` still live).
-2. Backend P4 (bulk) and P5 (list/filter) ship → their endpoints freeze to `v1.0` then.
-3. Backend P7 routes existing admin email workflows through message creation (cutover).
+1. ✅ Backend P3 shipped → **individual-send** endpoints (create / preview / detail / resend)
+   **frozen at `v1.0`** (2026-06-22). `rettxadmin` may migrate the individual-send + status screens.
+2. ✅ Backend P4 shipped → **bulk** endpoints (`/admin/communications/*`) **frozen at `v1.0`**
+   (2026-06-22). `rettxadmin` may build the bulk-communication screens (old `/bulk-email-campaigns`
+   still live).
+3. Backend P5 (list/filter) ships → `GET /admin/messages` freezes to `v1.0` then.
+4. Backend P7 routes existing admin email workflows through message creation (cutover).
 
 ## 5. Open items needing a joint decision (rettxapi ↔ rettxadmin)
 
-- **O1**: Surface read status for all messages or only selected categories?
-- **O2**: Bulk audience selection model (reuse current patient-cohort selection → resolve caregivers).
-- **O3**: How much of the old "send email" screen is replaced vs. wrapped during P3–P7 transition.
+- **O1**: Surface read status for all messages or only selected categories? *(frontend UX, `rettxadmin` lane)*
+- **O2 (RESOLVED → patient-cohort audience).** Bulk audience is a patient cohort
+  (`patient_ids[]`, 1–100) resolved to **active caregivers**; each caregiver gets **one** persisted
+  message tagged `campaign_id`. Patients with no active caregiver → `skipped_patients[]` in the
+  create response. Per the ratified v1 semantics in §3, bulk messages carry `patient_id = null` and
+  unresolved patients are not in the persisted rollup (both additive to extend later).
+- **O3**: How much of the old "send email" screen is replaced vs. wrapped during P3–P7 transition. *(frontend UX, `rettxadmin` lane)*
 - **O4 (RESOLVED → send-time status only for v1; umbrella Q3).** "Delivered" in the UI means the
   provider accepted the send (`sent`); bounce/complaint webhooks are out of scope for v1. The UI
   shows `pending | sent | failed | not_attempted` and offers resend on `failed`.
