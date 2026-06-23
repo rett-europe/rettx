@@ -17,7 +17,7 @@ review; this copy is the control-plane reference for the API lane.
 - **Language/Runtime**: Python 3.11, FastAPI ≥0.115, Azure Functions v4 (Python worker).
 - **Data**: Azure Cosmos DB. **New container** `messages` (partition leaning `/recipient_id`
   for caregiver-scoped reads — finalized in §4). Reuse `bulk_email_campaigns` for bulk fan-out,
-  `audit_events` for the separate comms audit domain.
+  `audit_events` for the separate MESSAGE audit domain (`message`).
 - **Templates/Storage**: Azure Blob (existing email-template container) extended to
   channel-aware, versioned communication templates.
 - **Email channel**: existing `EmailServices` (SendGrid) reused as the channel adapter.
@@ -48,7 +48,7 @@ unused/flagged until the activating phase).
 | **P3** | Individual send via create-then-deliver — *US2* | Admin creates a Message → persisted → email delivered async → status tracked. New message visible in P1 API. | None until admin uses new path; old `/send-email` preserved |
 | **P4** | Bulk send fan-out — *US3* | Campaign send creates one Message per resolved caregiver (reusing `027` lifecycle); idempotent retry; per-recipient delivery. | None until used; old bulk path preserved |
 | **P5** | Admin visibility + resend — *US4* | Admin list/filter (caregiver, patient, category, campaign, date, status, template), delivery + read status, resend failed. | None |
-| **P6** | Caregiver archive + comms audit domain — *US6, FR-028/029* | Archive/hide; `MESSAGES` audit domain + `log_message_event`. | None |
+| **P6** | Caregiver archive + MESSAGE audit domain — *US6, FR-028/029* | Archive/hide; `MESSAGE` audit domain (`message`) + `log_message_event`. | None |
 | **P7** | Cutover + flag enablement | Enable caregiver feature flag; route existing admin email workflows through message creation (FR-026); deprecate-in-place old direct-email path. | **Behavioral switch** — done last, after web/admin ready |
 | **P8 (future)** | Provider webhooks / push channel | Optional: bounce webhook (Q3); push as 2nd channel (reuse push infra). | Out of v1 |
 
