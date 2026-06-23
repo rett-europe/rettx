@@ -140,6 +140,28 @@ counters as create, plus `read_count`):
 }
 ```
 
+**Bulk retry (response, `200`)** — `POST /admin/communications/{campaign_id}/retry`; re-delivers only
+previously-failed recipients (never creates new messages, SC-004). `409` if nothing failed:
+```json
+{
+  "campaign_id": "comm_ab12cd34",
+  "retried": 2,
+  "now_sent": 2,
+  "still_failed": 0,
+  "recipients": [
+    {
+      "recipient_principal_id": "…",
+      "message_id": "…",
+      "reference_id": "MSG-20260623-AB12CD",
+      "delivery_status": "sent",
+      "is_read": false,
+      "error": null
+    }
+  ]
+}
+```
+
+
 ## 2.5 Shapes — list/filter (frozen at v1.0, P5)
 
 **List/filter (request)** — `GET /admin/messages`, all query params optional:
