@@ -129,6 +129,22 @@ courtesy, not a security control.
 - New caregiver-facing features ship with the full supported language set,
   even if some translations are placeholder pending review.
 
+### Message templates & channel content
+
+- Transactional content (e.g. the Message Center) is authored as per-locale
+  templates in the **`templates`** content repo, one folder per message type
+  (e.g. `emails/welcome/<locale>.html` + `<locale>.subject.txt`).
+- A single message renders to **per-channel** content captured in an immutable
+  snapshot at send time: a rich **email** HTML body and a plaintext **in-app**
+  body (plus a derived preview). Email and in-app content MAY intentionally
+  diverge.
+- In-app body resolution precedence: `<locale>.inapp.txt` →
+  `<locale>.text.txt` → cleaned `html_to_text(<locale>.html)`. Author a
+  dedicated `<locale>.inapp.txt` **only** where the email is a poor in-app fit
+  (heavy chrome / CTA buttons); otherwise the clean auto-derived text is used.
+  HTML→text derivation MUST strip `<style>`/`<script>` blocks. See
+  [ADR 0003](../../docs/adr/0003-message-channel-content-model.md).
+
 ## 6. Issue routing labels
 
 These labels are managed (largely) by **Iris** in the `rettx` repo. They
@@ -222,3 +238,4 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 |---|---|
 | 2026-05-01 | Initial version (1.0.0). |
 | 2026-06-22 | §6/§7: cross-cutting work goes via gap-analysis → umbrella spec → `spec-fanout` (frontmatter `fanout:`, not `tasks.md`); `/route confirm` reserved for single-repo work (ADR 0002). |
+| 2026-06-23 | §5: added message templates & channel content (in-app vs email, `inapp.*` precedence) per ADR 0003. |
