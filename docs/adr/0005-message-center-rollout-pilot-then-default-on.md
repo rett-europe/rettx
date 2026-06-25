@@ -1,7 +1,7 @@
 # ADR 0005 — Message Center rollout: per-user pilot, then default-on for all
 
-- **Status**: Accepted
-- **Date**: 2026-06-24
+- **Status**: Accepted — implemented 2026-06-25
+- **Date**: 2026-06-24 (implementation outcome appended 2026-06-25)
 - **Decision-makers**: rettX maintainers
 - **Relates to**: [`specs/032-message-center/`](../../specs/032-message-center/),
   [ADR 0004](0004-message-center-no-historical-backfill.md) (no historical backfill)
@@ -55,6 +55,51 @@ storage, caregiver read — must use this **same key** end to end. A mismatch (e
 writes `message_center`, web reads `messages`) silently no-ops the toggle. Phase A must
 verify the full path before sign-off.
 
+## Implementation outcome (2026-06-25)
+
+Both phases shipped; the cutover is **live in production**.
+
+**Phase A — done.** The per-user `messages` toggle was added to the rettxadmin Users
+screen (`rettxadmin` PR #50: one entry in `AVAILABLE_FEATURES`). The flag-key path was
+verified end to end — admin writes `app_metadata.features.messages` via
+`PATCH /admin/principals/{id}/features`; the caregiver app reads the **same key** off the
+resolved profile. No `rettxapi` change was needed for Phase A. Pilot caregivers were
+enabled individually and the pilot was validated.
+
+**Phase B — done, as a single `rettxapi` resolution switch.** On the maintainer's explicit
+go, `messages` was made **on for all caregivers**:
+
+- The switch lives in `rettxapi`, **not** `rettxweb` — the caregiver app reads
+  `app_metadata.features.messages` off the resolved profile, so defaulting it server-side
+  lights up both `rettxweb` gates (route guard + unread badge) with **no web redeploy** and
+  no dead frontend code. A frontend ungate (`rettxweb` PR #169) was prepared as a fallback
+  and **closed unused** once the read path was confirmed to be API-resolved (no Auth0/JWT
+  claim source).
+- First cut (`rettxapi` PR #306) defaulted `messages` to `true` **only when unset**. This
+  proved **insufficient**: pilot/admin-touched accounts carried an **explicit stored
+  `messages: false`** — the rettxadmin Users screen PATCHes the full known-flag map with
+  replace semantics, so saving a user while the toggle was off persisted `false`. Those
+  accounts stayed dark.
+- Final cut (`rettxapi` PR #307, **supersedes #306**) **forces `messages = true`
+  regardless of the stored value**, realising this ADR's "no per-user exceptions". It is
+  applied at the response builder
+  (`principal_profile_services._map_principal_to_response`), the single funnel for
+  `GET`/`PATCH /user/profile`. Deliberately **not** at the `FeaturesFlags` model level: the
+  per-request `update_last_seen_at` full-document upsert would have stealth-migrated
+  `messages: true` into stored docs. The response-layer override applies **on read only —
+  non-destructive, no data migration**. One-line revert: delete
+  `features_dict["messages"] = True`.
+
+**Consequence — admin toggle retired.** Because caregiver visibility is now forced on
+server-side, the rettxadmin Messages toggle is a no-op and is being **removed** (revert of
+PR #50). Stored `messages` values are left as-is (harmless; overridden on read). Re-adding
+the toggle entry is how a per-user switch would be restored if force-on is ever reverted.
+
+This is consistent with the original decision (single low-risk switch, no migration, no
+per-user exceptions); the only refinement is that realising "on for everyone" required
+**force-true**, not merely default-when-unset, because explicit `false` values already
+existed in the pilot cohort.
+
 ## Alternatives considered
 
 ### A. Skip the pilot — flip default-on at launch
@@ -94,12 +139,12 @@ a single default/gate switch. Phase B should be one switch, not a data migration
 
 ## Follow-ups
 
-- `rettxadmin`: surface the per-user `messages` toggle in the Users screen (Phase A);
-  verify the admin-write → store → caregiver-read key path; document the Phase-B switch
-  location. Route an `rettxapi` change only if the per-user flag field is missing
-  server-side.
-- `rettxweb`: confirm the gate
-  (`featureMatchGuard('messages')` / `isMessagesContentEnabled`) is the single, central
-  place a Phase-B default-on flip would touch.
-- When the maintainer calls the global go, route the Phase-B switch as its own small,
-  coordinated change and revisit this ADR's status if needed.
+- `rettxadmin`: ~~surface the per-user `messages` toggle in the Users screen (Phase A)~~
+  **done (PR #50)**; key path verified. **Pending:** remove the now-redundant Messages
+  toggle entry (revert of PR #50) since Phase-B force-on makes it a no-op.
+- `rettxweb`: ~~confirm the gate is the single place a flip would touch~~ **done** — gates
+  are `featureMatchGuard('messages')` + `isMessagesContentEnabled`, both reading the
+  resolved profile; the Phase-B switch landed in `rettxapi` instead, so no `rettxweb`
+  change shipped (fallback PR #169 closed unused).
+- ~~When the maintainer calls the global go, route the Phase-B switch~~ **done** — Phase B
+  shipped via `rettxapi` PR #306 → #307 (force-on); deployed to production 2026-06-25.
