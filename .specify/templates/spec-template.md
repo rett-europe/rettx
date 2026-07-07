@@ -41,6 +41,17 @@ fanout:
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
+<!--
+  STACK & DELIVERY PRE-FLIGHT (mandatory before status: ready).
+  For EVERY repo in the fanout above, confirm its runtime/platform facts against
+  patterns.md §1 "Repositories and roles" + its *Delivery targets* note — especially
+  the DELIVERY MECHANISM (native vs. web; FCM vs. Web Push; TWA vs. Capacitor;
+  synchronous vs. queued). Do not assume a mechanism the registry contradicts.
+  If any platform/delivery fact is missing, stale, or uncertain, the gap-analysis
+  session must confirm it from code and §1 must be UPDATED IN THIS SAME SPEC PR.
+  Delete this comment once done.
+-->
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--

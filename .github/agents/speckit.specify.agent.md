@@ -271,6 +271,16 @@ Given that feature description, do this:
 - Avoid HOW to implement (no tech stack, APIs, code structure).
 - Written for business stakeholders, not developers.
 - DO NOT create any checklists that are embedded in the spec. That will be a separate command.
+- **Cross-cutting stack & delivery pre-flight (rettX control plane).** For a
+  cross-cutting spec that fans out to downstream repos, before marking it
+  `status: ready` you MUST verify each fanout repo's runtime/platform facts —
+  especially the **delivery mechanism** (native vs. web, FCM vs. Web Push,
+  TWA vs. Capacitor, synchronous vs. queued) — against
+  `.specify/memory/patterns.md` §1 "Repositories and roles" and its *Delivery
+  targets* note. Do not assume a mechanism the registry contradicts. If any
+  platform/delivery fact is missing, stale, or uncertain, confirm it via the
+  gap-analysis session and **update §1 in the same spec PR**. The registry, not
+  the issue text, is the source of truth for platform facts.
 
 ### Section Requirements
 

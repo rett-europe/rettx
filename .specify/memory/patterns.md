@@ -24,8 +24,18 @@ program constitution but differ in lifecycle and deployment model.
 
 | Repo | Visibility | Stack |
 |---|---|---|
-| `rettxweb` | 🔒 Private | Angular 18+ standalone PWA, ngx-translate, Auth0, Firebase Cloud Messaging |
+| `rettxweb` | 🔒 Private | Angular 18+ standalone PWA **wrapped with Capacitor as a native app (Android published as a pilot; iOS planned)**, ngx-translate, Auth0, Firebase Cloud Messaging (**native FCM device tokens via the Capacitor Push Notifications plugin on Android; Web Push/VAPID on the browser PWA**) |
 | `rettxadmin` | 🔒 Private | Angular 18+ standalone, Angular Material, Microsoft Entra ID (MSAL) |
+
+> **Delivery targets (read before any device-dependent spec).** `rettxweb`
+> ships as **both** a browser PWA **and** a **Capacitor-wrapped native app**
+> (Android live as a pilot; iOS planned). Treat it as a **native mobile surface**,
+> not only a PWA, whenever a spec touches **push notifications, deep links, secure
+> storage, background execution, or OS permissions**. Concretely for push:
+> Android delivery uses **native FCM device tokens acquired through the Capacitor
+> Push Notifications plugin**, not the browser Web Push/VAPID service-worker path —
+> so a "send a push" feature needs device-token registration + storage and an
+> FCM server-side send, not just a VAPID subscription.
 
 ### Backend (deployed service)
 
@@ -190,6 +200,17 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
   - *Precondition*: every target repo must be registered as a **main-checkout**
     project. Spawning a session against a worktree-backed project fails
     (`os error 267`).
+  - **Consult the stack registry (§1) for every fanout repo before authoring.**
+    Each affected repo's runtime/platform facts — framework, auth, and especially
+    **delivery mechanism** (native vs. web, FCM vs. Web Push, TWA vs. Capacitor,
+    queue vs. synchronous) — are recorded in §1 and its *Delivery targets* note.
+    A spec must not assume a mechanism the registry contradicts. If a delivery or
+    platform fact is **missing, stale, or uncertain**, the gap analysis must
+    confirm it against the repo's code and **§1 must be updated in the same spec
+    PR** before the spec is marked `status: ready`. (This rule exists because a
+    push spec was nearly written for Web Push/VAPID when `rettxweb` had already
+    become a Capacitor native Android app — the registry, not the issue text, is
+    the source of truth for platform facts.)
 - **The umbrella spec hosts the shared API contract** under
   `specs/NNNN-slug/contracts/`. The control plane owns the contract's location
   as the single source of truth; `rettxapi` **implements and versions** it.
@@ -239,3 +260,4 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 | 2026-05-01 | Initial version (1.0.0). |
 | 2026-06-22 | §6/§7: cross-cutting work goes via gap-analysis → umbrella spec → `spec-fanout` (frontmatter `fanout:`, not `tasks.md`); `/route confirm` reserved for single-repo work (ADR 0002). |
 | 2026-06-23 | §5: added message templates & channel content (in-app vs email, `inapp.*` precedence) per ADR 0003. |
+| 2026-07-07 | §1: recorded that `rettxweb` is a **Capacitor native app** (Android pilot; native FCM device tokens) in addition to the PWA, plus a *Delivery targets* note. §7: added the rule that specs must verify each fanout repo's delivery/platform mechanism against the §1 registry (and update §1 in the same PR) before `status: ready`. Prompted by spec 033 (Message Center push). |
