@@ -75,9 +75,10 @@ re-registering the same device updates the token and re-activates it.
 
 - `device_type: "android" | "ios"` ⇒ `device_token` MUST be a non-empty **string**.
 - `device_type: "web"` ⇒ `device_token` MUST be the **subscription object** (`endpoint` + `keys`).
-- Registration is **gated on the caregiver's `push_notification` preference** conceptually, but
-  the server does not reject registration when disabled; it simply won't dispatch push (spec
-  FR-015). Clients SHOULD still only register after the user grants OS permission.
+- Registration is available to **all** caregivers (the `push_notification` capability is
+  force-on); the server does not reject registration. Whether push actually fires is gated by
+  the presence of an **active registered token** (spec FR-015/FR-016). Clients SHOULD only
+  register after the user grants OS notification permission.
 
 ## `GET /device-tokens` — list the caller's registered devices
 

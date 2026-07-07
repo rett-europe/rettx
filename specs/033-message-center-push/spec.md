@@ -39,8 +39,12 @@ fanout:
       tokens resolver in the push path. Add `push_title`/`push_body` to
       `ContentSnapshot` and `push.subject.txt`/`push.txt` versioned template
       suffixes, rendered by the recipient's **profile language** (032 D1) with
-      English fallback. **Enforce the `push_notification` feature flag
-      server-side** in the push branch (today it is UI-only). Handle FCM
+      English fallback. The push capability is **available to all**
+      caregivers (the `push_notification` flag is force-on, mirroring
+      `messages`); delivery is naturally gated by **active device-token
+      presence** — resolve `principal_id → identities → active tokens` and
+      send to each; an empty token set simply **skips** push (not a failure),
+      so do NOT hard-gate on a default-false per-user flag. Handle FCM
       `UNREGISTERED`/`NOT_FOUND` by invalidating the stored token. Do NOT reuse the
       standalone admin ad-hoc web-push endpoints as the Message Center channel.
       Implement strictly to `contracts/device-token-registration.md`.
@@ -60,9 +64,12 @@ fanout:
       (`addListener` + `zone.run` + `router.navigateByUrl`) for
       `pushNotificationReceived` (foreground) and `pushNotificationActionPerformed`
       (tap → `/messages/:id`), and calls `messageUnreadService.refresh()` on
-      receive so the badge updates live. Gate native registration on the existing
-      `push_notification` flag. CONSUME `contracts/device-token-registration.md` —
-      do not invent the token shape.
+      receive so the badge updates live. Register on **OS-permission grant**
+      (request the Android 13+ `POST_NOTIFICATIONS` permission at first run,
+      optionally behind a custom pre-prompt) and the in-app notification
+      toggle; the `push_notification` flag is force-on for all, so the opt-in
+      UI is available to every caregiver. CONSUME
+      `contracts/device-token-registration.md` — do not invent the token shape.
   - repo: rettxadmin
     summary: |
       Smallest slice. The admin send path already persist-and-delegates to the
@@ -74,7 +81,7 @@ fanout:
       dormant standalone `push-notification-section` manual tool — it is orthogonal
       to the Message Center (keyed off Auth0 `user_id`, not `principal_id`) and must
       not be confused with the MC push channel. No new per-user toggle is needed;
-      `push_notification` consent is backend/device-enforced.
+      push consent is device-enforced (OS opt-in / active-token presence).
 ---
 
 # Feature Specification: rettX Message Center — Push Notifications
@@ -131,7 +138,7 @@ admin sends me a Message Center message, I receive a **push notification** on my
 showing a short title and preview, so I learn about the communication without opening the app
 or my email.
 
-**Independent test**: with a registered Android device token and `push_notification` enabled,
+**Independent test**: with a registered Android device token (caregiver opted in),
 send an individual message from admin → the device receives an FCM push whose title/body match
 the message's rendered push content in the caregiver's profile language; a `push` delivery is
 recorded on the persisted message with status `sent`.
@@ -155,15 +162,17 @@ receiving push, so notifications reflect my consent and device state.
 `POST /device-tokens` (`device_type: android`); revoking/sign-out invalidates it; a message
 send after invalidation produces no push to that device and no spurious `failed` delivery.
 
-### User Story 4 — Push respects the caregiver's push consent (Priority: P2)
+### User Story 4 — Push respects the caregiver's device opt-in (Priority: P2)
 
-As the program, I only send push to caregivers whose `push_notification` preference is
-enabled, so push honours consent and device-notification norms (this differs from the in-app
-`messages` channel, which is on for everyone).
+As the program, the push capability is enabled for **all** caregivers, but I only send push to
+those who have **opted in at the device level** (granted OS notification permission → have an
+active registered token), so push honours device-notification norms while email + in-app always
+land (the in-app `messages` channel is on for everyone).
 
-**Independent test**: with `push_notification` disabled for a principal, a message send records
-email + in-app deliveries but **no** push delivery (status `not_attempted` or omitted); with it
-enabled, a `push` delivery is attempted to each active device.
+**Independent test**: for a principal with **no active device token** (never opted in, or
+revoked), a message send records email + in-app deliveries but **no** push delivery (omitted /
+`not_attempted`, not a failure); once the caregiver opts in and a token is registered, the next
+send attempts a `push` delivery to each active device.
 
 ### User Story 5 — Admin sees push as a delivery channel (Priority: P3)
 
@@ -182,7 +191,7 @@ error; existing email-only flows are unchanged.
 - **Multiple devices / multiple linked identities** → resolve the recipient `principal_id` to
   all linked `user_id`s and all their active tokens; send to each; record outcome.
 - **Mixed device types** for one principal → android/ios tokens go via FCM v1; any web-push
-  subscriptions go via the existing VAPID path (see D-PUSH-1 for v1 scope).
+  subscriptions go via the existing VAPID path (both are in v1 scope, per D-PUSH-1).
 - **FCM transport/auth outage** → push deliveries recorded `failed`; message + email + in-app
   still persist and succeed; admin resend can retry push (synchronous, per D2).
 - **Permission denied on Android 13+** → app registers no token; no push; in-app remains the
@@ -213,9 +222,9 @@ error; existing email-only flows are unchanged.
   (`…/v1/projects/{project_id}/messages:send`), authenticated with a Firebase **service
   account** whose credentials are stored in **Key Vault** (never in source). This is net-new;
   the existing `pywebpush`/VAPID sender does not reach native tokens.
-- **FR-006** The existing **Web Push / VAPID** stack MUST remain intact for the browser PWA;
-  the message-send push path selects transport by device type (`android`/`ios` → FCM v1;
-  `web` → VAPID). v1 delivery scope for browser web-push is per **D-PUSH-1**.
+- **FR-006** The existing **Web Push / VAPID** stack MUST remain intact **and is in v1 scope**:
+  the message-send push path also delivers to caregivers' registered **browser** web-push
+  subscriptions, selecting transport by device type (`android`/`ios` → FCM v1; `web` → VAPID).
 - **FR-007** On an FCM `UNREGISTERED` / `NOT_FOUND` (or equivalent invalid-token) response the
   system MUST invalidate the offending stored token so it is not retried.
 - **FR-008** The dedicated Message Center push path MUST NOT reuse the standalone admin ad-hoc
@@ -248,17 +257,21 @@ error; existing email-only flows are unchanged.
 
 ### Functional Requirements — Consent & gating
 
-- **FR-015** Push MUST be gated on the caregiver's **`push_notification`** preference, enforced
-  **server-side** in the push delivery path (today the flag is UI-only). When disabled, no push
-  is attempted for that recipient. (Unlike the `messages` channel, push is **not** force-on.)
-- **FR-016** The rollout default for `push_notification` (default-on vs opt-in) is an **open
-  program decision** — see *Open Decisions*.
+- **FR-015** The push **capability MUST be enabled for all** caregivers — the
+  `push_notification` feature flag is force-on (mirroring the `messages` channel per ADR 0005),
+  so every caregiver's app surfaces the opt-in UI. There is **no per-user admin precondition**.
+- **FR-016** Actual push delivery MUST be gated on the recipient having **≥1 active registered
+  device token**, which requires the caregiver's **device-level opt-in** (OS notification
+  permission granted, and not disabled via the in-app notification toggle). A recipient with no
+  active token receives email + in-app but **no** push; this is **not** a failure and MUST NOT
+  block or fail the send.
 
 ### Functional Requirements — Caregiver native app
 
 - **FR-017** The native Android app MUST register for push (`@capacitor/push-notifications`),
   request the Android 13+ `POST_NOTIFICATIONS` permission, obtain the FCM token, and register it
-  via `POST /device-tokens`, gated on `push_notification`.
+  via `POST /device-tokens`; registration is driven by the caregiver's OS-permission grant and
+  the in-app notification toggle (the `push_notification` flag being force-on for all).
 - **FR-018** The app MUST handle a **received** push (foreground) by refreshing the unread
   badge, and a **tapped** push by navigating to `/messages/:id`, re-entering Angular's zone
   (mirroring the existing native deep-link handler).
@@ -293,8 +306,9 @@ error; existing email-only flows are unchanged.
   `push` delivery recorded `sent`.
 - **SC-002** Tapping the push opens the app at the correct `/messages/:id` from cold start,
   background, and foreground.
-- **SC-003** A caregiver with `push_notification` disabled receives email + in-app but **no**
-  push; enabling it (and registering a device) starts push on the next send.
+- **SC-003** A caregiver who has **not opted in at the device level** (no active token) receives
+  email + in-app but **no** push; after they grant permission and register a device, push starts
+  on the next send.
 - **SC-004** A failed or stale-token push never blocks the persisted message, its email, or its
   in-app record; stale tokens are invalidated and not retried.
 - **SC-005** Existing browser PWA push and all existing email/in-app Message Center behaviour
@@ -321,12 +335,10 @@ one-line channel-type widening can land any time.
 
 Decided **once, here**, so the lanes do not diverge. These extend the 032 decisions (D1–D4).
 
-- **D-PUSH-1 — Two transports, native FCM is the must-have.** Native Android push via **FCM
-  HTTP v1** is the P1 target (the published pilot). The existing browser **Web Push/VAPID**
-  stack is retained and reused; the message-send push path dispatches per `device_type`. For
-  v1, delivering the Message Center push to existing **browser web-push** subscriptions is a
-  **SHOULD** (near-free reuse), not a blocker — see *Open Decisions* if we prefer Android-only
-  for v1.
+- **D-PUSH-1 — Two transports, BOTH in v1.** Native Android push via **FCM HTTP v1** is the P1
+  target (the published pilot). The existing browser **Web Push/VAPID** stack is retained and
+  **also delivered to in v1** (near-free reuse); the message-send push path dispatches per
+  `device_type` (`android`/`ios` → FCM v1; `web` → VAPID). *(Resolves O2.)*
 - **D-PUSH-2 — Identity resolution is `rettxapi`'s.** The `principal_id → user_id(s) → device
   tokens` resolution lives in the backend push path, reusing existing principal/identity
   services. Frontends never resolve devices.
@@ -337,8 +349,14 @@ Decided **once, here**, so the lanes do not diverge. These extend the 032 decisi
 - **D-PUSH-4 — Synchronous, per 032 D2.** Push is dispatched synchronously within the send
   request; no async/queue semantics are assumed. A Storage Queue worker remains a deferred
   fast-follow shared with 032.
-- **D-PUSH-5 — Consent-gated (not force-on).** Push honours the server-side `push_notification`
-  flag. This intentionally differs from the in-app `messages` channel (force-on per ADR 0005).
+- **D-PUSH-5 — Enabled for all, gated by device opt-in.** The push capability is **on for every
+  caregiver** (the `push_notification` flag is force-on, like `messages` per ADR 0005) — there is
+  no per-user admin precondition. Whether a caregiver actually *receives* push is gated at the
+  **device level**: the app requests OS notification permission (standard install-time pop-up,
+  optionally a custom pre-prompt) and registers a token only when granted; the in-app toggle lets
+  the caregiver enable/disable at will. Send logic = "deliver to every active registered token
+  for the recipient"; no active token ⇒ no push, email + in-app still land. Post-pilot this is
+  the standard default. *(Resolves O1.)*
 - **D-PUSH-6 — Push content via versioned templates + D1 language.** Push title/body are
   template-driven, snapshotted, and rendered in the recipient's profile language with English
   fallback — identical to email/in-app.
@@ -356,8 +374,8 @@ Decided **once, here**, so the lanes do not diverge. These extend the 032 decisi
   for v1 (delivery receipts optional/future).
 - **Android** is the native pilot target; the token model already allows `ios` for a later APNs
   effort not built here.
-- Message-send push is delivered to existing **browser Web Push** subscriptions as a SHOULD
-  (reusing the VAPID sender), unless *Open Decisions* narrows v1 to Android-only.
+- Message-send push **is** delivered to existing **browser Web Push** subscriptions in v1
+  (reusing the VAPID sender) alongside native FCM.
 
 ## Out of Scope (v1)
 
@@ -397,17 +415,14 @@ repo-specific technical principles are verified in each repo's derived plan.*
   token store, feature-flag framework, template pipeline, and 032 delivery model; adds one new
   transport rather than a parallel notification system. ✅
 
-## Open Decisions *(confirm before merge → then move to Resolved)*
+## Resolved Decisions *(confirmed by maintainer, folded in)*
 
-- **O1 — `push_notification` rollout default.** Should push be **default-on for all** caregivers
-  (like the `messages` channel at Phase B), or **opt-in** (respect the stored flag, which
-  defaults `false`)? Push is more intrusive than in-app, so consent matters more. *Recommended*:
-  opt-in for the pilot, with a later ADR-tracked default-on decision once content/i18n are
-  validated — but this is the maintainer's call. (Drives FR-015/FR-016 and D-PUSH-5.)
-- **O2 — Browser web-push in v1 scope.** Deliver the Message Center push to existing **browser
-  Web Push** subscriptions too (SHOULD, near-free reuse), or scope v1 to **Android-native only**
-  and defer browser? *Recommended*: include browser web-push (reuse) since the sender exists.
-  (Drives FR-006 and D-PUSH-1.)
-
-Once confirmed, these fold into the Resolved set and the affected FRs/decisions are updated in
-the same PR before merge/fan-out.
+- **O1 — Rollout default → enabled for all, device opt-in.** The push capability is enabled for
+  **all** caregivers (feature-flag force-on, like `messages`); each caregiver opts in at the
+  **device level** via the OS notification pop-up (install-time, optionally a custom pre-prompt)
+  and/or the in-app toggle. Delivery is gated on active device-token presence, not on a per-user
+  admin flag. This is the standard mobile pattern and the intended post-pilot default. Folded
+  into **FR-015 / FR-016**, **D-PUSH-5**, US4, SC-003.
+- **O2 — Browser web-push in v1 → included.** The Message Center push is delivered to existing
+  **browser Web Push/VAPID** subscriptions in v1 alongside native Android FCM (near-free reuse).
+  Folded into **FR-006**, **D-PUSH-1**.
