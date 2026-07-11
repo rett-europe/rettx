@@ -70,7 +70,7 @@ per-locale transactional **content** the surfaces and backend render.
 
 | Repo | Visibility | Purpose | Deploys to |
 |---|---|---|---|
-| [`templates`](https://github.com/rett-europe/templates) | 🔒 Private | Per-locale Message Center templates (`emails/<type>/<locale>.*`), plus consent forms, privacy policies, surveys, and Auth0 email templates | Azure Blob `email-templates` container, via its own GitHub Actions deploy (`deploy-email-templates.yml`, `az storage blob sync` on merge to `main`) |
+| [`templates`](https://github.com/rett-europe/templates) | 🔒 Private | Per-locale Message Center message templates (`messages/<type>/<locale>.<suffix>`), plus consent forms, privacy policies, surveys, and Auth0 email templates | Azure Blob `email-templates` container, via its own GitHub Actions deploy (`deploy-email-templates.yml`, `az storage blob sync` on merge to `main`) |
 
 Content lifecycle differs from the code repos:
 
@@ -81,8 +81,16 @@ Content lifecycle differs from the code repos:
   only the rendering code in `rettxapi`. A spec that adds a channel MUST fan a
   slice out to `templates`.
 - Deploy is a **full sync with delete** (`--delete-destination true`): the blob
-  container mirrors `emails/` exactly. Manual blob edits are transient and are
-  wiped on the next deploy — every template change MUST land in this repo.
+  container mirrors the source folder exactly. Manual blob edits are transient
+  and are wiped on the next deploy — every template change MUST land in this repo.
+- The Message Center message templates live under **`messages/`** (renamed from
+  `emails/` per [ADR 0006](../../docs/adr/0006-message-center-template-store-layout.md),
+  since they now carry email **and** in-app **and** push content). The deploy
+  strips the folder prefix, so the blob container is still named `email-templates`
+  and `rettxapi` (which reads by `<type>/<locale>.<suffix>`) is unaffected by the
+  rename. Per-channel file suffixes: `<locale>.html` + `<locale>.subject.txt`
+  (email), `<locale>.inapp.txt` (optional dedicated in-app body),
+  `<locale>.push.subject.txt` + `<locale>.push.txt` (push).
 
 ## 2. Shared vocabulary
 
@@ -164,7 +172,9 @@ courtesy, not a security control.
 
 - Transactional content (e.g. the Message Center) is authored as per-locale
   templates in the **`templates`** content repo, one folder per message type
-  (e.g. `emails/welcome/<locale>.html` + `<locale>.subject.txt`).
+  (e.g. `messages/welcome/<locale>.html` + `<locale>.subject.txt`). The folder is
+  `messages/` (not `emails/`) because a message renders to email, in-app and push
+  — see [ADR 0006](../../docs/adr/0006-message-center-template-store-layout.md).
 - A single message renders to **per-channel** content captured in an immutable
   snapshot at send time: a rich **email** HTML body and a plaintext **in-app**
   body (plus a derived preview). Email and in-app content MAY intentionally
@@ -295,3 +305,4 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 | 2026-06-23 | §5: added message templates & channel content (in-app vs email, `inapp.*` precedence) per ADR 0003. |
 | 2026-07-07 | §1: recorded that `rettxweb` is a **Capacitor native app** (Android pilot; native FCM device tokens) in addition to the PWA, plus a *Delivery targets* note. §7: added the rule that specs must verify each fanout repo's delivery/platform mechanism against the §1 registry (and update §1 in the same PR) before `status: ready`. Prompted by spec 033 (Message Center push). |
 | 2026-07-11 | §1: registered the **`templates`** content repo as a first-class ecosystem repo (fifth kind — *Content*; deploys to the `email-templates` blob via its own CI, full sync with delete). §5: documented the **push** channel template files (`<locale>.push.subject.txt`/`.push.txt`, English fallback, generic/no-PHI) and the "missing template ⇒ channel skipped" rule. §6/§7: added the `route:templates` label, put `templates` in the fan-out allow-list, and required content-adding specs to fan a slice out to `templates`. Prompted by spec 033 push templates never being authored because `templates` was not a routable/fan-out repo — rendering shipped in `rettxapi` but the `push.*` files never existed, so push was silently skipped. |
+| 2026-07-11 | §1/§5: renamed the Message Center template folder `emails/` → **`messages/`** ([ADR 0006](../../docs/adr/0006-message-center-template-store-layout.md), Accepted) since it now carries email + in-app + push content; documented the per-channel file-suffix convention. Deploy strips the folder prefix, so the blob container stays `email-templates` and `rettxapi` is unaffected. |

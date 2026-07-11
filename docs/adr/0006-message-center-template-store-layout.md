@@ -1,6 +1,6 @@
 # ADR 0006 — Message Center template store: multi-channel layout & naming
 
-- **Status**: Proposed
+- **Status**: Accepted (2026-07-11)
 - **Date**: 2026-07-11
 - **Decision-makers**: rettX maintainers
 - **Relates to**: [ADR 0003](0003-message-channel-content-model.md) (channel
@@ -122,9 +122,10 @@ and avoids the sync-with-delete cutover hazard. Record the per-channel file
 convention explicitly (this ADR + a `templates` README + `patterns.md` §5) so the
 naming is self-documenting regardless of the folder label.
 
-> This ADR is **Proposed**. It does not itself perform any rename — on
-> acceptance, the folder rename fans out as a `templates` slice, and the
-> convention documentation updates land in `patterns.md`.
+> This ADR is **Accepted** (2026-07-11). The `patterns.md` convention/`messages/`
+> documentation lands with this ADR (control-plane PR #27); the folder rename
+> itself is executed as a `templates` repo slice (its own PR) — the container and
+> blob paths are unchanged, so `rettxapi` needs no change.
 
 ## Consequences
 
