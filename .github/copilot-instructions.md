@@ -45,7 +45,8 @@ this repo's context**. Instead:
 1. Capture the change in a cross-cutting spec under `specs/`.
 2. Once merged, the `spec-fanout` workflow opens scoped issues in the
    affected repos (label: `squad`).
-3. Each downstream repo's own agents / squad pick up the work there.
+3. A maintainer picks up each fan-out issue by spawning an orchestrated
+   working session in that repo (one session → one branch → one PR).
 
 ## Style
 

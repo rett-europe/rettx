@@ -222,7 +222,7 @@ jobs:
               gh label create squad \
                 --repo "rett-europe/${target}" \
                 --color 9B8FCC \
-                --description "Squad triage inbox — Lead will assign to a member" \
+                --description "Fan-out inbox — pick up via an orchestrated session" \
                 --force >/dev/null 2>&1 || true
 
               url=$(gh issue create \
