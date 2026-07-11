@@ -42,7 +42,10 @@ so the autonomous layer became redundant overhead.
 
 - **Delete** the four `squad-*.yml` workflows (`squad-heartbeat.yml`,
   `squad-issue-assign.yml`, `squad-triage.yml`, `sync-squad-labels.yml`) and the
-  `.squad/` directory from every downstream repo that carried them.
+  `.squad/` directory from every downstream repo that carried them. The removal
+  also sweeps up the **companion artifacts** the toolkit installed: the Squad
+  **Coordinator** agent (`.github/agents/squad.agent.md`) and, in `rettxweb` and
+  `rettxadmin`, the six Squad-coupled Copilot skills under `.copilot/skills/`.
 - **Keep the `squad` GitHub label.** It is unchanged as a routing artifact: the
   control-plane `spec-fanout` workflow still applies it to each `[spec/<slug>]`
   downstream issue. What changes is that the label **no longer triggers any
@@ -64,7 +67,11 @@ Repos cleaned up by this decision:
 `rettxid`, `rettxmutation`, and `templates` never carried the Squad toolkit, so
 there is nothing to remove there.
 
-Implementation PRs: <to be linked>
+Implementation PRs:
+
+- `rettxapi` — [rett-europe/rettxapi#312](https://github.com/rett-europe/rettxapi/pull/312)
+- `rettxweb` — [rett-europe/rettxweb#182](https://github.com/rett-europe/rettxweb/pull/182)
+- `rettxadmin` — [rett-europe/rettxadmin#55](https://github.com/rett-europe/rettxadmin/pull/55)
 
 ## Consequences
 
