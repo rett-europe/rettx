@@ -4,7 +4,7 @@
   repos get a `[spec/<slug>] <title>` issue with the `squad` label. Set
   `status: ready` when this spec should fan out on merge — drafts will not.
 
-  Allowed fanout repos: rettxweb, rettxadmin, rettxapi, rettxmutation, rettxid.
+  Allowed fanout repos: rettxweb, rettxadmin, rettxapi, rettxmutation, rettxid, templates.
 
   STACK & DELIVERY PRE-FLIGHT (patterns.md §7): each fanout repo's delivery
   mechanism was verified against patterns.md §1. rettxweb is a Capacitor native
@@ -37,9 +37,13 @@ fanout:
       **identity mapping**: device tokens are keyed on Auth0 `user_id`, but message
       recipients are `principal_id` — add a principal → linked identities → active
       tokens resolver in the push path. Add `push_title`/`push_body` to
-      `ContentSnapshot` and `push.subject.txt`/`push.txt` versioned template
-      suffixes, rendered by the recipient's **profile language** (032 D1) with
-      English fallback. The push capability is **available to all**
+      `ContentSnapshot` and **render** the `push.subject.txt`/`push.txt` template
+      suffixes by the recipient's **profile language** (032 D1) with English
+      fallback. NOTE: the push template *files* are authored in the **`templates`**
+      content repo (see its fan-out slice below) — this slice only reads and renders
+      them; it does NOT create template content. A message whose template has no
+      `push.*` files renders empty push fields and the push channel is skipped.
+      The push capability is **available to all**
       caregivers (the `push_notification` flag is force-on, mirroring
       `messages`); delivery is naturally gated by **active device-token
       presence** — resolve `principal_id → identities → active tokens` and
@@ -82,6 +86,27 @@ fanout:
       to the Message Center (keyed off Auth0 `user_id`, not `principal_id`) and must
       not be confused with the MC push channel. No new per-user toggle is needed;
       push consent is device-enforced (OS opt-in / active-token presence).
+  - repo: templates
+    summary: |
+      Author the **push channel template files** — without these, `rettxapi`
+      renders empty push content and the channel is silently skipped (this is the
+      slice that makes push actually fire). For each Message Center email-template
+      folder under `emails/<type>/`, add `<locale>.push.subject.txt` (push title)
+      and `<locale>.push.txt` (push body). **English (`en.push.*`) is the minimum
+      required** — the renderer falls back to English when a localized push file is
+      absent; localized files can follow later. Keep push text **generic and
+      PHI-free**: it is a nudge (e.g. title "New message", body "You have a new
+      message from rettX. Tap to open."), never the message body, which lives in
+      the in-app record + email (FR-014). Cover every template the admin can send —
+      the source of truth is `rettxadmin` `TEMPLATE_CATEGORY_MAP`
+      (`src/app/models/message.ts`): at least `welcome`, `missing_name`,
+      `missing_surname`, `missing_dob`, `info_mismatch_name`, `info_mismatch_dob`,
+      `missing_mutation_in_report`, `no_rett_diagnosis`, `reminder_genetics`, and
+      `information_request_custom`. Merging to `main` runs
+      `deploy-email-templates.yml` (`az storage blob sync --delete-destination`),
+      which publishes the files to the `email-templates` blob container `rettxapi`
+      renders from — so the push files MUST live in this repo; a manual blob upload
+      would be wiped on the next sync.
 ---
 
 # Feature Specification: rettX Message Center — Push Notifications
