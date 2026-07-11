@@ -299,7 +299,43 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 - Releases follow semantic versioning per repo. Cross-repo coordinated
   releases are documented in an ADR or release note here.
 
-## 10. Change log of this document
+## 10. AI-assisted code review & custom instructions
+
+We run **GitHub Copilot code review** on pull requests across the ecosystem.
+Copilot code review consumes a repo's **custom instructions**, so those files
+are how automated review is made to enforce *our* conventions. See
+[ADR 0007](../../docs/adr/0007-ai-code-review-custom-instructions.md) and the
+GitHub docs on
+[repository custom instructions](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions).
+
+- **Every repo maintains review-focused custom instructions.** The repo-wide
+  file `.github/copilot-instructions.md` is **mandatory** and MUST contain a
+  clearly-marked section of **enforceable review conventions** (checkable
+  statements a reviewer applies to a diff) — not a technology inventory or a
+  changelog.
+- **Two file kinds, distinct homes:**
+  - `.github/copilot-instructions.md` — repo-wide rules (applies to all files).
+  - `.github/instructions/<area>.instructions.md` — path-specific rules, each
+    with `applyTo: "<glob>"` frontmatter. **`applyTo:` is only valid in these
+    files** and is inert in the repo-wide file — never put it there.
+  - `AGENTS.md` / `CLAUDE.md` are for AI *agents*, not code review; they may
+    reference the review conventions but must not duplicate them with drift.
+- **Content rules:** keep files **concise** (long instructions get truncated);
+  prefer imperative, checkable rules; cover the repo's own non-negotiables plus
+  the cross-cutting constants every repo shares — **no PHI in code, logs, tests
+  or examples** (constitution); auth/trust boundaries (§4); full supported-
+  language set for user-facing strings (§5); API-contract ownership (§3, contracts
+  live in `rettxapi`, consumers don't fork them); and test integrity (don't
+  change source just to make a test pass). **Reference** the constitution and
+  this document rather than duplicating them.
+- **Ownership:** each repo owns its own instruction files (Copilot code review
+  reads only the target repo's files — it cannot read another repo). The control
+  plane defines the standard/skeleton and the cross-cutting text here; the
+  operative files live in each repo.
+- **Setting:** the Copilot code-review "use custom instructions" preference must
+  stay enabled (on by default).
+
+## 11. Change log of this document
 
 | Date | Change |
 |---|---|
@@ -309,4 +345,5 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 | 2026-07-07 | §1: recorded that `rettxweb` is a **Capacitor native app** (Android pilot; native FCM device tokens) in addition to the PWA, plus a *Delivery targets* note. §7: added the rule that specs must verify each fanout repo's delivery/platform mechanism against the §1 registry (and update §1 in the same PR) before `status: ready`. Prompted by spec 033 (Message Center push). |
 | 2026-07-11 | §1: registered the **`templates`** content repo as a first-class ecosystem repo (fifth kind — *Content*; deploys to the `email-templates` blob via its own CI, full sync with delete). §5: documented the **push** channel template files (`<locale>.push.subject.txt`/`.push.txt`, English fallback, generic/no-PHI) and the "missing template ⇒ channel skipped" rule. §6/§7: added the `route:templates` label, put `templates` in the fan-out allow-list, and required content-adding specs to fan a slice out to `templates`. Prompted by spec 033 push templates never being authored because `templates` was not a routable/fan-out repo — rendering shipped in `rettxapi` but the `push.*` files never existed, so push was silently skipped. |
 | 2026-07-11 | §1/§5: renamed the Message Center template folder `emails/` → **`messages/`** ([ADR 0006](../../docs/adr/0006-message-center-template-store-layout.md), Accepted) since it now carries email + in-app + push content; documented the per-channel file-suffix convention. Deploy strips the folder prefix, so the blob container stays `email-templates` and `rettxapi` is unaffected. |
+| 2026-07-11 | Added §10 **AI-assisted code review & custom instructions** ([ADR 0007](../../docs/adr/0007-ai-code-review-custom-instructions.md)): every repo must maintain a review-focused `.github/copilot-instructions.md`; path-specific rules go in `.github/instructions/*.instructions.md` with `applyTo:` frontmatter (never in the repo-wide file); files stay concise and enforce the cross-cutting non-negotiables (PHI, auth, i18n, contract ownership, test integrity). Renumbered the change log to §11. Prompted by an audit showing all repos have the file but content was uneven/agent-oriented (e.g. `rettxweb` thin, `rettxapi` with a stray `applyTo:` in the repo-wide file). |
 | 2026-07-11 | §6: retired the autonomous **Squad/Ralph** toolkit (the `squad-*.yml` workflows and `.squad/` directories) across the downstream repos. The `squad` label is **retained** as the fan-out inbox marker, now picked up by a human/orchestrated working session rather than an automated agent. See [ADR 0008](../../docs/adr/0008-retire-autonomous-squad-agent-system.md). |
