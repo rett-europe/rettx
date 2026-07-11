@@ -245,8 +245,8 @@ elaborated and kept current in [`patterns.md`](./patterns.md).
 - **Issue routing labels** (set by Iris): `route:web`, `route:admin`,
   `route:api`, `route:mutation`, `route:id`, `cross-cutting`, plus state
   labels `needs-triage`, `triaged`, `routed`. Downstream issues created
-  by the fanout carry the label `squad` so each repo's automation can
-  pick them up.
+  by the fanout carry the label `squad` so a maintainer can pick them up
+  by spawning an orchestrated working session in that repo.
 - **Identity attribution**: automated actions across the ecosystem repos
   run under the `rettx-iris[bot]` GitHub App identity. Human actions run
   as the human's own account.

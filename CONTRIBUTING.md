@@ -70,9 +70,10 @@ The flow is:
    downstream repo that needs to act, each with a per-repo `summary:`.
 4. On merge to `main`, the `Iris — spec fanout` workflow reads the
    frontmatter and opens a `[spec/<slug>] <title>` issue with the
-   `squad` label in each fanout target. Each downstream squad then
-   runs its own `/speckit.plan` and `/speckit.tasks` against the spec
-   link in their repo and executes the work.
+   `squad` label in each fanout target. A maintainer then picks up each
+   fan-out issue by spawning an orchestrated working session in that
+   downstream repo, running its own `/speckit.plan` and `/speckit.tasks`
+   against the spec link and executing the work.
 
 Please do not start writing code in a downstream repository for a
 cross-cutting change before the spec here is at least at "Draft —
@@ -88,7 +89,7 @@ of the flow runs here. Implementation happens in the downstream repos.
 |---|---|---|
 | `/speckit.constitution` | ✅ | Program constitution lives at `.specify/memory/constitution.md` |
 | `/speckit.specify` | ✅ | Drafts a new program-level spec into `specs/<NNNN>-<slug>/spec.md` from `.specify/templates/spec-template.md`, including the `fanout:` frontmatter block. |
-| `/speckit.plan`, `/speckit.tasks`, `/speckit.implement` | ❌ | Implementation happens in the downstream repos. Iris fans the merged spec out as squad issues; each downstream squad runs `/speckit.plan` and `/speckit.tasks` against the spec link in their repo. |
+| `/speckit.plan`, `/speckit.tasks`, `/speckit.implement` | ❌ | Implementation happens in the downstream repos. Iris fans the merged spec out as `[spec/<slug>]` issues (label `squad`); a maintainer picks each one up by spawning an orchestrated working session that runs `/speckit.plan` and `/speckit.tasks` against the spec link in that repo. |
 
 If you want to author a spec from your editor, open this repo in an
 editor that supports GitHub Copilot slash commands, and run

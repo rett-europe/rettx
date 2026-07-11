@@ -214,10 +214,13 @@ form the contract between intake and execution.
 | `bug` | Defect report | Issue template |
 | `spec-proposal` | New idea / feature proposal | Issue template |
 | `question` | Public question | Issue template |
-| `squad` | (downstream repos) Pick this up via the local Squad team | Iris fanout |
+| `squad` | (downstream repos) Fan-out inbox — a maintainer picks this up by spawning an orchestrated working session | Iris fanout |
 
-In downstream repos, the `squad` label is the trigger for that repo's
-local Squad/Copilot agent to begin work.
+In downstream repos, the `squad` label marks a fan-out **inbox** issue: a
+maintainer picks it up by spawning an orchestrated working session
+(one session → one branch → one PR). It no longer triggers any
+automated local agent or "squad" team — the autonomous Squad/Ralph
+toolkit was retired (see [ADR 0008](../../docs/adr/0008-retire-autonomous-squad-agent-system.md)).
 
 **Cross-cutting issues do not use the raw `/route confirm` fan-out.** The
 `route:*` + `/route confirm` path (`iris-route`) copies the issue text into a
@@ -306,3 +309,4 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 | 2026-07-07 | §1: recorded that `rettxweb` is a **Capacitor native app** (Android pilot; native FCM device tokens) in addition to the PWA, plus a *Delivery targets* note. §7: added the rule that specs must verify each fanout repo's delivery/platform mechanism against the §1 registry (and update §1 in the same PR) before `status: ready`. Prompted by spec 033 (Message Center push). |
 | 2026-07-11 | §1: registered the **`templates`** content repo as a first-class ecosystem repo (fifth kind — *Content*; deploys to the `email-templates` blob via its own CI, full sync with delete). §5: documented the **push** channel template files (`<locale>.push.subject.txt`/`.push.txt`, English fallback, generic/no-PHI) and the "missing template ⇒ channel skipped" rule. §6/§7: added the `route:templates` label, put `templates` in the fan-out allow-list, and required content-adding specs to fan a slice out to `templates`. Prompted by spec 033 push templates never being authored because `templates` was not a routable/fan-out repo — rendering shipped in `rettxapi` but the `push.*` files never existed, so push was silently skipped. |
 | 2026-07-11 | §1/§5: renamed the Message Center template folder `emails/` → **`messages/`** ([ADR 0006](../../docs/adr/0006-message-center-template-store-layout.md), Accepted) since it now carries email + in-app + push content; documented the per-channel file-suffix convention. Deploy strips the folder prefix, so the blob container stays `email-templates` and `rettxapi` is unaffected. |
+| 2026-07-11 | §6: retired the autonomous **Squad/Ralph** toolkit (the `squad-*.yml` workflows and `.squad/` directories) across the downstream repos. The `squad` label is **retained** as the fan-out inbox marker, now picked up by a human/orchestrated working session rather than an automated agent. See [ADR 0008](../../docs/adr/0008-retire-autonomous-squad-agent-system.md). |
