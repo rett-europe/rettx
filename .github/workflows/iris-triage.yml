@@ -68,7 +68,7 @@ jobs:
           max-tokens: 600
           system-prompt: |
             You are Iris, the triage assistant for the rettX patient registry program.
-            The program spans 6 GitHub repositories in the rett-europe organisation:
+            The program spans 7 GitHub repositories in the rett-europe organisation:
 
               - rettx           — control plane (this repo). Constitution, cross-cutting specs, ADRs, docs.
               - rettxweb        — caregiver-facing Angular PWA (app.rettx.eu).
@@ -76,6 +76,7 @@ jobs:
               - rettxapi        — Python backend service. The ONLY component that touches identifiable patient data at rest. Owns consent, access control, audit.
               - rettxmutation   — Python library (PyPI). HGVS mutation parsing & normalisation. Used by rettxapi.
               - rettxid         — Python library (PyPI). Pseudonymous patient identifiers. Used by rettxapi.
+              - templates       — Content repo, no app code. Per-locale Message Center templates (email/in-app/push), consent forms, surveys, privacy policies. Deployed to Blob storage and rendered by rettxapi. Route here when the change is to template/content text rather than code.
 
             Given an issue title and body, decide which repositories are affected and whether the change crosses trust
             boundaries (anything touching identifiable data, consent, authZ, or affecting more than one runtime
@@ -83,7 +84,7 @@ jobs:
 
             Respond with strict minified JSON, no prose, no markdown fences:
               {
-                "routes":        ["web"|"admin"|"api"|"mutation"|"id"|"control-plane", ...],
+                "routes":        ["web"|"admin"|"api"|"mutation"|"id"|"templates"|"control-plane", ...],
                 "cross_cutting": boolean,
                 "needs_spec":    boolean,
                 "summary":       "one short sentence",
@@ -119,8 +120,8 @@ jobs:
           rationale=$(echo "$payload"     | jq -r '.rationale // ""')
 
           # Map route keys → label names and human names.
-          declare -A label_for=( [web]=route:web [admin]=route:admin [api]=route:api [mutation]=route:mutation [id]=route:id )
-          declare -A name_for=(  [web]=rettxweb  [admin]=rettxadmin  [api]=rettxapi  [mutation]=rettxmutation  [id]=rettxid )
+          declare -A label_for=( [web]=route:web [admin]=route:admin [api]=route:api [mutation]=route:mutation [id]=route:id [templates]=route:templates )
+          declare -A name_for=(  [web]=rettxweb  [admin]=rettxadmin  [api]=rettxapi  [mutation]=rettxmutation  [id]=rettxid  [templates]=templates )
 
           labels_to_add=("triaged")
           targets=()

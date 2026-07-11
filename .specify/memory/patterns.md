@@ -11,7 +11,7 @@ adopted, and reference it from cross-cutting specs.
 
 ## 1. Repositories and roles
 
-The ecosystem has **four kinds** of repository. They are governed by the same
+The ecosystem has **five kinds** of repository. They are governed by the same
 program constitution but differ in lifecycle and deployment model.
 
 ### Control plane
@@ -62,6 +62,27 @@ Library lifecycle differs from the surfaces and backend:
   `rettxapi` version bump that consumes the new release.
 - Library issues are accepted directly in their own repos for
   library-internal concerns; cross-cutting work is still authored here.
+
+### Content (deployed template & document assets)
+
+`templates` holds **no application code** — it is the source of truth for the
+per-locale transactional **content** the surfaces and backend render.
+
+| Repo | Visibility | Purpose | Deploys to |
+|---|---|---|---|
+| [`templates`](https://github.com/rett-europe/templates) | 🔒 Private | Per-locale Message Center templates (`emails/<type>/<locale>.*`), plus consent forms, privacy policies, surveys, and Auth0 email templates | Azure Blob `email-templates` container, via its own GitHub Actions deploy (`deploy-email-templates.yml`, `az storage blob sync` on merge to `main`) |
+
+Content lifecycle differs from the code repos:
+
+- Templates are **rendered, not imported.** `rettxapi` reads them from the blob
+  container at send time by path (`<type>/<locale>.<suffix>`). A **missing file
+  for a channel means that channel is silently skipped** at render — so shipping
+  a new channel (e.g. push) requires authoring its template files **here**, not
+  only the rendering code in `rettxapi`. A spec that adds a channel MUST fan a
+  slice out to `templates`.
+- Deploy is a **full sync with delete** (`--delete-destination true`): the blob
+  container mirrors `emails/` exactly. Manual blob edits are transient and are
+  wiped on the next deploy — every template change MUST land in this repo.
 
 ## 2. Shared vocabulary
 
@@ -154,6 +175,14 @@ courtesy, not a security control.
   (heavy chrome / CTA buttons); otherwise the clean auto-derived text is used.
   HTML→text derivation MUST strip `<style>`/`<script>` blocks. See
   [ADR 0003](../../docs/adr/0003-message-channel-content-model.md).
+- **Push channel** (spec 033) renders from `<locale>.push.subject.txt` (title)
+  and `<locale>.push.txt` (body), resolved by the recipient's profile language
+  with **English fallback** (`<locale>` → `en`). Push text is intentionally
+  **generic and free of PHI** — it is a nudge, never the message body (which
+  lives in the in-app record and email). A template with **no** `push.*` files
+  renders empty `push_title`/`push_body` and the push channel is **skipped** for
+  that message (email + in-app unaffected). Author `push.*` files in the
+  **`templates`** repo for every Message Center template that should notify.
 
 ## 6. Issue routing labels
 
@@ -168,6 +197,7 @@ form the contract between intake and execution.
 | `route:api` | Should land in `rettxapi` | Iris |
 | `route:mutation` | Should land in `rettxmutation` | Iris |
 | `route:id` | Should land in `rettxid` | Iris |
+| `route:templates` | Should land in `templates` (content assets) | Iris |
 | `cross-cutting` | Affects more than one repo | Iris |
 | `triaged` | Iris has classified; awaiting maintainer routing | Iris |
 | `routed` | Maintainer confirmed `/route`; downstream issues opened | Iris |
@@ -220,7 +250,10 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
   each entry is `{ repo, summary }` — and opens one `[spec/<slug>]` squad issue
   per listed repo on merge. Fan-out runs **only** when the spec's `status` is
   `ready` or `accepted`; a `draft` spec never fans out. Allowed repos:
-  `rettxweb, rettxadmin, rettxapi, rettxmutation, rettxid`.
+  `rettxweb, rettxadmin, rettxapi, rettxmutation, rettxid, templates`.
+  A spec that adds or changes **rendered content** (email/in-app/push templates,
+  consent forms, surveys) MUST include a `templates` fan-out slice — the
+  rendering repo (`rettxapi`) consumes template files but does not author them.
 - Single-repo work does not require a cross-cutting spec; it can flow
   directly through the downstream repo's local spec-kit workflow (reached via
   the `/route confirm` path — see §6).
@@ -261,3 +294,4 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 | 2026-06-22 | §6/§7: cross-cutting work goes via gap-analysis → umbrella spec → `spec-fanout` (frontmatter `fanout:`, not `tasks.md`); `/route confirm` reserved for single-repo work (ADR 0002). |
 | 2026-06-23 | §5: added message templates & channel content (in-app vs email, `inapp.*` precedence) per ADR 0003. |
 | 2026-07-07 | §1: recorded that `rettxweb` is a **Capacitor native app** (Android pilot; native FCM device tokens) in addition to the PWA, plus a *Delivery targets* note. §7: added the rule that specs must verify each fanout repo's delivery/platform mechanism against the §1 registry (and update §1 in the same PR) before `status: ready`. Prompted by spec 033 (Message Center push). |
+| 2026-07-11 | §1: registered the **`templates`** content repo as a first-class ecosystem repo (fifth kind — *Content*; deploys to the `email-templates` blob via its own CI, full sync with delete). §5: documented the **push** channel template files (`<locale>.push.subject.txt`/`.push.txt`, English fallback, generic/no-PHI) and the "missing template ⇒ channel skipped" rule. §6/§7: added the `route:templates` label, put `templates` in the fan-out allow-list, and required content-adding specs to fan a slice out to `templates`. Prompted by spec 033 push templates never being authored because `templates` was not a routable/fan-out repo — rendering shipped in `rettxapi` but the `push.*` files never existed, so push was silently skipped. |

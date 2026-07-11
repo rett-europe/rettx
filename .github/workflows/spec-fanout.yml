@@ -45,7 +45,7 @@ jobs:
           app-id: ${{ secrets.IRIS_APP_ID }}
           private-key: ${{ secrets.IRIS_PRIVATE_KEY }}
           owner: rett-europe
-          repositories: rettx,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid
+          repositories: rettx,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid,templates
 
       - name: Check out rettx at the merge commit
         uses: actions/checkout@v4
@@ -84,7 +84,7 @@ jobs:
           set -euo pipefail
           python -m pip install --quiet "PyYAML==6.0.2"
 
-          ALLOWED_REPOS="rettxweb rettxadmin rettxapi rettxmutation rettxid"
+          ALLOWED_REPOS="rettxweb rettxadmin rettxapi rettxmutation rettxid templates"
 
           while IFS= read -r spec_path; do
             [[ -z "$spec_path" ]] && continue
