@@ -25,7 +25,7 @@
 spec_id: "035"
 slug: "pulse-tracker"
 title: "rettX Pulse"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-15"
 author: "perocha"
 source_issue: "rett-europe/rettx#9 (Pulse — generalized in place; supersedes)"
@@ -45,7 +45,7 @@ fanout:
       (1) **Value-primitive metric model.** Introduce a `MetricDefinition` entity
       whose measurements compose from a small library of **value primitives**:
       `occurrence` (boolean/happened), `count` (quantity), `scale` (severity —
-      default 1–5 or mild/moderate/severe; exact scale is a MINOR open item),
+      a **numeric 1–5** rating; the UI MAY render labels),
       `duration`, `dose` (amount + unit — **actual dose given vs prescribed dose**,
       with a server-computed **deviation flag**), and `note` (free text, always
       available). Reuse Pulse's category-CODE vs translated-LABEL split (issue #9
@@ -96,13 +96,15 @@ fanout:
   - repo: rettxadmin
     summary: |
       Admin dashboard (Angular + MSAL). rettxadmin currently has **no Pulse code** —
-      this is net-new. Provide a **metric-definition catalog management** surface so
-      the Rett Forum can **curate and extend** the metric catalog post-MVP: create /
-      edit / version / translate `MetricDefinition` records (code, per-locale labels,
-      composed value primitives, type-config) that the caregiver app renders. Enforce
-      that edits are non-destructive to existing caregiver entries (versioning, never
-      in-place mutation of historical data). Smallest slice; whether it lands in the
-      MVP or Phase 2 is a MINOR open item. CONSUME the rettxapi Pulse contract; no
+      this is net-new, and it is a **Phase 2** deliverable (scheduled AFTER the MVP).
+      Provide a **metric-definition catalog management** surface so the Rett Forum can
+      **curate and extend** the metric catalog post-MVP: create / edit / version /
+      translate `MetricDefinition` records (code, per-locale labels, composed value
+      primitives, type-config) that the caregiver app renders. Enforce that edits are
+      non-destructive to existing caregiver entries (versioning, never in-place
+      mutation of historical data). **Not required for the MVP** — caregiver-created
+      custom metrics (rettxweb) cover metric creation for Phase 1; this admin surface
+      is the Forum-curation path that follows. CONSUME the rettxapi Pulse contract; no
       research/data-export surface here.
 ---
 
@@ -139,7 +141,7 @@ Every metric is composed from a small, fixed library of **value primitives**; ev
 
 - **occurrence** — boolean "it happened".
 - **count / quantity** — a number (e.g. stools per day).
-- **scale / severity** — an ordinal rating. **Default: 1–5 or mild/moderate/severe** (exact scale is a MINOR open item — see Open Decisions).
+- **scale / severity** — an ordinal rating on a **numeric 1–5 scale** (finer-grained so side-effect and severity trends are trackable over time; the UI MAY render descriptive labels over the 1–5 values).
 - **duration** — how long something lasted.
 - **dose** — amount + unit; this is where **actual dose given vs prescribed dose** lives, with a **server-computed deviation flag**.
 - **note** — free text, always available on every entry.
@@ -153,8 +155,8 @@ Pulse ships with a starter catalog composed from those primitives; caregivers ca
 | **Medication** | dose (actual-vs-prescribed + deviation flag) + note |
 | **Bathroom / stool frequency** | count / occurrence |
 | **Menstrual cycle** | occurrence + note |
-| **Seizure** *(the former "episode")* | composite: occurrence + duration + severity + trigger (note) |
-| **Generic side-effect** | severity + frequency (count) |
+| **Seizure** *(the former "episode")* | composite: occurrence + duration + severity (1–5) + trigger (note) |
+| **Generic side-effect** | severity (1–5) + frequency (count) |
 
 The **Rett Forum refines/extends** this catalog **post-MVP** by composing the same primitives. Because catalog growth is additive over code/label-versioned definitions, it never breaks existing records — so **Forum input is not an MVP blocker**; the MVP ships with primitives + seed presets and the Forum curates later.
 
@@ -164,7 +166,7 @@ On merge (once `status: ready`), `spec-fanout` opens one scoped `[spec/pulse-tra
 |---|---|---|
 | **Backend + contract owner** | `rettxapi` | Generalize the Pulse backend in place: primitive-typed `MetricDefinition` + `TrackerEntry`/`Measurement` + `DoseRecord` + seed presets; in-app-viz data endpoints; reuse access/consent/audit |
 | **Caregiver native app** | `rettxweb` | Calendar quick-log + definition-driven forms + in-app timeline/per-metric history; text-only; reuse the Pulse domain layer + navbar |
-| **Admin dashboard** | `rettxadmin` | Metric-definition catalog management (Forum curation) — net-new; no Pulse code there today |
+| **Admin dashboard** | `rettxadmin` | Metric-definition catalog management (Forum curation) — net-new; **Phase 2** (after the MVP); no Pulse code there today |
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -227,7 +229,7 @@ As a caregiver (or, post-MVP, a Rett Forum curator via admin), I create a new me
 
 ### Functional Requirements — Admin (rettxadmin)
 
-- **FR-017** rettxadmin MUST provide a **metric-definition catalog management** surface to create / edit / **version** / translate `MetricDefinition` records (code, per-locale labels, composed primitives, config), so the **Rett Forum can curate and extend** the catalog — this is net-new (no Pulse code exists in rettxadmin). Whether it lands in the MVP or Phase 2 is a MINOR open item.
+- **FR-017** rettxadmin MUST provide a **metric-definition catalog management** surface to create / edit / **version** / translate `MetricDefinition` records (code, per-locale labels, composed primitives, config), so the **Rett Forum can curate and extend** the catalog — this is net-new (no Pulse code exists in rettxadmin) and is a **Phase 2** deliverable (after the MVP). Caregiver-created custom metrics (FR-013) cover metric creation for the MVP.
 - **FR-018** Admin edits MUST be **non-destructive** to existing caregiver entries (versioning; never in-place mutation of historical data), enforced server-side.
 
 ## Key Entities *(include if feature involves data)*
@@ -267,7 +269,7 @@ As a caregiver (or, post-MVP, a Rett Forum curator via admin), I create a new me
 - **PDF export** (print-friendly, time-range filtered) for doctor consultations.
 - **Media attachments** (photo/video) — reuse the existing Pulse **SAS / quota** machinery (PR #288).
 - **Richer charts / trends** over tracked metrics.
-- **Forum-curated catalog expansion** (admin curation of new metrics from the primitives).
+- **Forum-curated catalog expansion** — the **rettxadmin metric-definition catalog-management surface** (net-new) through which the Rett Forum curates/extends metrics composed from the primitives.
 
 ## Cross-Team Coordination *(mandatory for this feature)*
 
@@ -282,7 +284,7 @@ As a caregiver (or, post-MVP, a Rett Forum curator via admin), I create a new me
 
 - **rettxapi first** — it defines/owns the contract, the primitive-typed metric model + entries + dose, the seed presets, and the in-app-viz data endpoints.
 - **rettxweb second** — calendar quick-log + definition-driven forms + in-app timeline/history, on the reused Pulse domain layer.
-- **rettxadmin last** — the metric-definition catalog management surface (MVP-or-Phase-2 is a minor open item).
+- **rettxadmin (Phase 2)** — the metric-definition catalog management surface for Forum curation, delivered after the MVP.
 
 ## Assumptions
 
@@ -311,15 +313,14 @@ As a caregiver (or, post-MVP, a Rett Forum curator via admin), I create a new me
 - **Principle VI — Security baseline**: authorization enforced server-side on every Pulse endpoint; audit for create/update/delete; no PII in logs.
 - No NON-NEGOTIABLE principle is weakened by this spec.
 
-## Open Decisions *(D1–D4 RESOLVED; only MINOR residual items remain for the review pass)*
+## Open Decisions *(all RESOLVED — no blocking open items)*
 
 - **D1 — User-facing name — RESOLVED.** Product name is **Pulse** ("Tracker" rejected as too technical). Slug `pulse-tracker`, title *rettX Pulse* (descriptive subtitle *Personal Tracker* permitted).
 - **D2 — MVP metric set — RESOLVED.** MVP ships with **value primitives + seed presets** + caregiver custom metrics; the **Rett Forum curates/extends post-MVP**. Forum input is **not** an MVP blocker. Catalog stays extensible without breaking records via the code/label + versioning pattern.
 - **D3 — Repurpose vs add-alongside — RESOLVED.** **Converge in place**: generalize the existing Pulse models/routers/domain layer, keep the Pulse name, seizure "episode" becomes one seed preset, and mark rettxweb spec-018 + issue #9 **superseded-by 035**. No parallel module.
 - **D4 — Visualization / export — RESOLVED.** MVP = **basic in-app visualization** (calendar quick-log + reverse-chron timeline + per-metric history). **PDF export → Phase 2.**
+- **M1 — Severity scale — RESOLVED.** Severity uses a **numeric 1–5 scale** (finer-grained for trend tracking; the UI may render labels).
+- **M2 — Seed-preset list — RESOLVED.** The **five seed presets are confirmed as-is**: medication (dose w/ actual-vs-prescribed deviation), bathroom/stool frequency, menstrual cycle, seizure (composite), generic side-effect. Custom metrics cover the rest.
+- **M3 — Admin catalog phasing — RESOLVED.** The **rettxadmin metric-definition catalog-management surface is Phase 2**; caregiver-created custom metrics cover the MVP.
 
-### Minor residual items (for the review pass)
-
-- **M1** Exact **severity scale**: numeric **1–5** vs a **3-level** mild/moderate/severe (default proposed: 1–5).
-- **M2** Final **seed-preset list** (confirm the five above; add/remove any).
-- **M3** Whether the **rettxadmin catalog management** surface is **MVP** or **Phase 2** (caregiver-created custom metrics cover the MVP either way).
+**Non-blocking note**: the Rett Forum will **curate and extend the metric catalog over time** (composing the same value primitives). This is expected, additive, and does not gate delivery — the code/label + versioning pattern guarantees new/edited definitions never break previously recorded entries.
