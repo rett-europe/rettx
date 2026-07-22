@@ -53,9 +53,11 @@ convenience that back-computes the duration and are NOT persisted.**
 
 Specifics:
 
-1. **One entry = one night.** `sleep-duration` (primitive DURATION, unit minutes,
-   REQUIRED, 1–1440) is the single canonical stored amount — the total sleep for the
-   night. There is no separate stored bedtime or wake time.
+1. **One entry = one sleep episode (night or nap).** `sleep-duration` (primitive
+   DURATION, unit minutes, REQUIRED, 1–1440) is the single canonical stored amount —
+   the total sleep for that episode. There is no separate stored bedtime or wake time.
+   Because an entry is one episode, multiple entries per date are allowed (a night
+   plus one or more naps); there is no per-day uniqueness constraint.
 2. **Bedtime/wake are input-only.** The form offers an optional bedtime + wake-time
    pair that computes `sleep-duration` = elapsed minutes (if wake ≤ bedtime, add 24h
    for cross-midnight). Only the computed duration is stored. Caregivers who think in
@@ -63,21 +65,31 @@ Specifics:
    field — exactly the two-mental-models / one-field pattern ADR 0009 established with
    the menstrual "Ended on" convenience.
 3. **Quality is required.** `quality` (primitive SCALE, 1–5, REQUIRED) with Poor↔Great
-   anchors. Pedro flagged quality as core to the metric, so it is not optional.
+   anchors. Pedro flagged quality as core to the metric, so it is not optional. It
+   applies to both night and nap entries.
 4. **Night wakings is optional.** `night-wakings` (primitive COUNT, 0–30, OPTIONAL).
-5. **Sleep is the first trend metric.** The Metrics-tab card subtitle shows an average
-   *duration* ("avg 7h 40m / night"), not a count; the metric detail shows a
-   nightly-hours trend chart with an avg-hours/night headline plus secondary avg
-   quality and avg wakings. All aggregation is **client-side** — no new server
-   read/derivation endpoint.
-6. **Composed from existing primitives.** The `sleep` seed introduces **no new
+5. **The night/nap distinction is a 2-option CATEGORY, not a boolean.** `sleep-type`
+   (primitive CATEGORY, options `night` (default) / `nap`) is surfaced as a simple
+   "Nap" tick. Our primitive set has **no boolean**, so a 2-option CATEGORY is the
+   honest mapping. It is **OPTIONAL** in the seed so it can never hard-break an entry,
+   but the app always sends an explicit value; any derivation treats a missing value
+   as `night`. The Duration default is type-dependent (`DEFAULT_SLEEP_MINUTES = 480`
+   for night, `DEFAULT_NAP_MINUTES = 60` for nap).
+6. **Sleep is the first trend metric — and the trend is night-only.** The Metrics-tab
+   card subtitle shows an average *duration* ("avg 7h 40m / night"), not a count; the
+   metric detail shows a nightly-hours trend chart with an avg-hours/night headline
+   plus secondary avg quality and avg wakings. The trend and averages are computed
+   from **NIGHT entries only** so naps don't skew them; naps still appear in the entry
+   history. All aggregation is **client-side** — no new server read/derivation
+   endpoint.
+7. **Composed from existing primitives.** The `sleep` seed introduces **no new
    primitive**; it is a new preset (`definition_version` 1, `scope=catalog`,
-   `is_seed_preset=True`) assembled from DURATION + SCALE + COUNT + NOTE. This is the
-   sixth catalog preset.
-7. **Backend-first, contract-owned.** rettxapi owns the seed that validates entries,
+   `is_seed_preset=True`) assembled from DURATION + SCALE + COUNT + CATEGORY + NOTE.
+   This is the sixth catalog preset.
+8. **Backend-first, contract-owned.** rettxapi owns the seed that validates entries,
    so the `sleep` seed lands and deploys before rettxweb starts sending the metric
    (the backend 400s `unknown-metric-code` until then).
-8. **No migration.** A brand-new metric has no existing entries; no backfill code.
+9. **No migration.** A brand-new metric has no existing entries; no backfill code.
 
 ## Consequences
 
@@ -89,9 +101,12 @@ Specifics:
   canonical stored field, an optional input-only convenience for the other mental
   model" shape as the menstrual period, keeping the Pulse model coherent.
 - **Backend stays generic.** No new primitive and no metric-specific server branching;
-  the existing DURATION/SCALE/COUNT validation enforces the bounds.
+  the existing DURATION/SCALE/COUNT/CATEGORY validation enforces the bounds.
 - **No clock-time fields on date-anchored entries.** Cross-midnight and timezone
   hazards are handled once, at input time on the client, not baked into stored data.
+- **Naps are captured without a new type.** The night/nap distinction rides on an
+  existing CATEGORY primitive, and naps are cleanly excluded from the night-only
+  trend, so nap logging never skews the "avg hours/night" figure.
 - **Trend-first UX.** Averages compute from concrete durations; the caregiver gets the
   "how are they sleeping lately" answer directly.
 
@@ -102,10 +117,13 @@ Specifics:
   enhancement (e.g. persisting the pair, or adding a clock-time primitive).
 - **All trend/average computation is client-side**, so any future server-side sleep
   analytics would need a new derivation endpoint added later.
+- **No dedicated nap summary in v1.** Naps are recorded and listed but get no separate
+  average or chart yet — a possible future enhancement.
 - A coordinated **cross-repo change** (rettxapi seed contract first, then rettxweb),
   tracked by spec 038 and fanned out as two `squad` issues.
 - i18n across **19 locales** for the new sleep strings (label, field labels, quality
-  anchors, bedtime/wake labels, hour/minute units, "avg / night", "{n} wakings").
+  anchors, bedtime/wake labels, hour/minute units, "avg / night", "{n} wakings", and
+  Sleep type / Night / Nap).
 - Adds a **sixth catalog preset** to the umbrella Pulse spec (relates to spec 035).
 
 ## Alternatives considered
@@ -118,11 +136,13 @@ Specifics:
   quality would leave many nights with only a duration and no sense of how the night
   went, undermining the metric's purpose.
 - **Add a new "sleep" primitive.** Rejected: unnecessary — DURATION (minutes) + SCALE
-  + COUNT already express the whole shape; a new primitive would add backend surface
-  for no gain.
+  + COUNT + CATEGORY already express the whole shape; a new primitive would add
+  backend surface for no gain.
+- **Model the nap flag as a boolean.** Rejected: the primitive set has no boolean
+  primitive. A 2-option CATEGORY (`night`/`nap`) is the honest mapping and keeps the
+  door open to more sleep types later without a schema change.
 - **Add a server-side sleep trend/derivation endpoint now.** Rejected as premature:
   the client can compute nightly-hours averages from the entries it already reads; a
   server endpoint can be added later if cross-surface analytics need it.
-- **Include naps in v1** (multiple sleep episodes per day). Rejected for v1 to keep
-  "one entry = one night"; a future `type` category (night | nap) can extend the same
-  preset.
+- **Fold naps into the nightly average.** Rejected: naps would skew "avg hours/night".
+  Naps are captured but excluded from the night-only trend.
