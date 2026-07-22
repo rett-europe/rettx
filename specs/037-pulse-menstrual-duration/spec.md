@@ -17,7 +17,7 @@
 spec_id: "037"
 slug: "pulse-menstrual-duration"
 title: "rettX Pulse — Menstrual Period as Start + Duration"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-22"
 author: "perocha"
 source_issue: "rett-europe/rettxweb#231"
