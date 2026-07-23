@@ -9,7 +9,7 @@
 spec_id: "036"
 slug: "pulse-metric-catalog-admin"
 title: "rettX Pulse — Global Metric-Catalog Administration"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-17"
 author: "perocha"
 source_issue: "rett-europe/rettx#10"
@@ -35,7 +35,7 @@ fanout:
       list (incl. retired), get-with-version-history, create, edit→new immutable
       version, retire. Reuse the spec-035 value-primitive models + immutable
       per-version document pattern already shipped for patient customs.
-      (3) One-time idempotent bootstrap that writes the 5 in-code seed presets
+      (3) One-time idempotent bootstrap that writes the in-code seed presets (iterated from `get_seed_presets()` — six today, incl. sleep; no hardcoded count)
       into the catalog container as v1 catalog-scope definitions if absent, so
       nothing is lost and the catalog is never empty on a cold environment.
       (4) Repoint the patient read path: the definitions the caregiver client
@@ -61,7 +61,7 @@ fanout:
 Spec 035 (pulse-tracker) shipped the value-primitive metric model with two
 sources of definitions:
 
-- **5 seed presets, in-code** — read-only; editing via API returns `409`.
+- **Seed presets, in-code** — read-only; editing via API returns `409`.
 - **Per-patient custom definitions** — stored in `pulse_metric_definitions`
   (partition `/patient_id`), created/edited by caregivers through the
   patient-scoped endpoints `/{rettxid}/pulse/metric-definitions`
@@ -82,7 +82,7 @@ storage.
 
 1. **Source of truth = DB-backed catalog (Option B, agreed).** The global
    catalog lives in storage and is fully admin-owned: creatable, editable,
-   versionable, translatable, retirable. The 5 in-code presets become a
+   versionable, translatable, retirable. The in-code presets (whatever `get_seed_presets()` returns at bootstrap — six today, incl. sleep, menstrual at v2) become a
    one-time **bootstrap seed** of that store, not a parallel runtime source.
 
 2. **Storage = a new, separate container `pulse_catalog_definitions`,
@@ -131,13 +131,13 @@ storage.
   clients as selectable).
 - **FR-006** Per-locale label management across the supported locales; an
   English label is required as the fallback.
-- **FR-007** The 5 in-code seed presets are bootstrapped into the catalog store
+- **FR-007** The in-code seed presets — all of them, iterated from `get_seed_presets()` (six today, incl. sleep; menstrual v2), never a hardcoded count — are bootstrapped into the catalog store
   once, idempotently, as v1 catalog definitions when absent. After bootstrap
   they are ordinary catalog definitions (fully editable/versionable) — the
   `409 not-editable` seed rule from 035 no longer applies at catalog scope.
 - **FR-008** Patient-facing reads resolve the global catalog from storage
   (catalog defs + patient customs). No caregiver-visible behavioural change
-  when the catalog store simply mirrors today's 5 seeds.
+  when the catalog store simply mirrors today's in-code seeds.
 - **FR-009** Catalog create/edit/retire emit fire-and-forget admin audit events
   (identifiers only, no PHI).
 - **FR-010** All new config symbols are registered in config.py + both secret
