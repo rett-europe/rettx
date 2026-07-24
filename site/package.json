@@ -5,9 +5,10 @@
   "type": "module",
   "description": "rettX engineering documentation site (docs.rettx.eu) — Astro + Starlight.",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "node ../scripts/sync-adrs.mjs && astro dev",
     "start": "astro dev",
-    "build": "astro check && astro build",
+    "sync:adrs": "node ../scripts/sync-adrs.mjs",
+    "build": "node ../scripts/sync-adrs.mjs && astro check && astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
