@@ -115,6 +115,10 @@ export default defineConfig({
           ],
         },
         {
+          label: 'Product',
+          autogenerate: { directory: 'product' },
+        },
+        {
           label: 'Architecture',
           autogenerate: { directory: 'architecture' },
         },
