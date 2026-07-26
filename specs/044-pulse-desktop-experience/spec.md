@@ -13,7 +13,7 @@
 spec_id: "044"
 slug: "pulse-desktop-experience"
 title: "rettX Pulse — desktop / wide-screen experience (web only)"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-26"
 author: "perocha"
 relates_to: "specs/035-pulse-tracker/"
