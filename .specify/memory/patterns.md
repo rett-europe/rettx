@@ -106,24 +106,47 @@ are coordinated through a cross-cutting spec.
   permissions.
 - **Admin** — registry operator with administrative access via the admin
   surface. Admins authenticate via **Microsoft Entra ID (MSAL)**, not Auth0.
-- **Entra App Role** — the **source of truth for admin authorization**. Admin
-  roles are provisioned as App Roles in the Entra app registration and delivered
-  in the verified access-token **`roles` claim**; `rettxapi` reads that claim to
-  authorize admin requests. This is deliberately **not** a DB-driven
-  `Principal.role` — admins are Entra principals that may have no `Principal`
-  record (see [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md)).
+- **Entra App Role** — the **source of truth for admin role _membership_**.
+  Admin roles are provisioned as App Roles in the Entra app registration and
+  delivered in the verified access-token **`roles` claim**; `rettxapi` reads that
+  claim to know *who* is `super_admin` / `admin` / `read_only`. This is
+  deliberately **not** a DB-driven `Principal.role` — admins are Entra principals
+  that may have no `Principal` record. What each role can *do* is separate config
+  (see *Capability catalog* below and
+  [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md)).
 - **Admin role set (MVP)** — the thin admin RBAC vocabulary
-  (specs 042/043, ADR 0012): `super_admin` (owner / break-glass; superset of all
-  checks), `admin` (base operator role required by every admin endpoint), and
-  `read_only` (view admin data, no mutations). Finer permissions extend the same
-  `roles` claim later. These are **admin authorization** roles and are distinct
-  from the caregiver **Permission level** (`owner`/`edit`/`read`) below and from
-  the account-lifecycle `Principal.status` (`PROVISIONAL`/`ACTIVE`/`LOCKED`).
-- **`RBAC_ENABLED`** — the rollout flag convention for admin RBAC. Admin role
-  enforcement in `rettxapi` is gated behind `RBAC_ENABLED` (**default OFF**) so
-  roles cannot lock admins out before Entra App Roles are provisioned and
-  assigned. Enable sequence: provision App Roles → assign → verify the `roles`
-  claim appears in tokens → flip the flag on.
+  (specs 042/043, ADR 0012): `super_admin` (owner / break-glass; implicitly holds
+  **all** capabilities; fixed — cannot be edited, diminished, or locked out; the
+  only role that may edit the capability config), `admin` (standard operator), and
+  `read_only` (viewer). Role membership is coarse and Entra-owned; the granular
+  capabilities `admin`/`read_only` grant are super_admin-configurable config (see
+  below). These are **admin authorization** roles, distinct from the caregiver
+  **Permission level** (`owner`/`edit`/`read`) below and from the
+  account-lifecycle `Principal.status` (`PROVISIONAL`/`ACTIVE`/`LOCKED`).
+- **Capability / capability catalog** — the granular, enumerated admin
+  permissions named `area.action` (e.g. `patients.view`, `patients.manage`,
+  `campaigns.send`, `pulse_catalog.manage`, super-only `rbac.manage`), grouped by
+  admin area and grounded in the `rettxapi` admin routers. The catalog is the
+  server-owned source of truth imported by enforcement; `.view` gates reads,
+  `.manage`/`.send`/`.manage_access` gate mutations.
+- **role→capability config** — a small, rettX-managed document (e.g. an
+  `admin_role_capabilities` store) mapping the `admin` and `read_only` roles to
+  their capability sets. It is **role-level** (one set per role, no per-user
+  tuning, no custom roles in the MVP), editable at runtime **only by
+  `super_admin`**, seeded with safe defaults (`admin` = all capabilities except
+  super-only; `read_only` = all `.view` only; `super_admin` = all, implicit and
+  not stored). It is **product config, not identity** — role membership stays in
+  Entra, `Principal.role` stays unused. Changes are audited. **Data topology:**
+  the `admin_role_capabilities` store and all other admin-domain Cosmos
+  containers live in the **dedicated `rettxadmindb` database** (same Cosmos
+  account, not `rettxdb`) per
+  [ADR 0013](../../docs/adr/0013-admin-data-dedicated-cosmos-database.md).
+- **`RBAC_ENABLED`** — the rollout flag convention for admin RBAC. Admin
+  capability enforcement in `rettxapi` is gated behind `RBAC_ENABLED`
+  (**default OFF**) so it cannot lock admins out before Entra App Roles are
+  provisioned and the capability defaults are seeded. Enable sequence: provision
+  App Roles → seed capability defaults → assign roles → verify the `roles` claim
+  appears in tokens → flip the flag on.
 - **Mutation** — a genetic variant recorded against a patient, expressed in
   HGVS where applicable. Extraction and validation are delegated to the
   [`rettxmutation`](https://github.com/rett-europe/rettxmutation) library.
@@ -192,17 +215,23 @@ be reconciled, not a feature.
 Authorization is **always** enforced server-side. UI gating is a usability
 courtesy, not a security control.
 
-**Admin authorization (RBAC).** Admin authorization uses **Entra App Roles** as
-the source of truth: roles are provisioned in the Entra app registration and
-delivered in the verified token **`roles` claim**, which `rettxapi` enforces
-server-side via a reusable `require_role(*roles)` / `require_permission(perm)`
-dependency layered on `get_admin_id`. The MVP role set is `super_admin` /
-`admin` / `read_only` (see §2). Admin roles do **not** live in the DB
-(`Principal` is the caregiver identity and may not exist for an admin) and admin
-is **not** migrated to Auth0 — the backend trusts Entra tokens only for admin.
-Enforcement rolls out behind the `RBAC_ENABLED` flag (default OFF). `rettxadmin`
-reflects the `roles` claim to gate nav items and routes, but that is **UX only**;
-the API is the boundary. See [spec 043](../../specs/043-admin-rbac-mvp/spec.md),
+**Admin authorization (RBAC).** Admin authorization is a **hybrid**: **Entra App
+Roles** own role *membership* (who is `super_admin` / `admin` / `read_only`, via
+the verified token **`roles` claim**), while the granular **capabilities**
+(`area.action`) that `admin`/`read_only` grant are **rettX-managed config** that
+`super_admin` tunes at runtime (see §2). `rettxapi` enforces server-side via a
+`require_capability("area.action")` dependency layered on `get_admin_id`: resolve
+the caller's Entra role → `super_admin` is allowed anything; otherwise allow iff
+the **configured** capability set for that role contains the capability. A thin
+`require_role(*roles)` backs the `super_admin`-only config endpoints
+(`GET/PUT /admin/rbac/roles...`). Neither role membership nor capabilities live on
+`Principal` (`Principal.role` stays unused); the persisted role→capability map is
+product config, not identity. Admin is **not** migrated to Auth0 — the backend
+trusts Entra tokens only for admin. Enforcement rolls out behind the
+`RBAC_ENABLED` flag (default OFF) and capability changes are audited. `rettxadmin`
+reflects the `roles` claim to gate nav items/routes and hosts the `super_admin`
+capability editor, but that is **UX only**; the API is the boundary. See
+[spec 043](../../specs/043-admin-rbac-mvp/spec.md),
 [spec 042](../../specs/042-admin-app-shell/spec.md), and
 [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md).
 
@@ -405,3 +434,5 @@ GitHub docs on
 | 2026-07-11 | §6: retired the autonomous **Squad/Ralph** toolkit (the `squad-*.yml` workflows and `.squad/` directories) across the downstream repos. The `squad` label is **retained** as the fan-out inbox marker, now picked up by a human/orchestrated working session rather than an automated agent. See [ADR 0008](../../docs/adr/0008-retire-autonomous-squad-agent-system.md). |
 | 2026-07-26 | §2: added the narrow **`pulse`** contributor permission scope (create Pulse + minimal read only; server-enforced; does not imply general `read`), the **Pulse contributor** and **Invite** (with lifecycle states) vocabulary, and the **Pulse Contribution Consent** ConsentDocument subtype. Prompted by [spec 041](../../specs/041-multi-caregiver-sharing/spec.md) and [ADR 0011](../../docs/adr/0011-pulse-contributor-access-scope.md) (multi-caregiver Pulse contribution: single owner + narrow `pulse` scope). |
 | 2026-07-26 | §2/§4: added the **admin RBAC** vocabulary and conventions — **Entra App Role** as the admin-authorization source of truth (the token `roles` claim), the MVP role set (`super_admin`/`admin`/`read_only`), and the **`RBAC_ENABLED`** flag-gated rollout convention (default OFF). Reinforced §4 that admin authorization is enforced **server-side** in `rettxapi` via a `require_role`/`require_permission` dependency, admin stays on **Entra** (not Auth0, not a DB `Principal.role`), and client gating is UX only. Prompted by the admin app maturity program — see [spec 042](../../specs/042-admin-app-shell/spec.md) (gated login + config-driven left nav with a `requiredRoles` extension point), [spec 043](../../specs/043-admin-rbac-mvp/spec.md) (RBAC MVP), and [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md). |
+| 2026-07-26 | §2/§4: **refined** the admin RBAC model from the fixed-capability framing in the prior 2026-07-26 entry to a **hybrid, super_admin-configurable** one. Entra App Roles now own only role **membership**; the granular **capabilities** (`area.action`) that `admin`/`read_only` grant are a **rettX-managed role→capability config** that `super_admin` edits at runtime (persisted, seeded with defaults: `admin` = all-but-super, `read_only` = views only; `super_admin` = all/implicit/fixed). Added *capability* / *capability catalog* / *role→capability config* vocabulary to §2 and switched §4 enforcement to `require_capability("area.action")` (resolve Entra role → configured capabilities, server-side; `super_admin` bypasses; changes audited). This **supersedes** the "finer permissions extend the same claim later / `require_role` only" wording above. Membership still does **not** live on `Principal`. See [spec 043](../../specs/043-admin-rbac-mvp/spec.md) (now `status: ready`), [spec 042](../../specs/042-admin-app-shell/spec.md) (`status: ready`), and [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md). |
+| 2026-07-26 | §2: recorded the **admin data topology** — admin-domain Cosmos containers (starting with `admin_role_capabilities` from spec 043, and the admin audit trail + admin data-model containers from the upcoming spec 044) live in a **dedicated `rettxadmindb` database in the same Cosmos account**, NOT in `rettxdb`. Prompted by `rettxdb` sitting at/near the **25-container shared-throughput ceiling** (~24 containers today) plus admin/patient data segregation. Needs a new `RETTX_ADMIN_DATABASE_NAME` config + a separate admin database handle. See [ADR 0013](../../docs/adr/0013-admin-data-dedicated-cosmos-database.md). |
