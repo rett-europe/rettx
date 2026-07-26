@@ -105,7 +105,25 @@ are coordinated through a cross-cutting spec.
 - **Clinician** — authorised medical professional with access scoped by
   permissions.
 - **Admin** — registry operator with administrative access via the admin
-  surface.
+  surface. Admins authenticate via **Microsoft Entra ID (MSAL)**, not Auth0.
+- **Entra App Role** — the **source of truth for admin authorization**. Admin
+  roles are provisioned as App Roles in the Entra app registration and delivered
+  in the verified access-token **`roles` claim**; `rettxapi` reads that claim to
+  authorize admin requests. This is deliberately **not** a DB-driven
+  `Principal.role` — admins are Entra principals that may have no `Principal`
+  record (see [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md)).
+- **Admin role set (MVP)** — the thin admin RBAC vocabulary
+  (specs 042/043, ADR 0012): `super_admin` (owner / break-glass; superset of all
+  checks), `admin` (base operator role required by every admin endpoint), and
+  `read_only` (view admin data, no mutations). Finer permissions extend the same
+  `roles` claim later. These are **admin authorization** roles and are distinct
+  from the caregiver **Permission level** (`owner`/`edit`/`read`) below and from
+  the account-lifecycle `Principal.status` (`PROVISIONAL`/`ACTIVE`/`LOCKED`).
+- **`RBAC_ENABLED`** — the rollout flag convention for admin RBAC. Admin role
+  enforcement in `rettxapi` is gated behind `RBAC_ENABLED` (**default OFF**) so
+  roles cannot lock admins out before Entra App Roles are provisioned and
+  assigned. Enable sequence: provision App Roles → assign → verify the `roles`
+  claim appears in tokens → flip the flag on.
 - **Mutation** — a genetic variant recorded against a patient, expressed in
   HGVS where applicable. Extraction and validation are delegated to the
   [`rettxmutation`](https://github.com/rett-europe/rettxmutation) library.
@@ -173,6 +191,20 @@ be reconciled, not a feature.
 
 Authorization is **always** enforced server-side. UI gating is a usability
 courtesy, not a security control.
+
+**Admin authorization (RBAC).** Admin authorization uses **Entra App Roles** as
+the source of truth: roles are provisioned in the Entra app registration and
+delivered in the verified token **`roles` claim**, which `rettxapi` enforces
+server-side via a reusable `require_role(*roles)` / `require_permission(perm)`
+dependency layered on `get_admin_id`. The MVP role set is `super_admin` /
+`admin` / `read_only` (see §2). Admin roles do **not** live in the DB
+(`Principal` is the caregiver identity and may not exist for an admin) and admin
+is **not** migrated to Auth0 — the backend trusts Entra tokens only for admin.
+Enforcement rolls out behind the `RBAC_ENABLED` flag (default OFF). `rettxadmin`
+reflects the `roles` claim to gate nav items and routes, but that is **UX only**;
+the API is the boundary. See [spec 043](../../specs/043-admin-rbac-mvp/spec.md),
+[spec 042](../../specs/042-admin-app-shell/spec.md), and
+[ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md).
 
 ## 5. Internationalization
 
@@ -372,3 +404,4 @@ GitHub docs on
 | 2026-07-11 | Added §10 **AI-assisted code review & custom instructions** ([ADR 0007](../../docs/adr/0007-ai-code-review-custom-instructions.md)): every repo must maintain a review-focused `.github/copilot-instructions.md`; path-specific rules go in `.github/instructions/*.instructions.md` with `applyTo:` frontmatter (never in the repo-wide file); files stay concise and enforce the cross-cutting non-negotiables (PHI, auth, i18n, contract ownership, test integrity). Renumbered the change log to §11. Prompted by an audit showing all repos have the file but content was uneven/agent-oriented (e.g. `rettxweb` thin, `rettxapi` with a stray `applyTo:` in the repo-wide file). |
 | 2026-07-11 | §6: retired the autonomous **Squad/Ralph** toolkit (the `squad-*.yml` workflows and `.squad/` directories) across the downstream repos. The `squad` label is **retained** as the fan-out inbox marker, now picked up by a human/orchestrated working session rather than an automated agent. See [ADR 0008](../../docs/adr/0008-retire-autonomous-squad-agent-system.md). |
 | 2026-07-26 | §2: added the narrow **`pulse`** contributor permission scope (create Pulse + minimal read only; server-enforced; does not imply general `read`), the **Pulse contributor** and **Invite** (with lifecycle states) vocabulary, and the **Pulse Contribution Consent** ConsentDocument subtype. Prompted by [spec 041](../../specs/041-multi-caregiver-sharing/spec.md) and [ADR 0011](../../docs/adr/0011-pulse-contributor-access-scope.md) (multi-caregiver Pulse contribution: single owner + narrow `pulse` scope). |
+| 2026-07-26 | §2/§4: added the **admin RBAC** vocabulary and conventions — **Entra App Role** as the admin-authorization source of truth (the token `roles` claim), the MVP role set (`super_admin`/`admin`/`read_only`), and the **`RBAC_ENABLED`** flag-gated rollout convention (default OFF). Reinforced §4 that admin authorization is enforced **server-side** in `rettxapi` via a `require_role`/`require_permission` dependency, admin stays on **Entra** (not Auth0, not a DB `Principal.role`), and client gating is UX only. Prompted by the admin app maturity program — see [spec 042](../../specs/042-admin-app-shell/spec.md) (gated login + config-driven left nav with a `requiredRoles` extension point), [spec 043](../../specs/043-admin-rbac-mvp/spec.md) (RBAC MVP), and [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md). |
