@@ -9,7 +9,7 @@
 spec_id: "042"
 slug: "admin-app-shell"
 title: "rettX Admin — gated login screen + config-driven left navigation shell"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-26"
 author: "perocha"
 source_issue: ""
@@ -192,6 +192,14 @@ interface AdminNavGroup {
 A presentational `SidenavComponent` iterates `AdminNavGroup[]` from a dedicated
 config file. Adding, reordering, grouping, or (later) role-gating an item is a
 data edit.
+
+> **Consistency note (RBAC).** For the MVP, the `requiredRoles` slot stays a
+> **coarse role-based** nav gate consumed by
+> [spec 043](../043-admin-rbac-mvp/spec.md). Spec 043 makes the granular
+> capabilities that `admin`/`read_only` grant **super_admin-configurable**;
+> finer nav gating **may** later consult those configured capabilities, but this
+> shell keeps the simple `requiredRoles` gate and the **API remains the true
+> authorization boundary** regardless of what the nav shows.
 
 ## Proposed grouping of the current routes
 
