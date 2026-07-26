@@ -74,8 +74,17 @@ fanout:
       (4) PERSISTED ROLE→CAPABILITY STORE. Add a small Cosmos container / config
       document (e.g. `admin_role_capabilities`) keyed by role, holding the
       capability list for `admin` and for `read_only`. `super_admin` is NOT
-      stored (implicitly all). SEED sensible DEFAULTS on first run / migration so
-      enabling enforcement never locks anyone out:
+      stored (implicitly all). **DATA TOPOLOGY (ADR 0013):** this container lives
+      in the DEDICATED ADMIN Cosmos database **`rettxadmindb`** (same Cosmos
+      account, NOT `rettxdb`), because `rettxdb` is at/near the 25-container
+      shared-throughput ceiling. Add a `RETTX_ADMIN_DATABASE_NAME` config setting
+      and an **admin Cosmos database handle** (a second `database` obtained from
+      the existing `CosmosClient`/account), have provisioning/IaC create
+      `rettxadmindb`, and create the `admin_role_capabilities` container there via
+      the admin handle — see
+      [ADR 0013](../../docs/adr/0013-admin-data-dedicated-cosmos-database.md).
+      SEED sensible DEFAULTS on first run / migration so enabling enforcement
+      never locks anyone out:
         - `admin` = ALL capabilities EXCEPT super-only (`rbac.manage`) — i.e.
           every `.view` + `.manage` + `campaigns.send` + `genetics.manage`, etc.
           (This reproduces today's "admin can do everything" as data.)
@@ -83,6 +92,9 @@ fanout:
           no `.manage_access`).
         - `super_admin` = all (implicit; not persisted, not editable).
       Keep the document tiny and versioned; store `updated_by` + `updated_at`.
+      NOTE (spec 044 forward-link): the upcoming admin **audit trail** and admin
+      data-model containers MUST also live in `rettxadmindb` per ADR 0013 — do
+      NOT add new admin containers to `rettxdb`.
 
       (5) SUPER_ADMIN-ONLY CONFIG ENDPOINTS. Add endpoints to read and update the
       config, guarded by `require_role("super_admin")`:
@@ -255,6 +267,15 @@ so enabling enforcement never locks anyone out:
 
 The document is versioned and records `updated_by` + `updated_at`.
 
+**Data topology (ADR 0013).** The `admin_role_capabilities` container lives in a
+**dedicated admin Cosmos database, `rettxadmindb`** (same Cosmos account, **not**
+`rettxdb`), because `rettxdb` is at/near the 25-container shared-throughput
+ceiling. This needs a `RETTX_ADMIN_DATABASE_NAME` config setting and a separate
+admin database handle from the existing account. The upcoming admin **audit
+trail** and admin data-model containers (spec 044) MUST also land in
+`rettxadmindb`. See
+[ADR 0013](../../docs/adr/0013-admin-data-dedicated-cosmos-database.md).
+
 ## Enforcement (rettxapi — owner, the security boundary)
 
 - `get_user_info()` stops hardcoding `is_admin=True`; it reads the Entra `roles`
@@ -347,7 +368,9 @@ Off ⇒ today's behaviour (any authenticated Entra admin allowed); on ⇒
 - [ ] A server-owned **capability catalog** (`area.action`) exists, grouped by
       admin area and grounded in the real `app/routers/admin/*` routers, incl.
       super-only `rbac.manage` and reserved `audit.view`.
-- [ ] A persisted **role→capability store** (`admin_role_capabilities`) exists,
+- [ ] A persisted **role→capability store** (`admin_role_capabilities`) exists in
+      the dedicated admin database **`rettxadmindb`** (same account, not
+      `rettxdb`; new `RETTX_ADMIN_DATABASE_NAME` + admin handle per ADR 0013),
       keyed by role, **seeded** with defaults: `admin` = all-but-super,
       `read_only` = views only; `super_admin` implicit/all/not stored.
 - [ ] `require_capability("area.action")` enforces server-side (super_admin
@@ -385,6 +408,7 @@ Off ⇒ today's behaviour (any authenticated Entra admin allowed); on ⇒
 - Pairs with **[spec 042 — Admin app shell](../042-admin-app-shell/spec.md)**,
   which defines the `requiredRoles` nav extension point this spec consumes.
 - Decision record: **[ADR 0012 — Admin RBAC via Entra App Roles](../../docs/adr/0012-admin-rbac-entra-app-roles.md)**.
+- Data topology: **[ADR 0013 — Admin data in a dedicated Cosmos database](../../docs/adr/0013-admin-data-dedicated-cosmos-database.md)** (`admin_role_capabilities` and future admin containers live in `rettxadmindb`).
 - Conventions: **[patterns.md §4](../../.specify/memory/patterns.md)** (auth/authz,
   server-side enforcement) and §2 (role + capability vocabulary).
 - A dedicated admin **audit trail** is deferred to a future spec 044 (referenced
