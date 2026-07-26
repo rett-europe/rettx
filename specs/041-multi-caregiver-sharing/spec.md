@@ -384,8 +384,10 @@ Pulse-contributor grant (still consent-gated), revoke, and read the audit trail.
 - **II — Privacy by design (NON-NEGOTIABLE)**: strict pre-accept minimization,
   narrow `pulse` scope (contributors never see the clinical record), distinct
   withdrawable consent, purpose limitation, verified email-match, audit. ✅✅
-- **III — Transparency (NON-NEGOTIABLE)**: pair with an ADR and patient-readable
-  docs on the sharing/consent model before `ready`. ⚠️ *(ADR to be authored.)*
+- **III — Transparency (NON-NEGOTIABLE)**: the architectural decision (new
+  `pulse` scope + single-owner boundary) is recorded in
+  [ADR 0011](../../docs/adr/0011-pulse-contributor-access-scope.md);
+  patient-readable docs to follow on the public site before launch. ✅
 - **IV — Accuracy/accountability**: Pulse-entry provenance/attribution
   preserved. ✅
 - **VI — Security baseline**: server-side enforcement of the narrow `pulse`
@@ -408,13 +410,16 @@ Pulse-contributor grant (still consent-gated), revoke, and read the audit trail.
 - **`rettxid` is not affected**; invite tokens are not rettX IDs.
 - Default invite expiry is **7 days**.
 
-## Proposed patterns.md extensions (do not invent ad hoc)
+## patterns.md extensions (applied)
 
-- **Permission-level vocabulary**: add a narrow **`pulse`** (contribute) scope
-  below `edit` (current levels are `owner | edit | read`), defined as
-  Pulse-create + minimal Pulse read only.
-- **Vocabulary**: *Pulse contributor* (a principal holding the `pulse` scope on
-  a patient), *Invite*, and the single-**owner** stewardship model.
+These were **applied** to [`.specify/memory/patterns.md`](../../.specify/memory/patterns.md)
+§2 on 2026-07-26 (see its §11 change log):
+
+- **Permission level**: added the narrow **`pulse`** scope — *not* a rung on the
+  read/edit ladder (does not imply general `read`); Pulse-create + minimal Pulse
+  read only, server-enforced.
+- **Vocabulary**: *Pulse contributor* (a principal holding the `pulse` scope),
+  *Invite* (with lifecycle states), and the single-**owner** stewardship model.
 - **Invite state vocabulary**: `pending | accepted | declined | expired |
   cancelled` (invite) and `active | revoked` (grant).
 - **ConsentDocument subtype**: *Pulse Contribution Consent*, versioned, distinct
@@ -422,7 +427,9 @@ Pulse-contributor grant (still consent-gated), revoke, and read the audit trail.
 
 ## Open decisions
 
-All headline and secondary decisions are **resolved** (2026-07-25). Remaining
-pre-`ready` work is authoring, not deciding: the companion **ADR** for the
-sharing/consent model (Principle III) and the `patterns.md` extensions listed
-above. Flip `status: ready` once those land and the fanout summaries are agreed.
+All headline and secondary decisions are **resolved** (2026-07-25). The
+companion **[ADR 0011](../../docs/adr/0011-pulse-contributor-access-scope.md)**
+(new `pulse` scope + single-owner boundary) is authored and the `patterns.md`
+extensions are applied. Remaining before `status: ready`: agree the fanout
+summaries and add patient-readable docs on the public site. Flip `status: ready`
+to fan out. **Kept `draft` for now — nothing fans out.**
