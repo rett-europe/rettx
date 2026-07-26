@@ -44,12 +44,14 @@ fanout:
       `require_patient_write_access_v2` (EDIT+). What is MISSING is any mechanism
       to CREATE a share. Build the CONSTRAINED v1:
 
-      (1) New INVITE entity/container with a state machine
+      (1) New pending **Invitation** entity/container keyed by the invited
+      EMAIL, with a state machine
       `pending → accepted | declined | expired | cancelled`, a single-use token
-      stored HASHED at rest, an expiry (default 7 days), the invited email, the
-      inviter (must be the patient OWNER), and the target patient. There is NO
-      role choice — every invite grants exactly the fixed Pulse-contributor
-      scope.
+      stored HASHED at rest, an expiry (default 7 days), the inviter (owner or
+      admin), the target patient, the fixed `pulse` scope, and the Pulse
+      Contribution Consent id/version to be accepted. There is NO role choice.
+      Invites are NOT restricted to already-registered users (Model B — invite
+      any email, provision-on-accept).
       (2) New NARROW permission scope `pulse` (contribute), strictly weaker than
       `edit`: it permits CREATING Pulse entries and a MINIMAL read (patient
       display name/nickname + the Pulse tracker & history) and NOTHING else —
@@ -57,11 +59,16 @@ fanout:
       info. Add a `require_patient_pulse_write` dependency and ensure Pulse-write
       endpoints accept it while every non-Pulse read/write endpoint rejects it.
       This MUST be enforced server-side (UI hiding is not a control).
-      (3) On ACCEPT, verify the authenticated caller's VERIFIED email matches the
-      invited email (reject on mismatch), require acceptance of the current
-      Pulse Contribution Consent version, then activate a `patient_access` grant
-      at the `pulse` scope that RECORDS the accepted consent
-      (`consent_document_id` + `version` + `accepted_at` + `principal_id`).
+      (3) RESOLVE-INVITATION-TO-GRANT on ACCEPT (post-authentication): if the
+      invitee has no rettX account they self-register via the EXISTING Auth0
+      signup (rettxapi does NOT create Auth0 users) and their Principal is
+      JIT-provisioned by the existing `ensure_principal_for_user` path; then
+      verify the authenticated principal's VERIFIED email matches `invited_email`
+      (reject on mismatch — THIS is the wrong-email enforcement point), require
+      acceptance of the current Pulse Contribution Consent version, and create the
+      `pulse` `patient_access` grant RECORDING the accepted consent
+      (`consent_document_id` + `version` + `accepted_at` + `principal_id`),
+      transitioning the invitation `pending → accepted`.
       (4) Revocation: only the OWNER (or admin) may revoke a contributor; a
       contributor may self-revoke (= consent withdrawal). Revoke = soft (reuse
       `include_revoked`); Pulse entries the contributor authored REMAIN with
@@ -77,6 +84,13 @@ fanout:
       Endpoints: create-invite, list-invites (owner), resend-invite,
       cancel-invite, accept-invite, decline-invite, list-contributors (owner),
       revoke-contributor.
+      NET-NEW pieces are exactly: (a) the pending email-keyed **Invitation**
+      entity + lifecycle; (b) the **resolve-invitation-to-grant** step
+      (verified-email-match + consent record + `pulse` grant creation); (c) the
+      invite-issue + accept endpoints. rettxapi MUST NOT gain Auth0
+      user-creation and MUST NOT change the `Principal` model — the invitee
+      self-registers via existing Auth0 signup and JIT provisioning does the
+      rest.
   - repo: rettxweb
     summary: |
       Caregiver-facing (Auth0, Capacitor native Android) UI:
@@ -141,8 +155,9 @@ constrained.
    (self-service, primary); **admin** is a support path. Neither may bypass
    invitee consent.
 2. **Wrong-email safeguard** — **Strictest**: nothing identifying is revealed
-   pre-acceptance; a grant activates only when the accepting identity's
-   **verified email matches** the invited address.
+   pre-acceptance; a grant is created only when the accepting identity's
+   **verified email matches** the invited address — enforced at **invitation
+   resolution** (see Model B below).
 3. **Constrained sharing model (single owner + Pulse contributors)** — there is
    **one owner** (the creator) and no "co-caregiver" concept. Invitees are
    **Pulse contributors**: they can **only create Pulse entries** and have a
@@ -155,6 +170,53 @@ constrained.
 **Explicitly out of scope for v1**: multiple equal owners, ownership transfer,
 and complex custody situations (e.g. divorced / dual-equal parents). These are
 accepted as corner cases to be revisited later.
+
+## Platform constraint & invite flow (Model B)
+
+rettX **cannot store a person without a pre-existing Auth0 identity** — verified
+in the live `rettxapi` code:
+
+- `Principal` (`app/models/principal/principal_models.py`) requires
+  `identities: list[Identity]` with `min_length=1`; each `Identity.user_id`
+  (Auth0 `sub`) is mandatory. There is **no** placeholder / pending principal.
+- Principals are created **only** by JIT provisioning on a user's **first
+  authenticated login** (`app/routers/users.py` `/user/profile` →
+  `PrincipalProfileServices.ensure_principal_for_user`, created with
+  `status=PROVISIONAL`). There is no other creation path.
+- `patient_access` grants **require an existing `principal_id`**: `grant_access`
+  calls `_validate_principal_exists` and 404s if it is missing
+  (`app/services/patient_access_services/patient_access_services.py`). There is
+  **no** grant-by-email and no pending grant.
+- The Auth0 client (`app/authentication/auth0_client.py`) can read / search /
+  update users and send verification emails but has **no `create_user`** —
+  rettxapi **cannot mint Auth0 accounts**.
+
+**Decision — Model B: invite any email, provision-on-accept** (Pedro,
+2026-07-26). Invites are **not** restricted to already-registered users; a
+brand-new email can be invited **without rettxapi ever creating an Auth0 user**,
+by reusing the existing Auth0 self-signup + JIT path:
+
+1. **Issue.** The owner (or admin) creates a pending **Invitation** keyed by the
+   invited **email** (net-new entity — see Key Entities). Nothing identifying
+   about the patient is exposed pre-acceptance.
+2. **Self-register (if needed).** The invitee opens the invite link. If they have
+   no rettX account they **self-register through the existing Auth0 signup** —
+   that is what mints the Auth0 identity; rettxapi does not. Their **Principal is
+   JIT-provisioned** on first authenticated login via the existing
+   `ensure_principal_for_user` path. If they already have an account, they log in.
+3. **Resolve.** After authentication, accepting the invitation **resolves it into
+   a `pulse` `patient_access` grant**: the system enforces that the authenticated
+   **principal's verified email matches `invited_email`** (this is the
+   wrong-email safeguard's enforcement point), records the Pulse Contribution
+   Consent acceptance on the grant, and transitions the invitation
+   `pending → accepted`. Decline / expiry / cancel follow the lifecycle.
+
+The **only** net-new backend pieces are therefore: **(a)** the pending
+email-keyed **Invitation** entity + its lifecycle; **(b)** the
+**resolve-invitation-to-grant** step (verified-email-match + consent record +
+`pulse` grant creation); and **(c)** the **invite-issue and accept endpoints**.
+There is **no** Auth0 `create_user` and **no** change to the `Principal`
+model — the invitee self-registers and JIT provisioning does the rest.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -182,10 +244,11 @@ invite exists and an invite message is dispatched — with no second user yet.
 
 ### User Story 2 - Invitee accepts safely with consent (Priority: P1)
 
-The invited person opens the invite, authenticates (or signs up + verifies
-email), sees **nothing identifying** about the patient until their verified
-email is confirmed to match, reviews and accepts the Pulse Contribution Consent,
-and only then gains the Pulse-contributor scope.
+The invited person opens the invite, authenticates (or **self-registers via the
+existing Auth0 signup** if they have no account, which JIT-provisions their
+Principal on first login), sees **nothing identifying** about the patient until
+their verified email is confirmed to match, reviews and accepts the Pulse
+Contribution Consent, and only then gains the Pulse-contributor scope.
 
 **Why this priority**: Consent + privacy are the non-negotiable constraints;
 acceptance is what actually creates access. With Story 1 this is the MVP.
@@ -208,6 +271,11 @@ an active `pulse`-scope grant carrying the consent record.
    **Then** it is `expired` and cannot be accepted (owner may resend).
 4. **Given** a valid invite, **When** the recipient declines, **Then** its state
    becomes `declined` and no grant is created.
+5. **Given** an invited email with **no** rettX account, **When** the recipient
+   self-registers via the existing Auth0 signup and logs in, **Then** their
+   Principal is JIT-provisioned (no rettxapi-side Auth0 user creation) and, on
+   accepting with a matching verified email + consent, a `pulse` grant is
+   created.
 
 ### User Story 3 - Contributor logs Pulse, tightly scoped (Priority: P2)
 
@@ -344,10 +412,14 @@ Pulse-contributor grant (still consent-gated), revoke, and read the audit trail.
 
 ### Key Entities *(include if feature involves data)*
 
-- **Invite**: a pending offer to grant the Pulse-contributor scope. Attributes:
-  patient ref, invited email, inviter principal, state, hashed token,
-  created-at, expires-at. Lifecycle `pending → accepted | declined | expired |
-  cancelled`.
+- **Invitation** (net-new): a pending, **email-keyed** offer to grant the
+  Pulse-contributor scope, resolved into a grant on acceptance. Fields: `id`,
+  `patient_id`, `invited_email`, `scope` (fixed `pulse`), `consent_document_id` +
+  `version` (the Pulse Contribution Consent to be accepted), `token` (hashed at
+  rest), `status` (`pending → accepted | declined | expired | cancelled`),
+  `created_at`, `expires_at` (7 days). Nothing identifying about the patient is
+  exposed pre-acceptance; `invited_email` is the wrong-email safeguard's anchor
+  (matched against the accepting principal's verified email at resolution).
 - **PatientAccess grant** (existing, extended): patient ref, principal, scope
   (`owner` for the creator, `pulse` for contributors), state
   (`active | revoked`), and the **accepted Pulse Contribution Consent** record

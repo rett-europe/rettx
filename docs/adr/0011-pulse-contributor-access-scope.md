@@ -47,6 +47,20 @@ patient info); `read` is both too broad (whole record) and too narrow (no
 write). No existing level fits, and per constitution **VI** the restriction MUST
 be enforced server-side — UI gating is not a security control.
 
+**Identity/provisioning constraint (verified in `rettxapi`).** rettX cannot
+store a person without a pre-existing Auth0 identity. `Principal`
+(`app/models/principal/principal_models.py`) requires `identities` with
+`min_length=1` and a mandatory Auth0 `sub` per identity; principals are created
+**only** by JIT provisioning on first authenticated login
+(`app/routers/users.py` `/user/profile` →
+`PrincipalProfileServices.ensure_principal_for_user`); `patient_access`
+`grant_access` calls `_validate_principal_exists` and 404s without an existing
+`principal_id` (no grant-by-email, no pending grant); and the Auth0 client
+(`app/authentication/auth0_client.py`) has **no `create_user`**. So any "invite a
+new person" design must either restrict invites to already-registered users or
+provision the invitee through the existing self-signup + JIT path — rettxapi
+cannot mint Auth0 accounts.
+
 ## Decision
 
 Introduce a **new, narrow, server-enforced `pulse` permission scope** in the
@@ -74,10 +88,20 @@ and keep the surrounding sharing model minimal.
    `accepted_at`, `principal_id`) is recorded on the grant. The full lifecycle,
    states, and safeguards live in
    [spec 041](../../specs/041-multi-caregiver-sharing/spec.md).
+4. **Model B — invite any email, provision-on-accept.** Given the
+   identity/provisioning constraint above, invites are **not** restricted to
+   already-registered users. The owner (or admin) issues a pending, **email-keyed
+   Invitation**; if the invitee has no account they **self-register through the
+   existing Auth0 signup** (which mints the Auth0 identity) and their Principal is
+   **JIT-provisioned** on first login. Accepting then **resolves the invitation
+   into the `pulse` grant**, gated by the **verified-email-match** against
+   `invited_email`. Deliberate boundary: **no rettxapi-side Auth0 user
+   creation** and **no change to the `Principal` model** — the auth surface stays
+   minimal and reuses the trusted signup + JIT path already in production.
 
 This ADR owns the **architectural** decision (a new access scope + the
-single-owner boundary); spec 041 owns the feature detail and the cross-repo
-fan-out.
+single-owner boundary + the Model B provisioning approach); spec 041 owns the
+feature detail and the cross-repo fan-out.
 
 ## Consequences
 
@@ -126,3 +150,9 @@ fan-out.
   over-engineering for a single capability today; if more scoped-sharing needs
   emerge, that generalisation can be its own ADR building on the `pulse`
   precedent.
+- **Invite existing (already-registered) users only** vs **invite any email**
+  (Model B). Rejected the existing-only option: most family members and carers
+  will not be pre-registered, so restricting invites to known principals would
+  make the feature largely unusable. Model B invites any email and provisions the
+  invitee through the existing Auth0 self-signup + JIT path on accept, which
+  needs no new Auth0 user-creation capability in rettxapi.
