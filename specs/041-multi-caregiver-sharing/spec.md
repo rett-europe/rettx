@@ -30,7 +30,7 @@
 spec_id: "041"
 slug: "multi-caregiver-sharing"
 title: "Patient Sharing — Pulse Contributors (Consent-Gated, Privacy-First)"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-25"
 author: "perocha"
 fanout:
