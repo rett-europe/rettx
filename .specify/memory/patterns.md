@@ -134,9 +134,33 @@ are coordinated through a cross-cutting spec.
   persistence and uniqueness enforcement live in `rettxapi`.
 - **ConsentDocument** — a versioned legal artefact that the caregiver has
   accepted; acceptance is recorded with timestamp and actor.
+  - **Pulse Contribution Consent** — a ConsentDocument *subtype*, distinct from
+    the patient-creation consent and scoped to **contributing Pulse
+    observations** to an existing patient. Accepted by a Pulse contributor at
+    invite acceptance; its `consent_document_id` + `version` + `accepted_at` are
+    recorded on the `patient_access` grant. Introduced by
+    [spec 041](../../specs/041-multi-caregiver-sharing/spec.md).
 - **File** — uploaded artefact (e.g. genetic report, medical document)
   living in segregated blob containers.
 - **Permission level** — `owner`, `edit`, `read`. Server-enforced.
+  - **`pulse`** — a **narrow contributor scope** (not a rung on the
+    read/edit ladder): it permits **creating Pulse entries** and a **minimal
+    read** (patient display name/nickname + the Pulse tracker & history) and
+    **nothing else** — no genetic data, documents, medical profile, or
+    patient-info edit, and it does **not** imply general `read`. Enforced
+    server-side by its own dependency (e.g. `require_patient_pulse_write`). See
+    [ADR 0011](../../docs/adr/0011-pulse-contributor-access-scope.md) and
+    [spec 041](../../specs/041-multi-caregiver-sharing/spec.md).
+- **Pulse contributor** — a principal holding the `pulse` scope on a patient:
+  a person the **owner** invited to help log Pulse. Not a co-owner/steward —
+  the patient **owner** (creator) remains the sole administrator (v1).
+- **Invite** — a pending, consent-gated offer to grant access to a patient by
+  email, with a single-use token (hashed at rest) and expiry. Lifecycle states:
+  `pending → accepted | declined | expired | cancelled`; the resulting
+  `patient_access` grant is then `active` until `revoked`. Privacy-first: nothing
+  identifying is revealed before acceptance and the accepting identity's verified
+  email must match the invited address. Introduced by
+  [spec 041](../../specs/041-multi-caregiver-sharing/spec.md).
 
 If a term means different things in different repos, that is a defect to
 be reconciled, not a feature.
@@ -379,4 +403,5 @@ GitHub docs on
 | 2026-07-11 | §1/§5: renamed the Message Center template folder `emails/` → **`messages/`** ([ADR 0006](../../docs/adr/0006-message-center-template-store-layout.md), Accepted) since it now carries email + in-app + push content; documented the per-channel file-suffix convention. Deploy strips the folder prefix, so the blob container stays `email-templates` and `rettxapi` is unaffected. |
 | 2026-07-11 | Added §10 **AI-assisted code review & custom instructions** ([ADR 0007](../../docs/adr/0007-ai-code-review-custom-instructions.md)): every repo must maintain a review-focused `.github/copilot-instructions.md`; path-specific rules go in `.github/instructions/*.instructions.md` with `applyTo:` frontmatter (never in the repo-wide file); files stay concise and enforce the cross-cutting non-negotiables (PHI, auth, i18n, contract ownership, test integrity). Renumbered the change log to §11. Prompted by an audit showing all repos have the file but content was uneven/agent-oriented (e.g. `rettxweb` thin, `rettxapi` with a stray `applyTo:` in the repo-wide file). |
 | 2026-07-11 | §6: retired the autonomous **Squad/Ralph** toolkit (the `squad-*.yml` workflows and `.squad/` directories) across the downstream repos. The `squad` label is **retained** as the fan-out inbox marker, now picked up by a human/orchestrated working session rather than an automated agent. See [ADR 0008](../../docs/adr/0008-retire-autonomous-squad-agent-system.md). |
+| 2026-07-26 | §2: added the narrow **`pulse`** contributor permission scope (create Pulse + minimal read only; server-enforced; does not imply general `read`), the **Pulse contributor** and **Invite** (with lifecycle states) vocabulary, and the **Pulse Contribution Consent** ConsentDocument subtype. Prompted by [spec 041](../../specs/041-multi-caregiver-sharing/spec.md) and [ADR 0011](../../docs/adr/0011-pulse-contributor-access-scope.md) (multi-caregiver Pulse contribution: single owner + narrow `pulse` scope). |
 | 2026-07-26 | §2/§4: added the **admin RBAC** vocabulary and conventions — **Entra App Role** as the admin-authorization source of truth (the token `roles` claim), the MVP role set (`super_admin`/`admin`/`read_only`), and the **`RBAC_ENABLED`** flag-gated rollout convention (default OFF). Reinforced §4 that admin authorization is enforced **server-side** in `rettxapi` via a `require_role`/`require_permission` dependency, admin stays on **Entra** (not Auth0, not a DB `Principal.role`), and client gating is UX only. Prompted by the admin app maturity program — see [spec 042](../../specs/042-admin-app-shell/spec.md) (gated login + config-driven left nav with a `requiredRoles` extension point), [spec 043](../../specs/043-admin-rbac-mvp/spec.md) (RBAC MVP), and [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md). |
