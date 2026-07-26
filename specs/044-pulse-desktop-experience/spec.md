@@ -66,6 +66,18 @@ fanout:
       OPTIONAL/secondary rettxapi item — pursue it only if a specific insight
       genuinely needs server-side aggregation.
 
+      The desktop experience centres on a dedicated, prototype-driven `Insights`
+      view (KPI bar; seizures/week stacked by severity; time-of-day distribution;
+      sleep-before-seizure; medication-log density waffle; an auto-generated
+      "What stands out" narrative with a medical-claims disclaimer; plus a
+      CONDITIONAL menstrual-cycle co-occurrence panel rendered only when tracked),
+      alongside a composed `Log` dashboard (Calendar + Timeline + Metrics side by
+      side). All analytics are DESCRIPTIVE, never clinical, and each panel is
+      OMITTED when its metric has no data. Three panels are data-dependent
+      (severity, time-of-day, adherence %) and MUST fall back to a reuse-only
+      variant rather than change the Pulse schema — see the spec's Data
+      feasibility caveats.
+
       Accessibility (WCAG 2.2 AA), i18n (all labels as ngx-translate keys across
       the existing locale set — currently 19 app languages, English fallback) and
       theming MUST follow existing rettxweb conventions and match the mobile Pulse
@@ -115,11 +127,25 @@ desktop-specific value.
 ## Goal
 
 Give desktop-web caregivers a proper **wide-screen Pulse experience** that USES
-the horizontal space: a **multi-panel dashboard** showing **Calendar + Timeline +
-Metrics side by side** (instead of tab-switched), PLUS **desktop-only insights**
-that only the extra space affords — trend charts over time, cross-metric
-overlays, longer/multi-month ranges, and KPI summaries with sparklines. This is
-**purely additive**: it must not change what mobile or native users see.
+the horizontal space. The desktop experience is composed of **two complementary,
+desktop-only views**:
+
+1. A **dedicated `Insights` view** — the **centerpiece** of the desktop
+   experience — that turns the logged Pulse data into at-a-glance, **descriptive**
+   analytics the cramped mobile column cannot show: a KPI summary bar, a
+   seizures-per-week chart broken down by severity, a time-of-day distribution, a
+   sleep-before-seizure view, a medication-log density view, an auto-generated
+   **"What stands out"** narrative, and a **conditional** menstrual-cycle
+   co-occurrence panel. This view is modelled directly on the reviewed desktop
+   **prototype** (see *Reference prototype* below).
+2. A **composed `Log` dashboard** that lays the existing **Calendar + Timeline +
+   Metrics** surfaces **side by side** (instead of tab-switched), with cross-panel
+   linkage (select a day → focus the Timeline) the tabbed mobile view cannot do.
+
+Everything is **purely additive**: it must not change what mobile or native users
+see, and every MVP panel is computed **client-side** from the existing Pulse read
+contract. All analytics are **descriptive observations, never clinical claims**
+(rettX is not a medical device) and carry a clear disclaimer.
 
 ## Hard constraint — completely agnostic to mobile / native (NON-NEGOTIABLE)
 
@@ -160,10 +186,11 @@ Two approaches were evaluated:
 1. **Zero risk to mobile/native.** The mobile component tree is not edited at all,
    so there is no way for the desktop work to regress the shipping mobile UX or
    the native app — the cleanest possible expression of the hard constraint.
-2. **Desktop-only insights want their own composition.** Multi-panel layout,
-   trend charts, cross-metric overlays and KPI sparklines are a different
-   information architecture from the mobile tab switcher; forcing both into one
-   component would bloat it and entangle two very different layouts.
+2. **The desktop `Insights` view wants its own composition.** A KPI bar,
+   severity-stacked charts, time-of-day and sleep views, a medication-density
+   view and an auto-generated narrative are a fundamentally different information
+   architecture from the mobile tab switcher; forcing both into one component
+   would bloat it and entangle two very different layouts.
 3. **Lazy-loading keeps the mobile/native bundle lean.** Charting and dashboard
    code load only when a wide web client actually needs them, so native and
    mobile users never pay for desktop-only weight.
@@ -209,45 +236,127 @@ Two approaches were evaluated:
   - Native app → the reconciler is inert (`isNativeApp()` short-circuits); nothing
     ever switches.
 
-## Desktop layout — panels & insights
+## Reference prototype
 
-The desktop shell composes the existing Pulse surfaces into a **multi-panel
-dashboard** and adds insights that only the wide layout affords. Every panel and
-MVP insight is fed **client-side** from the existing `PulseDataSource`
+A **desktop prototype** was produced and reviewed (a static HTML mockup built from
+the real rettxweb Pulse components — sidebar, desktop shell, header — with
+synthetic sample data). It is the visual source of truth for the `Insights` view:
+KPI bar, seizures-per-week stacked by severity, time-of-day distribution,
+sleep-before-seizure, medication-log density (waffle), the auto-generated
+"What stands out" narrative with a medical-claims disclaimer, and the conditional
+menstrual-cycle co-occurrence panel. The panels and caveats below encode that
+prototype into buildable, reuse-first requirements. (Prototype artefact held with
+the spec owner; no patient data — synthetic identifiers only.)
+
+## Desktop layout — views, panels & insights
+
+The desktop shell exposes **two complementary, desktop-only views** — a
+prototype-driven **`Insights`** view (the centerpiece) and a composed **`Log`**
+dashboard — reachable from a simple desktop-level switch. Both are fed
+**client-side** from the existing `PulseDataSource`
 (`src/app/core/services/pulse-data-source.ts`) — no new endpoint for the MVP.
+Every analytics panel is a **descriptive observation, never a clinical claim**,
+and each panel **renders only when its underlying metric actually has data**
+(and, where noted, the required attribute); it is **omitted entirely** otherwise,
+so an absent panel never implies tracking that isn't happening.
 
-### MVP (must ship)
+### View 1 — `Insights` (desktop centerpiece, prototype-driven)
+
+Modelled on the reviewed desktop prototype (see *Reference prototype*). MVP panels:
+
+1. **KPI summary bar.** A top strip of KPI cards (Seizures / Doses / Notes,
+   extensible to other seed + custom metrics) showing the period total plus a
+   small **sparkline** trend, computed client-side from `getMonthMarkers()` /
+   `getMetricHistory()`. The wide-screen evolution of the three cramped mobile
+   stat cards.
+2. **Seizures per week — stacked by severity.** A weekly bar chart of seizure
+   counts, **stacked by severity band**, over the selected range. *Data check:*
+   requires a severity attribute on seizure entries; if the current entry schema
+   does not capture severity, MVP ships the weekly count **without** the severity
+   breakdown and the stacked dimension moves to Stretch (no schema change here).
+3. **Time-of-day distribution.** When events (seizures by default, any metric by
+   selection) occur across the day, bucketed into day-parts. *Data check:*
+   requires entry **timestamps** (time-of-day), not date-only records; if the
+   read contract exposes only dates, this panel is deferred to Stretch pending a
+   timestamp-bearing read (see Open questions).
+4. **Sleep-before-seizure.** A descriptive view pairing logged sleep with
+   subsequent seizure events to surface visual co-occurrence over the range.
+   *Data check:* renders only when both sleep and seizure metrics have sufficient
+   overlapping data; purely descriptive, explicitly **not** a causal claim.
+5. **Medication-log density (waffle).** A waffle/heatmap of **doses logged** per
+   day over the range, giving an at-a-glance view of logging regularity. *Framing
+   caveat:* this is **"doses logged", NOT an adherence %** — a true adherence
+   percentage needs an **expected-dose denominator** (a prescription / schedule)
+   which the current Pulse model does not hold; an adherence-% waffle is Stretch,
+   gated on a schedule source (see Open questions). The MVP waffle is descriptive
+   density only.
+6. **"What stands out" — auto-generated narrative.** A short, **template/rule-based**
+   summary of notable descriptive patterns in the selected range (e.g. "most
+   seizures this month were logged in the evening"), generated **client-side from
+   the same data** — no LLM, no new endpoint. MUST carry a visible
+   **medical-claims disclaimer** ("descriptive summary of your logs, not medical
+   advice"), MUST use non-diagnostic language, and MUST degrade gracefully to
+   nothing when there is too little data to say anything meaningful.
+
+**Conditional / sensitive panel:**
+
+7. **Menstrual-cycle co-occurrence.** A panel overlaying logged events against the
+   menstrual-cycle metric to surface visual co-occurrence. It is **rendered ONLY
+   when the patient actively tracks the menstrual-cycle metric AND has sufficient
+   data**; it is **omitted entirely** otherwise (never an empty state). Given the
+   sensitivity of this data it is descriptive-only, clearly disclaimered, and its
+   presence/absence must not leak whether cycle tracking is on to anyone who
+   shouldn't see it. Confirm consent/visibility expectations before promoting from
+   conditional (see Open questions).
+
+### View 2 — `Log` dashboard (composed existing surfaces)
 
 1. **Multi-panel dashboard — Calendar + Timeline + Metrics side by side.**
-   Replace the tab switcher with a responsive grid: the **month calendar** (reuse
-   the existing marker/legend/day-cell model from
-   `getMonthMarkers()` / `CalendarDay` / `DayMarker`) as the primary panel, with
-   the **Timeline** (`getTimeline()` + filter chips) and **Metrics catalogue**
+   Compose the existing surfaces into a responsive grid: the **month calendar**
+   (reuse the existing marker/legend/day-cell model from `getMonthMarkers()` /
+   `CalendarDay` / `DayMarker`) as the primary panel, with the **Timeline**
+   (`getTimeline()` + filter chips) and **Metrics catalogue**
    (`getMetricDefinitions()` — entry counts + last-logged) as adjacent panels, all
    visible at once. Selecting a day in the calendar filters/focuses the Timeline
    panel (cross-panel linkage the tabbed mobile view cannot do).
-2. **KPI summary bar with sparklines.** A top strip of KPI cards
-   (Seizures / Doses / Notes, extensible to other seed + custom metrics) showing
-   the period total plus a small **sparkline** trend, computed client-side from
-   `getMonthMarkers()` / `getMetricHistory()`. This is the wide-screen evolution
-   of the three cramped mobile stat cards.
-3. **Per-metric trend chart, inline.** A charts panel that renders a metric's
+2. **Per-metric trend chart, inline.** A charts panel that renders a metric's
    history over a selectable range **inline** on the dashboard (line/bar), reusing
    `getMetricHistory(patientId, metricCode, range)` which already returns
    `MetricHistoryPoint[]` over a `DateRange`. On mobile this requires drilling into
    the full-screen `metric/:metricCode` detail; desktop shows it without leaving
    the dashboard.
-4. **Longer / adjustable date range.** A range selector (e.g. 1 / 3 / 6 months)
-   driving the Timeline, KPI sparklines and trend chart — desktop can comfortably
-   show multi-month spans. Multi-month data is assembled client-side from the
-   existing per-month / per-range reads.
+
+### Shared controls
+
+- **Longer / adjustable date range.** A range selector (e.g. 1 / 3 / 6 months)
+  driving the KPI sparklines, all `Insights` panels, the Timeline and the trend
+  chart — desktop can comfortably show multi-month spans. Multi-month data is
+  assembled client-side from the existing per-month / per-range reads.
+
+### Data feasibility caveats (summary)
+
+The panels above with a *Data check* / *framing caveat* are the only MVP risks,
+and each has a defined **reuse-first fallback** rather than a schema or endpoint
+change:
+
+| Panel | Needs | If unavailable (MVP fallback) |
+| --- | --- | --- |
+| Seizures/week by severity | severity on seizure entries | ship weekly count, drop severity stacking → Stretch |
+| Time-of-day distribution | entry timestamps (time, not date) | defer panel to Stretch pending timestamp read |
+| Medication waffle as adherence % | expected-dose denominator (schedule) | ship "doses logged" density only; adherence % → Stretch |
+| Menstrual-cycle panel | active cycle tracking + consent posture | omit panel entirely unless tracked + confirmed |
 
 ### Stretch (nice to have; explicitly out of MVP scope)
 
+- **Adherence-% medication waffle** — once an expected-dose schedule source
+  exists to provide the denominator.
+- **Severity-stacked seizures** and **time-of-day distribution** — promoted to MVP
+  only if the entry schema / read already carries severity and timestamps
+  respectively (see the caveats table).
 - **Cross-metric overlay / correlation.** Plot multiple metrics on a shared time
-  axis (e.g. seizures vs. sleep vs. medication adherence) to surface visual
-  co-occurrence. If client-side assembly over long ranges proves too heavy/chatty,
-  this is the trigger for the OPTIONAL rettxapi aggregation item — not before.
+  axis (e.g. seizures vs. sleep vs. medication) to surface visual co-occurrence.
+  If client-side assembly over long ranges proves too heavy/chatty, this is the
+  trigger for the OPTIONAL rettxapi aggregation item — not before.
 - **Multi-month calendar (quarter view).** Two-to-three months side by side.
 - **Printable / exportable dashboard snapshot.** Deferred; aligns with the Pulse
   media/PDF Phase 2 in spec 035, not this spec.
@@ -258,10 +367,14 @@ MVP insight is fed **client-side** from the existing `PulseDataSource`
 **rettxweb-first, reuse existing data.** The desktop MVP consumes the **existing**
 Pulse `/v2` read contract through the current `PulseHttpDataSource`
 (`src/app/core/services/pulse-http.data-source.ts`) behind the stable
-`PulseDataSource` abstraction. All MVP insights (KPIs, sparklines, trend chart,
-multi-month ranges) are derived **client-side** from
-`getMonthMarkers`, `getTimeline`, `getMetricHistory`, `getMetricDefinitions` and
-`getEntriesForDay`. **No new endpoint is required to ship the MVP.**
+`PulseDataSource` abstraction. All MVP insights (KPI bar, sparklines, seizures/week,
+time-of-day, sleep-before-seizure, medication-log density, the "What stands out"
+narrative, the composed Log dashboard and multi-month ranges) are derived
+**client-side** from `getMonthMarkers`, `getTimeline`, `getMetricHistory`,
+`getMetricDefinitions` and `getEntriesForDay`. **No new endpoint is required to
+ship the MVP** — the three data-dependent panels (severity, time-of-day, adherence
+%) each fall back to a reuse-only variant rather than forcing a schema or endpoint
+change (see *Data feasibility caveats*).
 
 An **OPTIONAL, secondary** rettxapi aggregation endpoint is flagged in the fanout
 **only** as a follow-up, to be pursued **only if** a specific stretch insight
@@ -313,9 +426,23 @@ client-side. Prefer reuse; do not build it speculatively.
   selected by a `CanMatch` guard.
 - [ ] The desktop route sits behind the **same eligibility gate** as mobile
   (Feature 040) and shows the identical guidance states when not eligible.
-- [ ] MVP desktop insights (KPI cards + sparklines, inline per-metric trend chart,
-  adjustable multi-month range) are computed **client-side** from the existing
-  `PulseDataSource` — **no new rettxapi endpoint** is introduced for the MVP.
+- [ ] The desktop **`Insights` view** ships as the centerpiece with its MVP panels
+  (KPI bar, seizures/week, time-of-day, sleep-before-seizure, medication-log
+  density, "What stands out" narrative) plus the composed **`Log`** dashboard, all
+  computed **client-side** from the existing `PulseDataSource` — **no new rettxapi
+  endpoint** for the MVP.
+- [ ] Every analytics panel is **descriptive, not clinical**: non-diagnostic
+  language, a visible **medical-claims disclaimer** on the "What stands out"
+  narrative, and graceful **omission** of any panel whose underlying metric lacks
+  data (no misleading empty states).
+- [ ] The **menstrual-cycle** panel renders **only** when the patient actively
+  tracks that metric and has sufficient data, is **omitted entirely** otherwise,
+  and its presence/absence does not leak cycle-tracking status to unauthorised
+  viewers.
+- [ ] The three data-dependent panels (severity stacking, time-of-day, adherence %)
+  either ship from existing data **or** fall back to their reuse-only variant per
+  the *Data feasibility caveats* — **no Pulse schema or write-path change** is made
+  in this spec.
 - [ ] The dashboard meets **WCAG 2.2 AA** (keyboard nav, accessible chart
   alternatives, reduced-motion, AA contrast) and all strings are **translation
   keys** across the existing locale set with English fallback.
@@ -334,6 +461,10 @@ Aligned with the [program constitution](../../.specify/memory/constitution.md):
   it reuses the existing server-side Pulse eligibility/authorization boundary
   (Feature 040) and adds no new data-bearing endpoint for the MVP — UI gating is a
   usability nicety, not a security control.
+- **Medical-safety framing (rettX is not a medical device).** All desktop
+  analytics — including the "What stands out" narrative and any co-occurrence
+  panel — are **descriptive observations only**, use non-diagnostic language, and
+  carry a visible disclaimer; no clinical, diagnostic or predictive claim is made.
 - **III — Transparency.** A single cross-cutting spec in the control plane; any
   future backend aggregation is captured here (optional fanout) rather than
   decided ad hoc downstream.
@@ -351,8 +482,11 @@ edit, per the guidance that shared vocabulary changes are proposed in-spec first
 
 ## Fanout summary
 
-- **rettxweb** — PRIMARY: build the separate desktop Pulse route/shell + MVP
-  panels/insights (see fanout front-matter).
+- **rettxweb** — PRIMARY: build the separate desktop Pulse route/shell with the
+  prototype-driven `Insights` view (KPI bar, seizures/week, time-of-day,
+  sleep-before-seizure, medication-log density, "What stands out" + disclaimer,
+  conditional cycle panel) and the composed `Log` dashboard (see fanout
+  front-matter and Data feasibility caveats).
 - **rettxapi** — OPTIONAL / SECONDARY: a read-only Pulse insights aggregation
   endpoint, pursued only if a stretch insight can't be computed client-side.
 - **rettxadmin / rettxid / templates** — **none**.
@@ -369,3 +503,20 @@ edit, per the guidance that shared vocabulary changes are proposed in-spec first
 - **Correlation insight placement.** Confirm whether cross-metric correlation
   stays a stretch item or is promoted once client-side feasibility is measured
   (this is the deciding factor for the optional rettxapi endpoint).
+- **Seizure severity availability.** Does the current seizure entry schema capture
+  a severity band? If not, MVP ships un-stacked weekly counts and severity is
+  Stretch (no schema change in this spec).
+- **Entry timestamps for time-of-day.** Does the Pulse read contract expose event
+  **times** (not just dates)? The time-of-day distribution needs them; if
+  date-only, the panel is deferred to Stretch pending a timestamp-bearing read.
+- **Medication adherence denominator.** A true adherence % needs an expected-dose
+  schedule/prescription source the current Pulse model does not hold. MVP ships
+  "doses logged" density; confirm whether/where a schedule source could come from
+  before promoting adherence % from Stretch.
+- **Menstrual-cycle panel — consent & visibility.** Confirm the consent/visibility
+  posture for surfacing cycle co-occurrence (sensitive data) before promoting it
+  from conditional, including who may see it and how its presence/absence is
+  concealed.
+- **"What stands out" generation.** Confirm the MVP is **template/rule-based** (no
+  LLM, client-side) and agree the disclaimer copy and the non-diagnostic phrasing
+  rules.
