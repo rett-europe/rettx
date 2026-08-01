@@ -18,8 +18,8 @@ invented; no real patient, caregiver or regimen appears in any of these images.
 |---|---|---|
 | [`mobile-1-pulse-calendar-entry-point.png`](mobile-1-pulse-calendar-entry-point.png) | Pulse → Calendar | The entry point into the medication surface: an *"On treatment · 3 medications"* card above the tab strip. This is the origin of **FR-015a**. Note the month-totals row already reads **Exceptions**, not *Doses* (**FR-021a**). |
 | [`mobile-2-treatment-plan.png`](mobile-2-treatment-plan.png) | Treatment plan | The **treatment timeline** (rows = medications, columns = days) plus the before/after panel (**FR-016**, **FR-023a**). The *"A pattern, not a medical conclusion"* line is exactly the framing Principle IV requires. |
-| [`mobile-3-add-medication.png`](mobile-3-add-medication.png) | Add medication | Dose + unit, a schedule chip row, `Started on`, and an optional end date. The *"Grid fills from 1 Aug onwards, until you stop it"* hint is good teaching copy. The mixed slot/clock chip row is the subject of **O5**. |
-| [`mobile-4-medication-detail.png`](mobile-4-medication-detail.png) | Medication detail | Current version, **treatment history** (the version chain, rendered as a story), logged exceptions, and *Stop this medication*. The single edit affordance is why **O3** is still open — there is no visible distinction between *"the treatment changed"* and *"I typed it wrong"*. |
+| [`mobile-3-add-medication.png`](mobile-3-add-medication.png) | Add medication | Dose + unit, a schedule chip row, `Started on`, and an optional end date. The *"Grid fills from 1 Aug onwards, until you stop it"* hint is good teaching copy. The mixed slot/clock chip row prompted **D13**: a dose now carries an optional clock time *and* a caregiver-chosen slot. Note *Bedtime* is not one of the five slots — it is not a sixth column; use `evening`/`other` plus the time. |
+| [`mobile-4-medication-detail.png`](mobile-4-medication-detail.png) | Medication detail | Current version, **treatment history** (the version chain, rendered as a story), logged exceptions, and *Stop this medication*. The single unqualified edit affordance is why **O3** is still open in design — **D14** requires *"the doctor changed it"* and *"I entered it wrong"* to be unmistakably different at the point of editing. |
 | [`mobile-5-log-sheet.png`](mobile-5-log-sheet.png) | Quick-log sheet | Medication has left the daily-logging list; what remains is **Exception dose** ("Missed, extra or different"). |
 | [`mobile-6-exception-dose-sheet.png`](mobile-6-exception-dose-sheet.png) | Exception dose | The four exception types, which is where `rescue-dose` ("Given outside the plan") came from. *"All details are optional"* matches the low-friction rule in **FR-020**. |
 
@@ -39,10 +39,10 @@ Four things in these mocks are **deliberately not** what the spec asks for.
    *"on treatment, nothing reported"*. Rendering it as adherence — on a document
    that then gets handed to a clinician — is a clinical claim rettX cannot
    support. See **FR-016b**, **SC-011**, and ADR 0015 §11.
-2. **"Share with clinician"** (desktop, top right) — the sheet is equally for
-   schools and respite carers, and rettX does not *send* anything: the file is
-   generated on-device and handed to the OS share sheet. Use a recipient-neutral
-   label. See **FR-019d**.
+2. **"Share with clinician"** (desktop, top right) — a **label choice for design**,
+   not a rejection. The one thing that is fixed: rettX does not *send* anything.
+   The file is generated on-device and handed to the OS share sheet, and the
+   sheet is equally for schools and respite carers. See **FR-019d**.
 3. **Treatment as the first and active tab** (desktop) — adding the tab is fine;
    making it the default landing view would change shipped behaviour, which
    **D12** rules out. Also unverified: five intrinsic-width tabs at exactly

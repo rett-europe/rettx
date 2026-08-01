@@ -64,7 +64,11 @@ fanout:
       `pulse_catalog_definitions` pattern but partitioned `/patient_id`: doc id
       `medregimen-{patient_id}-{medication_id}-v{n}`, stable `medication_id`,
       `version`, `valid_from` (required) / `valid_to` (optional), per-slot dose
-      map, `is_current`/`superseded_by`. A dose change / stop / restart writes a
+      map (each dose = amount + optional amount_max + unit code + OPTIONAL
+      wall-clock `time` "HH:MM" — see D13/FR-003; the server must NOT derive the
+      slot from the time, must NOT reject a time that looks inconsistent with its
+      slot, and must NOT validate spacing between doses or medications),
+      `is_current`/`superseded_by`. A dose change / stop / restart writes a
       NEW version; history is NEVER mutated. "As of date D" is a single-partition
       read. No composite index is required: a patient has tens of regimen rows,
       so fetch the partition and resolve latest-version-per-medication in
@@ -187,7 +191,11 @@ fanout:
       `pulse-calendar.component.html` (`role="grid"`/`row`/`columnheader`/
       `gridcell`). On narrow Android, collapse the five columns into stacked
       per-medication cards (label: dose) — NOT horizontal scroll. As-needed
-      (PRN) rows render their instructions spanning the slot columns. Header
+      (PRN) rows render their instructions spanning the slot columns. Where more
+      than one medication shares a slot, order the doses by their clock `time`
+      (ascending, untimed last) and show the time beside the dose — this is what
+      makes "give this one 30 min before that one" legible to someone reading a
+      column top to bottom (FR-016d). Header
       shows the as-of date and the latest known `weight` reading with its date.
       Keep component SCSS under the repo's size budget.
       (4) **Regimen editing writes history, never overwrites** — the edit flow
@@ -313,12 +321,43 @@ gap analysis in `rettxapi` and `rettxweb` (same day).
 - **D3 — Fixed, translatable time-of-day slots**: `morning` · `midday` ·
   `afternoon` · `evening` · `other`. Mirrors the paper sheet (*Matí / Dinar /
   Tarda / Vespre / Altres*), prints predictably, and keeps the grid comparable
-  across patients. Rejected: free-form clock times (unprintable, incomparable,
-  and not how caregivers or schools talk) and caregiver-configurable columns
-  (breaks the shared artefact for marginal gain). **These are a NEW slot set** —
+  across patients. Rejected: caregiver-configurable columns (breaks the shared
+  artefact for marginal gain). **These are a NEW slot set** —
   they are prescribed slots, semantically distinct from the timestamp-derived
   `morning|afternoon|evening|night|anytime` enum in rettxweb's existing
-  `copy-medication` utility, which must not be overloaded.
+  `copy-medication` utility, which must not be overloaded. **Amended by D13:**
+  slots are the printable columns, but a dose also carries an optional clock
+  time.
+- **D13 — A dose carries an optional clock time; the slot stays the printable
+  column.** Doses are prescribed by the clock, caregivers set phone alarms by the
+  clock, and — the case that settles it — one medication is sometimes given a set
+  interval before another. Two doses at 08:00 and 08:30 belong in the same
+  *morning* column, and **only the stored time makes their order legible** on a
+  sheet a school reads top to bottom. So the time is stored and the slot is kept:
+  the slot gives the printed grid its fixed, comparable columns; the time orders
+  the doses inside them. The slot is **caregiver-chosen, never derived**
+  (FR-003a). Sequencing between medications is expressed by the times themselves
+  plus free-text `instructions` — **not** as structured links between rows.
+  Rejected: **clock time as the only field** (the sheet then needs fixed columns
+  back, so rettX would have to invent locale-dependent bucketing rules and print
+  the result onto a document a school follows); **structured drug-to-drug offsets**
+  (creates references between independently-versioned rows that break when either
+  medication is stopped or corrected, and invites the next request — "warn me if
+  these are too close" — which is clinical decision support rettX must not
+  provide, FR-003b).
+- **D14 — Correcting a mistake and recording a prescribed change are two
+  different things, and both must exist.** They look identical to a caregiver —
+  "change the dose" describes both — but they mean opposite things to the record.
+  A prescribed change writes a new version from a date and keeps the old one, so
+  the exposure window stays true. A correction says the earlier value was never
+  right, so no clinical event is created. Getting it backwards corrupts the layer
+  this feature exists for, in both directions: a correction recorded as a change
+  manufactures a dose increase on the day someone noticed a typo, and Insights
+  will then compute a before/after comparison around an event that never
+  happened; a change recorded as a correction erases that the dose ever was
+  300 mg, so a later seizure spike is attributed to the wrong dose. Corrections
+  MUST be audited (FR-012) but MUST NOT appear in the caregiver-facing treatment
+  history, or the story of a treatment becomes a list of typos.
 - **D4 — Retire, don't migrate.** Existing pilot medication entries stay in
   place, read-only, and keep rendering; the preset is retired; regimens start
   empty and caregivers enter their current sheet once. *Rationale:* a best-effort
@@ -599,9 +638,21 @@ label; the medication metric no longer appears in the loggable metric picker.
   `instructions`, a **required `valid_from` date**, an **optional `valid_to`
   date**, and provenance (who/when).
 - **FR-003** A per-slot dose MUST express an `amount` (decimal), an optional
-  `amount_max` (for ranges such as 12–15 drops), and a `unit` **code** from the
+  `amount_max` (for ranges such as 12–15 drops), a `unit` **code** from the
   medication unit set (codes stored separately from translated labels, per the
-  Pulse code/label convention).
+  Pulse code/label convention), and an **optional clock `time`** (`HH:MM`,
+  24-hour, no timezone — a wall-clock time of day, not an instant).
+- **FR-003a** The slot MUST be **chosen by the caregiver**, never derived from
+  the `time` by the system. A time may *suggest* a default slot in the UI, where
+  the caregiver sees and can change it. It MUST NOT be silently bucketed at
+  render or print time: any threshold rettX picks is wrong somewhere — midday is
+  12:00 in one country and 14:00 in another — and that error would print onto a
+  document a school follows.
+- **FR-003b** rettX MUST NOT validate, warn about, or reason over the spacing
+  between doses or between medications. It records what the caregiver entered
+  and prints it legibly. Interaction checking and dose-spacing advice are
+  clinical decision support, which rettX is not (Principle IV, and the
+  not-a-medical-device stance).
 - **FR-004** Regimen rows MUST be **append-only and immutably versioned**: any
   clinical change (dose change, stop, restart) writes a new version; no prior
   version is mutated or deleted. Corrections to a mis-typed row are the one
@@ -710,6 +761,13 @@ label; the medication metric no longer appears in the loggable metric picker.
   respite carer receives, and it MUST NOT be dropped in favour of the treatment
   timeline, which does not answer "what do I give, and when". It needs no
   separate in-app screen — the generated sheet is its preview.
+- **FR-016d** Wherever more than one medication falls in the same slot, the doses
+  MUST be ordered by their clock `time` (ascending, untimed doses last) and the
+  time MUST be shown next to the dose. This is what makes "give this one half an
+  hour before that one" legible to someone reading a column top to bottom, and it
+  applies to the shareable sheet as much as to the in-app views. Any free-text
+  `instructions` MUST travel with the row onto the sheet, because that is where
+  the reason for the ordering lives (D13).
 - **FR-016b** The treatment timeline MUST NOT assert that a dose was **taken**.
   rettX records what was *prescribed* and what the caregiver *reported as an
   exception*; it has no knowledge of administration. A day with no logged
@@ -728,8 +786,11 @@ label; the medication metric no longer appears in the loggable metric picker.
   colour-only meaning — every colour-coded state also carries text or a shape)
   and MUST NOT require horizontal scrolling on a narrow Android screen.
 - **FR-018** Adding, changing, stopping and restarting a medication MUST be
-  possible from the medication surface, and the UI MUST make **"change from this
-  date"** (new version) distinct from **"fix a mistake"** (correction).
+  possible from the medication surface. **Two distinct capabilities are required**
+  (D14): recording a **change prescribed by the doctor** from a given date, which
+  writes a new version and preserves the previous one; and **correcting something
+  the caregiver entered wrongly**, which does not invent a clinical event. The UI
+  MUST make the two unmistakable at the point of editing.
 - **FR-019** The client MUST produce a **one-page A4 PDF medication sheet**
   entirely **on-device**, from a single layout implementation used on every
   surface, containing: the as-of date, the latest known weight and height with
@@ -745,12 +806,13 @@ label; the medication metric no longer appears in the loggable metric picker.
 - **FR-019c** The generated filename MUST NOT contain the patient's name; the
   name belongs inside the document. Filenames surface in cloud backups, chat
   previews and notification banners.
-- **FR-019d** The share action's label MUST NOT name a single recipient type.
-  The sheet is equally for schools, respite carers and clinicians, and a label
-  such as "share with clinician" both narrows it and implies a send capability
-  rettX does not have — the artefact is generated on-device and handed to the
-  OS share sheet or opened for print. Whatever the label, the behaviour on both
-  surfaces MUST be the same single on-device artefact (D6).
+- **FR-019d** The share action MUST NOT imply that rettX sends, stores or
+  transmits anything — the artefact is generated on-device and handed to the OS
+  share sheet or opened for print, and the behaviour MUST be the same single
+  artefact on every surface (D6). *Design and translation note, not a
+  requirement:* the sheet is equally for schools and respite carers, so a label
+  naming one recipient reads narrower than the feature is. Wording is for design
+  to choose per locale.
 - **FR-020** The client MUST allow logging a **missed / extra / changed /
   rescue** dose against a medication; these render on the existing Pulse calendar
   and timeline.
@@ -809,9 +871,11 @@ therefore **not** in this spec's fanout.
   validity interval. `medication_id` (stable across versions), `version`, `name`,
   `as_needed`, `doses` (slot → dose), `instructions`, `valid_from` (required),
   `valid_to` (optional), `is_current`, `superseded_by`, provenance. Append-only.
-- **SlotDose** *(net-new)* — `amount`, optional `amount_max`, `unit` code.
+- **SlotDose** *(net-new)* — `amount`, optional `amount_max`, `unit` code,
+  optional `time` (`HH:MM` wall clock).
 - **TimeOfDaySlot** *(net-new, fixed vocabulary)* — `morning` · `midday` ·
-  `afternoon` · `evening` · `other`. Codes stored, labels translated.
+  `afternoon` · `evening` · `other`. Codes stored, labels translated. The slot
+  is the **printable column**; the time is the **order within it** (D13).
 - **MedicationException** *(net-new, expressed as an existing `TrackerEntry`)* —
   a dated `medication-exception` entry referencing `medication_id` + `version`.
 - **Value primitive `quantity`** *(net-new; extends the program-level
@@ -1190,17 +1254,24 @@ requirement above.
   price is the query retrofit in slice 1.1 (R1a), not money. Separately,
   `rettxdb`'s container strategy deserves its own ADR — that is a follow-up, not
   this spec.
-- **O3 — Correction vs clinical change in the UI.** FR-018 requires the
-  distinction; the exact wording and interaction need design review, because
-  getting it wrong silently corrupts history. The hi-fi prototype shows a single
-  edit affordance on the medication detail screen, so this is still unresolved
-  in design.
-- **O5 — Named slots versus clock times in the schedule.** D3 fixes five
-  translatable slots; the hi-fi prototype offers a mixed chip row (Morning ·
-  08:00 · Midday · 20:00 · Bedtime) producing "Twice daily · 08:00, 20:00".
-  Clock times are closer to how doses are prescribed, but the printable sheet
-  needs slot columns and cross-patient comparability depends on them. Likely
-  resolution: store the slot as the canonical field (so the sheet and any future
-  comparison keep working) and allow an optional exact time alongside it for
-  display. Needs a decision before FR-002 is implemented, because it changes
-  `SlotDose`.
+- **O3 — Correction vs clinical change: SETTLED IN SUBSTANCE, OPEN IN DESIGN.**
+  **D14** settles that both capabilities are required and must be unmistakably
+  distinct. What remains is the interaction and the wording, which must be
+  resolved with pilot caregivers rather than reasoned about: any phrasing built
+  from *version* / *supersede* / *correction* vocabulary will be answered at
+  random. The current lean is a single edit flow asking one question in
+  world terms — *"From when?"* → **"From \<date\>"** or **"It's always been this
+  — I entered it wrong"** — because two separate entry points force the caregiver
+  to categorise before they have seen what is being asked. The hi-fi prototype
+  shows a single, unqualified edit affordance, so this is not yet designed.
+  Sub-question still open: whether a caregiver may correct a version that has
+  already been superseded, where the neighbouring `valid_from` / `valid_to` must
+  stay consistent.
+- **O5 — Named slots versus clock times — RESOLVED by D13: both, with distinct
+  jobs.** The dose carries an optional clock `time`; the caregiver-chosen slot
+  remains the printable column. The deciding case was sequencing — one medication
+  given a set interval before another — which is invisible on a printed sheet
+  unless the times are stored and the column is ordered by them (FR-016d).
+  Sequencing is expressed by the times plus free-text instructions, not by
+  structured links between rows, and rettX does not check spacing or interactions
+  (FR-003b).

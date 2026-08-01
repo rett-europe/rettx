@@ -31,11 +31,11 @@ RettX-confirmed diagnosis + caregiver access / `pulse` contributor scope).
 morning | midday | afternoon | evening | other
 ```
 
-> **Open decision O5** — whether a regimen row may additionally carry a caregiver
-> clock time (e.g. `08:00`) alongside the named slot is still open in spec 046.
-> If it lands, `SlotDose` gains an optional `time` field; the named slot stays
-> the primary key of the map, so the shareable sheet's five fixed columns and
-> every existing document remain valid. Implement the named-slot form first.
+The slot is the **printable column** and is **chosen by the caregiver** — the
+server MUST NOT derive it from `time`. A `SlotDose` may additionally carry an
+optional wall-clock `time`, which orders doses within a slot; see `SlotDose`
+below. rettX does not validate spacing between doses or between medications, and
+does not check interactions.
 
 **Dose units** (reuse the existing medication dose unit set):
 
@@ -66,8 +66,8 @@ as opposed to "the treatment changed". Clients MUST surface the difference
   "name": "Lamictal",                   // free text — POTENTIAL PHI (FR-014)
   "as_needed": false,                    // PRN row: instructions, no schedule
   "doses": {                             // omit slots with no dose
-    "morning":  { "amount": 50,   "unit": "mg" },
-    "evening":  { "amount": 62.5, "unit": "mg" }
+    "morning":  { "amount": 50,   "unit": "mg", "time": "08:00" },
+    "evening":  { "amount": 62.5, "unit": "mg", "time": "20:00" }
   },
   "instructions": null,                  // free text — POTENTIAL PHI (FR-014)
   "valid_from": "2026-07-20",           // REQUIRED
@@ -84,13 +84,28 @@ as opposed to "the treatment changed". Clients MUST surface the difference
 ### `SlotDose`
 
 ```jsonc
-{ "amount": 12, "amount_max": 15, "unit": "drop" }   // a range: 12–15 drops
-{ "amount": 0.25, "unit": "tablet" }                  // ¼ tablet
+{ "amount": 12, "amount_max": 15, "unit": "drop" }              // a range: 12–15 drops
+{ "amount": 0.25, "unit": "tablet" }                             // ¼ tablet
+{ "amount": 250, "unit": "mg", "time": "07:30" }                 // with a clock time
 ```
 
 `amount` is a decimal. `amount_max` is optional and, when present, MUST be
 greater than `amount`. Clients render locale-aware decimal separators and MAY
 offer fraction shortcuts (¼ ½ ¾) over the decimal value.
+
+`time` is **optional**, `HH:MM`, 24-hour, and is a **wall-clock time of day** —
+not an instant, so it carries no timezone and is never converted. It exists
+because doses are prescribed by the clock and because one medication is
+sometimes given a set interval before another: two doses at `07:30` and `08:00`
+sit in the same `morning` column, and only the stored time makes their order
+legible on a printed sheet. Clients MUST order doses within a slot by `time`
+ascending, untimed last, and show the time beside the dose (spec FR-016d).
+
+The server MUST NOT derive the slot from `time`, MUST NOT reject a `time` that
+looks inconsistent with its slot, and MUST NOT validate spacing between doses or
+between medications (spec FR-003a, FR-003b). Sequencing between medications is
+expressed by the times plus free-text `instructions` — there are deliberately no
+structured links between regimen rows.
 
 ## Endpoints
 
@@ -184,6 +199,11 @@ dates in the gap.
 - `valid_from` earlier than the `valid_from` of the version being superseded
 - an unknown slot or unit code
 - `amount_max ≤ amount`
+- a `time` that is not a valid `HH:MM` 24-hour wall-clock value
+
+Explicitly **not** rejected: a `time` that looks inconsistent with its slot
+(e.g. `07:00` in `evening`). Caregivers have reasons, and policing this would
+put rettX in the position of judging a schedule.
 
 No clinical validation of any kind.
 
