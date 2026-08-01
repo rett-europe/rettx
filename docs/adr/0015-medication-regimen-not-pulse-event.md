@@ -75,8 +75,9 @@ Specifics:
    versioning pattern already proven in the catalog, partitioned `/patient_id` so
    an **"as of date D"** read is a cheap single-partition query. Correcting a
    mis-typed row is the one in-place write, and is explicitly distinguished from
-   a clinical change in both the contract (`change_reason: "corrected"`) and the
-   UI.
+   a clinical change in both the contract and the UI. A correction records
+   `corrected_at` / `corrected_by` and **never rewrites `change_reason`** — see
+   decision 13.
 3. **Daily medication logging is replaced by exception events.** A missed, extra
    or changed dose is recorded as an ordinary **Pulse tracker entry** under a new
    `medication-exception` definition that references the opaque `medication_id`
@@ -179,6 +180,20 @@ Specifics:
     that the dose ever was 300 mg, so a later seizure spike is attributed to the
     wrong exposure. Corrections are audited but stay out of the caregiver-facing
     treatment history, which is a story of the treatment, not of the typing.
+
+    **`change_reason` is immutable, and there is no `corrected` value in it.** An
+    earlier draft of the contract had a correction rewrite `change_reason` to
+    `corrected`, which quietly reintroduced the second failure above: correct a
+    typo in a version that recorded a genuine prescribed dose change, and that
+    version stops saying a dose change ever happened. Any client honouring "keep
+    corrections out of the history" by filtering on `change_reason` — the obvious
+    implementation — would then erase a real change from the caregiver's history
+    and drop its marker from the before/after panel. One field was carrying two
+    orthogonal facts: *what clinical event this version is*, which is immutable,
+    and *whether the record was later amended*, which is bookkeeping. They are now
+    separate: a correction sets `corrected_at` / `corrected_by` and touches
+    nothing else. This also removes the need to filter at all — a correction
+    creates no version, so nothing about it is in the history to begin with.
 
 ## Consequences
 
