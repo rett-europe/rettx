@@ -156,6 +156,29 @@ Specifics:
     keeps the share action recipient-neutral: the sheet is for schools and
     respite carers as much as clinicians, and rettX does not send it anywhere —
     it is generated on-device and handed to the operating system.
+12. **A dose carries an optional clock time; the caregiver-chosen slot stays the
+    printable column.** Doses are prescribed by the clock, and one medication is
+    sometimes given a set interval before another — two doses at 07:30 and 08:00
+    belong in the same *morning* column, and only the stored time makes their
+    order legible on a sheet a school reads top to bottom. Storing only the time
+    was rejected: the printed grid needs fixed columns, so rettX would have to
+    invent bucketing thresholds, and those are locale-dependent (midday is 12:00
+    in one country and 14:00 in another) — a rule we would get quietly wrong on a
+    document someone follows. Structured drug-to-drug offsets were also rejected:
+    they create references between independently-versioned rows that break when
+    either medication stops, and they invite the next request — *"warn me if
+    these are too close together"* — which is clinical decision support. rettX
+    records and prints; it does not check spacing or interactions.
+13. **Correcting a mistake and recording a prescribed change are different
+    operations, and both exist.** They are indistinguishable in a caregiver's own
+    words — "change the dose" describes both — but they mean opposite things to
+    the record, and either confusion corrupts the insight layer this feature
+    exists for. A correction misfiled as a change manufactures a dose increase on
+    the day someone noticed a typo, and the before/after comparison then reports
+    on an event that never happened. A change misfiled as a correction erases
+    that the dose ever was 300 mg, so a later seizure spike is attributed to the
+    wrong exposure. Corrections are audited but stay out of the caregiver-facing
+    treatment history, which is a story of the treatment, not of the typing.
 
 ## Consequences
 
