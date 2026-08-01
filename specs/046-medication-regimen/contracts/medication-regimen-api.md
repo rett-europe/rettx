@@ -45,14 +45,18 @@ mcg | mg | g | ml | drop | sachet | tablet | capsule | puff | IU
 
 Units are **advisory, not clinically validated** — rettX does not judge doses.
 
-**Change reasons** (why a new version exists):
+**Change reasons** (why a new version exists) — **immutable once written**:
 
 ```
-started | dose-changed | stopped | restarted | corrected
+started | dose-changed | stopped | restarted
 ```
 
-`corrected` is the only reason that means "the previous version was wrong",
-as opposed to "the treatment changed". Clients MUST surface the difference
+Every value names a **clinical event**. There is deliberately no `corrected`
+value: a correction is bookkeeping about the record, not something that happened
+to the patient, and it creates no new version. Corrections are recorded on the
+amended version as `corrected_at` / `corrected_by` and MUST NOT rewrite
+`change_reason` — see `PATCH .../versions/{version}` for why. Clients MUST
+surface the difference between a prescribed change and a correction
 (spec FR-018).
 
 ## Resource shape
@@ -72,11 +76,15 @@ as opposed to "the treatment changed". Clients MUST surface the difference
   "instructions": null,                  // free text — POTENTIAL PHI (FR-014)
   "valid_from": "2026-07-20",           // REQUIRED
   "valid_to": null,                      // null = still taking
-  "change_reason": "dose-changed",
+  "change_reason": "dose-changed",       // IMMUTABLE — the clinical event this
+                                         // version records. A later correction
+                                         // NEVER rewrites it.
   "is_current": true,                    // latest version for this medication_id
   "superseded_by": null,                 // version number, when superseded
   "created_at": "2026-07-20T09:14:00Z",
   "created_by": "<principal-id>",
+  "corrected_at": null,                  // set when this version was amended
+  "corrected_by": null,                  // in place; null = never corrected
   "_etag": "\"0x8DC...\""
 }
 ```
@@ -200,6 +208,10 @@ dates in the gap.
 - an unknown slot or unit code
 - `amount_max ≤ amount`
 - a `time` that is not a valid `HH:MM` 24-hour wall-clock value
+- a `change_reason` outside the enum — including the literal string `corrected`,
+  which is not a clinical event and MUST be rejected rather than silently stored
+- a request body attempting to set `corrected_at` or `corrected_by`; both are
+  server-assigned by `PATCH .../versions/{version}` and are never client input
 
 Explicitly **not** rejected: a `time` that looks inconsistent with its slot
 (e.g. `07:00` in `evening`). Caregivers have reasons, and policing this would
@@ -209,10 +221,30 @@ No clinical validation of any kind.
 
 ### `PATCH .../versions/{version}`
 
-Corrects a mistake **in place** (`change_reason` becomes `corrected`). Requires
-`If-Match` with the version's `_etag`. This is the only write that changes an
-existing version's values, and clients MUST present it distinctly from a
-clinical change (FR-018).
+Corrects a mistake **in place**. Requires `If-Match` with the version's `_etag`.
+This is the only write that changes an existing version's values, and clients
+MUST present it distinctly from a clinical change (FR-018).
+
+**A correction MUST NOT rewrite `change_reason`.** It sets `corrected_at` and
+`corrected_by` and leaves every other piece of the version's clinical identity
+intact. There is no `corrected` value in the `change_reason` enum, and servers
+MUST NOT invent one.
+
+The reason is worth stating, because the obvious design fails. `change_reason`
+records **what clinical event this version is** — started, dose-changed, stopped,
+restarted. Whether it was later corrected is **bookkeeping about the record**,
+not a clinical event. Overwriting the first with the second destroys
+information: correct a typo in a version that recorded a genuine prescribed dose
+change, and that version stops saying a dose change happened. Any client
+honouring "corrections stay out of the treatment history" by filtering on
+`change_reason` would then erase a real prescribed change from the caregiver's
+history and drop its marker from the Insights before/after panel — the precise
+failure FR-018 exists to prevent.
+
+Keeping the two separate also removes the need to filter anything: a correction
+creates **no new version**, so nothing about it belongs in the treatment history
+to begin with. Clients MAY surface `corrected_at` as quiet provenance on the
+version it amended; they MUST NOT render it as a treatment change.
 
 ### `DELETE /v2/patients/{rettxid}/pulse/medications/{medication_id}`
 

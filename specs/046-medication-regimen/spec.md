@@ -358,6 +358,14 @@ gap analysis in `rettxapi` and `rettxweb` (same day).
   300 mg, so a later seizure spike is attributed to the wrong dose. Corrections
   MUST be audited (FR-012) but MUST NOT appear in the caregiver-facing treatment
   history, or the story of a treatment becomes a list of typos.
+  **`change_reason` is immutable and has no `corrected` value** — a correction
+  records `corrected_at` / `corrected_by` and rewrites nothing else. An earlier
+  draft had corrections overwrite `change_reason`, which reintroduced the second
+  failure above: correcting a typo in a version that recorded a real prescribed
+  change made that version stop saying a change had happened, so any client
+  filtering on `change_reason` would erase it from both the history and the
+  Insights markers. It also means there is nothing to filter — a correction
+  creates no version, so it is absent from the history by construction.
 - **D4 — Retire, don't migrate.** Existing pilot medication entries stay in
   place, read-only, and keep rendering; the preset is retired; regimens start
   empty and caregivers enter their current sheet once. *Rationale:* a best-effort
@@ -791,6 +799,13 @@ label; the medication metric no longer appears in the loggable metric picker.
   writes a new version and preserves the previous one; and **correcting something
   the caregiver entered wrongly**, which does not invent a clinical event. The UI
   MUST make the two unmistakable at the point of editing.
+- **FR-018a** A correction MUST NOT alter `change_reason`, which records the
+  clinical event a version represents and is immutable once written. A correction
+  sets `corrected_at` / `corrected_by` only. Clients MAY show that a version was
+  corrected as quiet provenance on the version itself; they MUST NOT render it as
+  a treatment change, and MUST NOT rely on `change_reason` to exclude corrections
+  from the treatment history — corrections create no version, so nothing about
+  them is in that history to exclude.
 - **FR-019** The client MUST produce a **one-page A4 PDF medication sheet**
   entirely **on-device**, from a single layout implementation used on every
   surface, containing: the as-of date, the latest known weight and height with
