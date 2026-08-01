@@ -130,10 +130,26 @@ the pilot** and planned for later phases:
 - PDF export for consultations
 - Advanced charts, trends, and analytics
 
+### Changing after the pilot: medication
+
+Medication is currently logged like any other metric — a `medication` entry per
+dose, per day. Spec 046 replaces that with a **dated medication regimen**: each
+medication is recorded once with a start date and an optional end date, and the
+app renders the familiar rows × time-of-day grid that caregivers already keep on
+paper, shareable as a one-page A4 sheet. Day-to-day logging is then reserved for
+**exceptions** — a missed, extra or changed dose. The `medication` metric will be
+retired at that point; entries already logged keep rendering, and nothing is
+migrated or deleted. The same spec adds **weight** and **height** as tracked
+metrics.
+
+Note that the medication sheet is generated on the caregiver's own device and
+shared by them; it is not the general "PDF export for consultations" listed
+above, which remains out of scope.
+
 ## Related work
 
 The Pulse feature is specified across several cross-cutting specifications in
 this control plane — the Pulse tracker (spec 035), the global metric-catalog
 administration (spec 036), the menstrual start-and-duration model (spec 037),
-and sleep tracking (spec 038) — each fanned out to the caregiver app, admin app,
-and backend.
+sleep tracking (spec 038), and the medication regimen (spec 046) — each fanned
+out to the caregiver app, admin app, and backend.
