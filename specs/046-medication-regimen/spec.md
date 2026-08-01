@@ -231,13 +231,21 @@ fanout:
       slots are a NEW translatable set — do NOT overload the timestamp-derived
       `morning|afternoon|evening|night|anytime` enum in
       `features/pulse/copy-medication/`. Respect locale decimal commas in doses.
+      (10) **Hi-fi prototypes** for every screen above are committed alongside
+      this spec at `specs/046-medication-regimen/prototypes/`. Read that folder's
+      README before building from the images — four things the mocks show are
+      deliberately NOT what this spec asks for, most importantly the
+      "Taken as prescribed" legend, which must not be built.
 ---
 
 # rettX Medication Regimen — a dated medication list, not a daily pulse event
 
 **Feature Branch**: `046-medication-regimen`
 **Created**: 2026-08-01
-**Status**: Draft
+**Status**: Ready
+**Prototypes**: [`prototypes/`](prototypes/) — hi-fi mocks for all six mobile
+screens and the desktop Treatment tab, with a note on the four things in them
+that this spec deliberately rejects.
 **Input**: Product owner: *"Instead of having the caregiver introduce medication daily as a pulse, add each medication with a `from` date (and optionally a `to` date). The caregiver ends up with a grid like the paper sheet they already keep. Every time a medication is added/removed/updated the grid updates. Insights can then cross medication against side effects, stool, seizures. This removes the pulse event of type medication."*
 
 ## Problem
