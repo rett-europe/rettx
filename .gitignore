@@ -34,3 +34,8 @@ pnpm-debug.log*
 # Squad (if ever used here) — externalized state
 .squad/
 .ai-team/
+
+# Programme status report (scripts/status.mjs).
+# Contains issue/PR titles from the PRIVATE downstream repos. This repo is
+# PUBLIC, so the report is generated locally and never committed.
+status.local.md
