@@ -300,6 +300,7 @@ form the contract between intake and execution.
 | `spec-proposal` | New idea / feature proposal | Issue template |
 | `question` | Public question | Issue template |
 | `squad` | (downstream repos) Fan-out inbox — a maintainer picks this up by spawning an orchestrated working session | Iris fanout |
+| `incident` | (downstream repos) Production is broken for caregivers; may ship without a spec, must be reconciled within 7 days (§11) | Maintainer |
 
 In downstream repos, the `squad` label marks a fan-out **inbox** issue: a
 maintainer picks it up by spawning an orchestrated working session
@@ -358,6 +359,8 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 - The line between "single-repo" and "cross-cutting" is whether the change
   requires *coordinated* releases or schema changes across repos, or hosts a
   shared contract. When in doubt, treat as cross-cutting.
+- **Delivery is accounted for after fan-out** — every downstream pull request
+  declares the spec it serves, or declares that it serves none. See §11.
 
 ## 8. Documentation surfaces
 
@@ -420,7 +423,90 @@ GitHub docs on
 - **Setting:** the Copilot code-review "use custom instructions" preference must
   stay enabled (on by default).
 
-## 11. Change log of this document
+## 11. Delivery accounting
+
+Fan-out is one-way. `spec-fanout` pushes intent outward — a spec merges, a
+`[spec/<slug>]` squad issue opens in each listed repo — and then stops. Nothing
+returns. Without a return signal the control plane can state what it *asked
+for* but never what it *got*, and three failures become invisible: a spec that
+is authored, correct and stalled looks identical to a healthy one; a spec whose
+downstream slices are half-delivered reads as shipped; and work that arrives
+with no spec behind it does not register at all.
+
+This section is the return path.
+
+### Every downstream pull request declares its origin
+
+Each pull request in a downstream repo carries exactly one `Spec:` line in its
+body:
+
+| Declaration | Means |
+|---|---|
+| `Spec: 046` or `Spec: medication-regimen` | Implements a slice of that cross-cutting spec |
+| `Spec: none — <reason>` | Genuine maintenance: flaky-test fix, tooling, chore |
+| `Spec: incident — <link>` | Shipped under the incident lane below; reconciliation still owed |
+
+A `[spec/<slug>]` title prefix, or a closing keyword (`Closes #NNN`) aimed at a
+fan-out issue, counts as a declaration on its own — the fan-out issue already
+carries the slug.
+
+`Spec: none` is a first-class answer, not a failure. The point is not that all
+work descends from a spec; it is that **unaccounted work is visible as such**.
+
+**Machine-generated dependency pull requests are outside this convention.**
+Dependabot and similar bots open pull requests per repo on their own schedule;
+they express no programme intent, and no one will add a `Spec:` line to them.
+Dependency hygiene is a **per-repo** responsibility with its own cadence and
+its own security escalation path — it is deliberately not routed through spec
+accounting, and the status report excludes these pull requests rather than
+reporting them as unaccounted work.
+
+### The incident lane
+
+Production breakage does not wait for a spec. Before this lane existed, urgent
+fixes either stalled or entered through the side door and were retro-fitted to
+a spec written afterwards — which reads, misleadingly, as if the spec had
+driven the work.
+
+- Label the pull request `incident`. It may ship **without** a spec.
+- It declares `Spec: incident — <link to the issue or incident note>`.
+- Scope stays at the fix. An incident is not a vehicle for adjacent
+  improvements.
+- **Within 7 days** it is reconciled: either folded into a spec (new or
+  existing) that covers the behaviour properly, or closed as a deliberate
+  one-off with the reason recorded.
+- Unreconciled incidents surface in the status report until resolved.
+
+The lane is for *"caregivers are affected now"*, never for feature work in a
+hurry.
+
+### The status report
+
+`scripts/status.mjs` reconciles intent against delivery on demand: specs and
+their frontmatter here, against open squad issues and open pull requests in the
+five downstream repos. It reports shipped specs whose delivery is still open,
+specs awaiting a maintainer decision, work with no spec declared, unreconciled
+incidents, and anything that has gone quiet.
+
+It attributes work **only by explicit declaration** — the `Spec:` line, a
+`[spec/<slug>]` title, or a closing keyword. Nothing is inferred from prose. An
+earlier draft guessed from surrounding text and mis-filed a spec-036 pull
+request under spec 042 on the strength of an incidental mention; a ledger that
+guesses is worse than one that admits what it cannot account for.
+
+**It is a local script and must never become a workflow in this repo.** `rettx`
+is public; the five downstream repos are private, and the report carries their
+issue and pull-request titles, which describe unfixed weaknesses in a codebase
+handling caregiver data. Two consequences: the output (`status.local.md`) is
+gitignored and never committed, and the script refuses to run under `CI` /
+`GITHUB_ACTIONS`, because Actions logs and job summaries on a public repo are
+world-readable — a scheduled run would publish the report even while committing
+nothing. The script itself is safe to publish: it holds query logic and public
+spec slugs, so anyone without access to the private repos who runs it gets
+nothing back. If scheduled runs are ever wanted, the workflow must live in a
+private repo.
+
+## 12. Change log of this document
 
 | Date | Change |
 |---|---|
@@ -436,3 +522,4 @@ GitHub docs on
 | 2026-07-26 | §2/§4: added the **admin RBAC** vocabulary and conventions — **Entra App Role** as the admin-authorization source of truth (the token `roles` claim), the MVP role set (`super_admin`/`admin`/`read_only`), and the **`RBAC_ENABLED`** flag-gated rollout convention (default OFF). Reinforced §4 that admin authorization is enforced **server-side** in `rettxapi` via a `require_role`/`require_permission` dependency, admin stays on **Entra** (not Auth0, not a DB `Principal.role`), and client gating is UX only. Prompted by the admin app maturity program — see [spec 042](../../specs/042-admin-app-shell/spec.md) (gated login + config-driven left nav with a `requiredRoles` extension point), [spec 043](../../specs/043-admin-rbac-mvp/spec.md) (RBAC MVP), and [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md). |
 | 2026-07-26 | §2/§4: **refined** the admin RBAC model from the fixed-capability framing in the prior 2026-07-26 entry to a **hybrid, super_admin-configurable** one. Entra App Roles now own only role **membership**; the granular **capabilities** (`area.action`) that `admin`/`read_only` grant are a **rettX-managed role→capability config** that `super_admin` edits at runtime (persisted, seeded with defaults: `admin` = all-but-super, `read_only` = views only; `super_admin` = all/implicit/fixed). Added *capability* / *capability catalog* / *role→capability config* vocabulary to §2 and switched §4 enforcement to `require_capability("area.action")` (resolve Entra role → configured capabilities, server-side; `super_admin` bypasses; changes audited). This **supersedes** the "finer permissions extend the same claim later / `require_role` only" wording above. Membership still does **not** live on `Principal`. See [spec 043](../../specs/043-admin-rbac-mvp/spec.md) (now `status: ready`), [spec 042](../../specs/042-admin-app-shell/spec.md) (`status: ready`), and [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md). |
 | 2026-07-26 | §2: recorded the **admin data topology** — admin-domain Cosmos containers (starting with `admin_role_capabilities` from spec 043, and the admin audit trail + admin data-model containers from the upcoming spec 044) live in a **dedicated `rettxadmindb` database in the same Cosmos account**, NOT in `rettxdb`. Prompted by `rettxdb` sitting at/near the **25-container shared-throughput ceiling** (~24 containers today) plus admin/patient data segregation. Needs a new `RETTX_ADMIN_DATABASE_NAME` config + a separate admin database handle. See [ADR 0013](../../docs/adr/0013-admin-data-dedicated-cosmos-database.md). |
+| 2026-08-04 | Added §11 **Delivery accounting** — the return path for fan-out. `spec-fanout` pushes intent outward and stops, so the control plane could state what it had asked for but never what it got: a stalled spec looked like a healthy one, a half-delivered spec read as shipped, and work with no spec behind it did not register at all. Three conventions close the loop: every downstream PR declares `Spec: <id>` / `Spec: none — <reason>` / `Spec: incident — <link>`; a new **`incident`** label (§6) gives production breakage a legitimate route that ships without a spec but must be reconciled within 7 days; and `scripts/status.mjs` reconciles specs against downstream issues/PRs on demand, attributing work by explicit declaration only. Machine-generated dependency PRs (Dependabot et al.) are explicitly **outside** this convention — they are opened per repo on their own schedule and express no programme intent, so dependency hygiene stays a per-repo responsibility with its own escalation path and the report excludes them rather than reporting them as unaccounted work. The report stays **local** — `rettx` is public, the downstream repos are private, and Actions logs on a public repo are world-readable, so it is gitignored and refuses to run in CI. Renumbered the change log to §12. Prompted by three urgent fixes shipping with no spec and being retro-fitted to one written afterwards, and by spec 001's fan-out issue sitting open for 94 days unnoticed. |
