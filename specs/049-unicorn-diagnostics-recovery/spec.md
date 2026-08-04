@@ -23,7 +23,7 @@
 ---
 spec_id: "049"
 slug: "unicorn-diagnostics-recovery"
-title: "The unicorn must capture and cure — fatal client error diagnostics and recovery"
+title: "The app must never trap a caregiver — fatal client errors and silent hangs"
 status: draft   # draft | ready | accepted | superseded
 authored: "2026-08-04"
 author: "perocha"
@@ -31,15 +31,20 @@ relates_to: "specs/034-auth-observability/ (origin of the `unicorn` term and of 
 fanout:
   - repo: rettxweb
     summary: |
-      PRIMARY IMPLEMENTER. The `/global-error` page ("the unicorn") becomes the
-      single canonical capture-and-recover surface for fatal client errors.
+      PRIMARY IMPLEMENTER. Two tracks, both aimed at one outcome: a caregiver
+      is never left unable to proceed. Track 1 makes the `/global-error` page
+      ("the unicorn") the single canonical capture-and-recover surface for fatal
+      client errors. Track 2 makes silent hangs visible and survivable.
 
-      Do:
+      TRACK 1 — the dead end. Do:
       (1) Emit ONE canonical `unicorn_shown` telemetry event FROM the error page
-      component after it renders — not from `GlobalErrorHandler`, which races the
-      page teardown that eats its best-effort flush. Every producer routes
-      through this page, so a page-level event is complete BY CONSTRUCTION and
-      cannot be bypassed by a producer added later.
+      component after it renders — not from `GlobalErrorHandler`. The reason is
+      producer-independence, NOT flush unreliability: flush is already wired on
+      `visibilitychange`, `pagehide` and the native `appStateChange`/`pause`
+      events, which was verified in code rather than assumed. A producer-level
+      event counts only the paths that remembered to emit it; a page-level event
+      is complete BY CONSTRUCTION and cannot be bypassed by a producer added
+      later.
       (2) Introduce a closed `cause` taxonomy and require every producer to hand
       one over. `unknown` is a permitted, COUNTED value — an `unknown` rate is
       itself the signal that a producer is not tagging.
@@ -53,9 +58,26 @@ fanout:
       without measuring it repeats the exact mistake this spec corrects.
       (6) Translate the page (FR-012). It is currently hardcoded English.
 
+      TRACK 2 — the silent hang. A request that never completes throws nothing
+      and shows nothing; the spinner simply never stops. Do, IN THIS ORDER:
+      (7) Ship client request instrumentation FIRST, with no behaviour change
+      (FR-018). The user-harm baseline does not exist: server telemetry shows
+      zero requests over 30s, but it cannot see a request that never arrived,
+      stalled, or was abandoned client-side. Bounding before measuring
+      permanently forfeits the before-figure (D9).
+      (8) THEN bound and cancel reads at a justified value (FR-019, FR-022).
+      Evidence supports 30s as a safety floor — roughly 14s above the worst
+      legitimate completion — but whether it is an acceptable caregiver wait is
+      an open decision (OD-7), as is uniform-vs-per-class (OD-8).
+      (9) Resolve every bounded-out request to a recoverable state IN PLACE
+      (FR-020) — retry affordance, partial render or localised message.
+
       Do NOT: add a free-text "what happened?" field (FR-006), log raw URLs or
-      un-normalised routes, or make the error page depend on services that may
-      already be broken (FR-015).
+      un-normalised routes, make the error page depend on services that may
+      already be broken (FR-015), bound writes where cancellation could discard
+      caregiver-entered data (FR-021), or let a timeout escape to `ErrorHandler`
+      and become a unicorn (D8) — that turns a recoverable condition into a dead
+      end and MUST be pinned by tests.
   - repo: rettxadmin
     summary: |
       Inherits the same policy at whatever its fatal-error surface is. Admin
@@ -150,10 +172,54 @@ executing. Telemetry could not answer it, because:
   recorded perfectly well. This is a **query-shape** gap, not a delivery gap —
   which is exactly what one canonical event removes.
 
+### The second trap: the silent hang
+
+A caregiver can also be trapped **without any error at all**. A request that
+never completes throws nothing, routes nowhere, and shows no error page — the
+spinner simply never stops. The harm is identical to the unicorn; the mechanism
+is the opposite. Nothing fails, so nothing is reported.
+
+This is the failure the maintainer personally hit, and it is why this spec is
+about being trapped rather than about one page.
+
+Measured on rettxapi, 30 days to 2026-08-04, medication routes:
+
+- regimen operation: **n=533, p99 11,739 ms, max 15,692 ms**
+- history operation: **n=812, p99 1,503 ms, max 14,097 ms**
+- named route GETs: p99 1,431–1,620 ms, max 1,669–1,765 ms
+
+Two conclusions follow, and they answer different questions:
+
+- A bound of 30 s sits roughly 14 s above the worst legitimate completion, so it
+  is a defensible **safety floor** — it will not kill slow-but-healthy requests.
+- It says nothing about whether 30 s is an acceptable **caregiver wait**. That is
+  a product decision, recorded as OD-7, not something a p99 can answer.
+
+**The harm itself is currently unmeasurable, and that is the sharper problem.**
+The server-side count of requests exceeding 30 s is **zero** — but server
+telemetry is the wrong instrument. A request that never reached rettxapi, stalled
+in the network, or was abandoned client-side is simply absent from it. There is
+no client-side measure of waits that reached the bound, spinner dwell time,
+cancellations, or manual retries.
+
+So there are two distinct baselines and they must never be conflated:
+
+- **Server safety baseline** — 0 medication invocations over 30 s; worst
+  legitimate completion 15.692 s. Established.
+- **User-harm baseline** — **unknown, not instrumented.** Quoting the server
+  figure as the hang baseline would pass off completed backend work as
+  client-visible trapping.
+
+This is why the bound must not ship before the instrumentation: doing so would
+permanently forfeit the before-figure, exactly as shipping the canonical unicorn
+event ahead of its baseline would.
+
 ## What changes
 
+A caregiver stops being trapped, by either mechanism.
+
 The unicorn stops being a dead end and becomes a **diagnostic checkpoint with a
-credible exit**.
+credible exit**:
 
 1. One canonical, producer-independent event is emitted **from the page**.
 2. That event carries enough context to diagnose the failure without touching
@@ -162,6 +228,18 @@ credible exit**.
    the state that is actually broken.
 4. Whether that recovery worked is **measured**.
 5. None of the above collects personal data.
+
+And the silent hang stops being invisible:
+
+6. Waiting is **instrumented first**, so the harm can be counted before anything
+   claims to fix it.
+7. Reads are **bounded and cancelled**, so a caregiver is never left in front of
+   a spinner that will never stop.
+8. A bounded-out request resolves to a **recoverable state in place** — not a
+   blank screen, not a continuing spinner, and explicitly not the unicorn.
+
+The two halves share one outcome — time spent unable to proceed — and that is
+the number this spec is ultimately judged on.
 
 The cute unicorn illustration stays. A friendly failure is forgivable; a button
 that lies is not.
@@ -197,6 +275,20 @@ that lies is not.
   cause to `/global-error`, that is a defect to be retired. Part of the point of
   the cause taxonomy is to make those cases **countable**, so they can be removed
   on evidence rather than argued about.
+- **D8 — A bounded wait must not become a unicorn.** The two failure modes in
+  this spec are treated separately on purpose. When a request is cut off at its
+  bound, the caller handles it in place — a retry affordance, a partial render,
+  or a localised message — and the error is marked handled so it does **not**
+  escape to `ErrorHandler` and does **not** route to `/global-error`. Converting
+  a timeout into a full-page fatal error would take a recoverable condition and
+  make it a dead end, which is D7 in the opposite direction. This is a deliberate
+  design property and it must be preserved by tests, because it is the kind of
+  thing an innocent-looking refactor silently reverses.
+- **D9 — Instrument before bounding.** The bound ships only after the
+  instrumentation that measures the harm it claims to fix. This is the same rule
+  the unicorn work is under: a fix that lands before its baseline can never be
+  shown to have worked. It costs one release ordering and buys the ability to
+  answer "did this help?" with a number.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -292,8 +384,32 @@ event without her describing anything about her child.
   the recovery ladder MUST no-op safely where the service worker is disabled by
   design, and MUST NOT break the Capacitor shell.
 
-### Detection
+### Bounded waiting
 
+These requirements address the silent hang. They deliberately do **not** route
+through the unicorn — see D8.
+
+- **FR-018** Client-side request instrumentation MUST exist and MUST ship
+  **before** any bound is enforced (D9). It MUST record, per request: start,
+  completion or failure, elapsed time, and whether the caller was still waiting
+  when the view was destroyed. Identifier-free, per the privacy rules below.
+- **FR-019** Every read request to rettxapi MUST be bounded. A request that
+  exceeds its bound MUST be cancelled rather than left outstanding, so the
+  connection and the caller's waiting state are both released.
+- **FR-020** A bounded-out request MUST surface to the caregiver as a
+  **recoverable** state — a retry affordance, a partial render, or a localised
+  message — never as a blank screen, never as a spinner that continues, and
+  never as the unicorn. Where a screen already renders useful content, that
+  content MUST survive the failure of a secondary request.
+- **FR-021** The bound MUST NOT be applied to requests where cancellation could
+  lose caregiver-entered data. Reads are safe to cut; writes are not, and a
+  timeout that silently discards a medication change is a worse outcome than a
+  slow save.
+- **FR-022** The bound MUST be a stated value with a recorded justification, not
+  an inherited constant. The current evidence supports 30 s as a safety floor
+  against false timeouts; whether it is an acceptable caregiver wait is OD-7.
+
+### Detection
 - **FR-017** A unicorn **rate alert** MUST exist, so the programme learns of a
   spike from monitoring rather than from a maintainer personally crashing —
   which is how the present work began. The measured baseline gives the threshold
@@ -386,6 +502,28 @@ never checked is not a criterion.
   **zero** free-text input fields on the error surface, enforced by a test in CI
   so that a future well-meaning change fails the build rather than a privacy
   review. See D3.
+- **SC-8 Silent hangs become visible.** Baseline: **unmeasurable**. Server
+  telemetry shows zero requests over 30 s, but it cannot see a request that never
+  arrived, stalled in the network, or was abandoned — and there is no client-side
+  measure of waits, spinner dwell, cancellations or manual retries at all. Target:
+  after the instrumentation slice ships, the programme can state **how many
+  caregiver waits exceeded the bound, on which screens, over a stated window**.
+  This criterion is met by being able to answer the question, and it must be
+  answered **before** the bound is enforced. Instrument: client request
+  start/finish/timeout events.
+- **SC-9 Bounded waits actually recover.** Baseline: unknown, pending SC-8.
+  Target: **zero** caregiver waits above the bound end in a blank screen, a
+  continuing spinner, or the unicorn — every one resolves to a recoverable state
+  offering a next action. Instrument: bounded-out events joined to what the
+  caregiver saw next. Deliberately expressed as *zero*, because this is a
+  correctness property rather than a rate to improve: D8 either holds or it has
+  been broken.
+- **SC-10 Time trapped is measured across both failure modes.** SC-6 measures
+  time trapped on the unicorn. The same measure MUST be reportable for silent
+  hangs once SC-8 lands, so the programme can state total time caregivers spent
+  unable to proceed, whatever the mechanism. Baseline: only the unicorn half
+  exists today (31 minutes worst observed). Target: both halves reportable, and
+  the combined figure is the number that matters.
 
 ### Measurement plan
 
@@ -406,6 +544,11 @@ never checked is not a criterion.
 
 ## Phased delivery
 
+Two tracks. The unicorn track and the waiting track are independent and can run
+in parallel; within each, order matters because measurement precedes the fix.
+
+**Unicorn track — the dead end.**
+
 - **Phase 1 — See it.** FR-001, FR-002, FR-006, FR-014, FR-015. The canonical
   event with a cause taxonomy and the privacy prohibitions enforced. Ships value
   immediately: the untagged 19 become classifiable.
@@ -415,7 +558,23 @@ never checked is not a criterion.
   ladder, the incident code, and outcome measurement.
 - **Phase 4 — Speak plainly.** FR-012. Translation and copy review.
 
-Phases 1 and 2 are independently valuable and MUST NOT be blocked on the
+**Waiting track — the silent hang.**
+
+- **Phase A — Count it.** FR-018. Client request instrumentation only, no
+  behaviour change. This establishes the user-harm baseline that does not exist
+  today, and it MUST land before Phase B (D9). It is the only slice in this spec
+  that changes nothing a caregiver can see, and it is the one that makes the rest
+  provable.
+- **Phase B — Bound it.** FR-019, FR-021, FR-022. Cancellation of reads at a
+  justified bound, with writes deliberately excluded.
+- **Phase C — Recover in place.** FR-020. Every bounded-out request resolves to a
+  recoverable state, and D8 is pinned by tests so a later refactor cannot quietly
+  route timeouts into the unicorn.
+
+**Detection — FR-017** spans both tracks and can land once either track emits a
+countable event.
+
+Phases 1, 2 and A are independently valuable and MUST NOT be blocked on the
 recovery work.
 
 ## Risks
@@ -528,3 +687,15 @@ raised as OD-6.
   older than N days, a required decision-by date in frontmatter, or accepting it
   as a purely human review habit. Out of scope for the unicorn work itself, but
   it is the reason this spec had to re-derive ground 034 already covered.
+- **OD-7** What is an acceptable caregiver wait? The evidence establishes 30 s as
+  a **safety floor** — roughly 14 s above the worst legitimate completion, so it
+  will not kill healthy slow requests. It does not establish 30 s as a tolerable
+  time to stare at a spinner, and those are different questions. A shorter bound
+  with a retry affordance may serve a caregiver better than a long silent one.
+  Decide the number, and record why. Affects FR-022.
+- **OD-8** Does the bound apply uniformly to all rettxapi reads, or per class?
+  The measured evidence covers medication routes; the implementation under
+  consideration bounds every read. Uniform is simpler and easier to reason about;
+  per-class better fits routes whose legitimate tail differs by an order of
+  magnitude. Affects FR-019, and the scope/evidence mismatch should be closed
+  either by widening the measurement or narrowing the rule.

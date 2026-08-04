@@ -148,7 +148,93 @@ exceptions
 
 ---
 
-## Post-rollout queries
+## Waiting track — the silent hang
+
+Two baselines, and they answer different questions. Never quote the first as if
+it were the second.
+
+### B7 — Server safety baseline (established)
+
+Baseline result, rettxapi, 30 days to 2026-08-04, medication routes: regimen
+**n=533, p99 11,739 ms, max 15,692 ms**; history **n=812, p99 1,503 ms, max
+14,097 ms**; named route GETs p99 1,431–1,620 ms, max 1,669–1,765 ms. Count of
+completed invocations **over 30 s: zero**.
+
+This establishes that a 30 s bound will not cut off healthy slow requests. It
+says nothing about caregiver harm.
+
+```kql
+requests
+| where timestamp > ago(30d)
+| where name has "medication" or url has "/pulse/medications"
+| summarize
+    n = count(),
+    p99ms = percentile(duration, 99),
+    maxms = max(duration),
+    over30s = countif(duration > 30000)
+    by operation_Name
+| order by n desc
+```
+
+### B8 — User-harm baseline (NOT MEASURABLE TODAY)
+
+**There is no query for this yet, and that is the finding.**
+
+Server `requests` only records invocations that reached rettxapi and produced
+telemetry. A request that never arrived, stalled in the network or in token
+acquisition, or was abandoned when the caregiver gave up, is absent. Nothing
+currently records client-side wait duration, spinner dwell, cancellations, or
+manual retries.
+
+So the honest current answer to "how often is a caregiver trapped by a hang?" is
+**unknown**. That is precisely why FR-018 (instrument) must ship before FR-019
+(bound) — see D9. Once the instrumentation exists, this is the query that
+establishes the baseline, and it must be run over a full window **before** any
+bound is enforced:
+
+```kql
+customEvents
+| where timestamp > ago(30d)
+| where name in ("http_request_started", "http_request_finished", "http_request_timeout")
+| extend requestKind = tostring(customDimensions.requestKind),
+         elapsedMs = toint(customDimensions.elapsedMs)
+| summarize
+    started = countif(name == "http_request_started"),
+    finished = countif(name == "http_request_finished"),
+    timedOut = countif(name == "http_request_timeout"),
+    p95ms = percentile(elapsedMs, 95),
+    maxms = max(elapsedMs)
+    by requestKind
+| extend neverFinished = started - finished
+| order by neverFinished desc
+```
+
+`neverFinished` is the number this whole track exists to reduce.
+
+### SC-9 — bounded waits resolve to a recoverable state
+
+Target is **zero** — a correctness property, not a rate. D8 either holds or a
+refactor has broken it.
+
+```kql
+customEvents
+| where timestamp > ago(30d)
+| where name == "http_request_timeout"
+| where isnotempty(session_Id)
+| join kind=leftouter (
+    pageViews
+    | where timestamp > ago(30d)
+    | where url has "/global-error" or name has "global-error"
+    | project session_Id, unicornAt = timestamp
+) on session_Id
+| where isnotnull(unicornAt) and unicornAt > timestamp
+| summarize timeoutsThatBecameUnicorns = count()
+```
+
+
+---
+
+## Post-rollout queries — unicorn track
 
 These do not run until the canonical event exists. They are written now so the
 review is not designed after the fact by whoever wants a particular answer.
