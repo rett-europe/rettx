@@ -188,6 +188,24 @@ are coordinated through a cross-cutting spec.
 If a term means different things in different repos, that is a defect to
 be reconciled, not a feature.
 
+### Operational shorthand
+
+Team shorthand that is **not** a domain entity but carries a single precise
+meaning in conversation, bug reports and telemetry. Captured here because these
+are the terms a newcomer — or an AI assistant — will otherwise misread.
+
+- **Unicorn** — the generic client error page at the **`/global-error`** route
+  ("Uppsss… I don't exist… you're not seeing this", illustrated with a unicorn).
+  "I saw a unicorn" means *the web/desktop app hit an unhandled client error and
+  `GlobalErrorHandler` bounced me to `/global-error`* — it is a **crash report**,
+  not a whimsical remark. Reaching it always means an exception escaped to
+  `ErrorHandler`; it is never a designed destination. Instrumented as a
+  `pageViews` row with `url` containing `/global-error`, plus an `exceptions` row
+  carrying `source: GlobalErrorHandler` and the per-install `correlationId`
+  (spec 034). Counting unicorns per hour is the standard health check after a
+  deploy. Used as established vocabulary in
+  [spec 034](../../specs/034-auth-observability/spec.md).
+
 ## 3. API contract ownership
 
 - The canonical API contract is owned by **`rettxapi`** and published at
@@ -531,3 +549,4 @@ private repo.
 | 2026-07-26 | §2/§4: **refined** the admin RBAC model from the fixed-capability framing in the prior 2026-07-26 entry to a **hybrid, super_admin-configurable** one. Entra App Roles now own only role **membership**; the granular **capabilities** (`area.action`) that `admin`/`read_only` grant are a **rettX-managed role→capability config** that `super_admin` edits at runtime (persisted, seeded with defaults: `admin` = all-but-super, `read_only` = views only; `super_admin` = all/implicit/fixed). Added *capability* / *capability catalog* / *role→capability config* vocabulary to §2 and switched §4 enforcement to `require_capability("area.action")` (resolve Entra role → configured capabilities, server-side; `super_admin` bypasses; changes audited). This **supersedes** the "finer permissions extend the same claim later / `require_role` only" wording above. Membership still does **not** live on `Principal`. See [spec 043](../../specs/043-admin-rbac-mvp/spec.md) (now `status: ready`), [spec 042](../../specs/042-admin-app-shell/spec.md) (`status: ready`), and [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md). |
 | 2026-07-26 | §2: recorded the **admin data topology** — admin-domain Cosmos containers (starting with `admin_role_capabilities` from spec 043, and the admin audit trail + admin data-model containers from the upcoming spec 044) live in a **dedicated `rettxadmindb` database in the same Cosmos account**, NOT in `rettxdb`. Prompted by `rettxdb` sitting at/near the **25-container shared-throughput ceiling** (~24 containers today) plus admin/patient data segregation. Needs a new `RETTX_ADMIN_DATABASE_NAME` config + a separate admin database handle. See [ADR 0013](../../docs/adr/0013-admin-data-dedicated-cosmos-database.md). |
 | 2026-08-04 | Added §11 **Delivery accounting** — the return path for fan-out. `spec-fanout` pushes intent outward and stops, so the control plane could state what it had asked for but never what it got: a stalled spec looked like a healthy one, a half-delivered spec read as shipped, and work with no spec behind it did not register at all. Three conventions close the loop: every downstream PR declares `Spec: <id>` / `Spec: none — <reason>` / `Spec: incident — <link>`; a new **`incident`** label (§6) gives production breakage a legitimate route that ships without a spec but must be reconciled within 7 days; and `scripts/status.mjs` reconciles specs against downstream issues/PRs on demand, attributing work by explicit declaration only. Machine-generated dependency PRs (Dependabot et al.) are explicitly **outside** this convention — they are opened per repo on their own schedule and express no programme intent, so dependency hygiene stays a per-repo responsibility with its own escalation path and the report excludes them rather than reporting them as unaccounted work. The report stays **local** — `rettx` is public, the downstream repos are private, and Actions logs on a public repo are world-readable, so it is gitignored and refuses to run in CI. Renumbered the change log to §12. Prompted by three urgent fixes shipping with no spec and being retro-fitted to one written afterwards, and by spec 001's fan-out issue sitting open for 94 days unnoticed. |
+| 2026-08-04 | §2: added an **Operational shorthand** subsection and defined **unicorn** — the `/global-error` page reached when an unhandled client error escapes to `GlobalErrorHandler`. Already used as vocabulary in [spec 034](../../specs/034-auth-observability/spec.md) but undiscoverable outside it, so newcomers and AI assistants misread "I saw a unicorn" as whimsy rather than a crash report. Includes how a unicorn appears in telemetry (`pageViews` on `/global-error`; `exceptions` with `source: GlobalErrorHandler` + `correlationId`) so unicorns-per-hour is usable as a post-deploy health check. |
