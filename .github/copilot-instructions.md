@@ -96,6 +96,16 @@ a `Spec:` line (`patterns.md` §11). Do not infer a spec from prose — a passin
 mention of "(spec 042)" is not a declaration, and treating it as one mis-files
 the work.
 
+**Specs state outcomes, not mechanisms.** A cross-cutting spec says what must be
+true and why; *how* a repo achieves it is that repo's decision, governed by its
+own constitution. Naming file paths, classes, build-tool invocations, config
+predicates or stack vendors in a spec is out of bounds twice over: it takes a
+decision that isn't this repo's to take, and it publishes private-codebase
+internals to a public repo. Reach for the mechanism only when the requirement
+genuinely is cross-cutting — "the build must fail if X is unset" belongs in a
+spec; which tool substitutes X does not. This applies to PR bodies and commit
+messages too, which are just as public as the file.
+
 ## Tooling gotchas that cost time
 
 - **`gh label list --search <term>` returns nothing even when the label
