@@ -170,15 +170,21 @@ is the opposite. Nothing fails, so nothing is reported.
 This is the failure the maintainer personally hit, and it is why this spec is
 about being trapped rather than about one page.
 
-Measured on rettxapi, 30 days to 2026-08-04, medication routes:
+Read latency was measured on rettxapi over the 30 days to 2026-08-04, across the
+medication routes. The shape that matters here, with the precise figures held
+privately alongside the other baselines:
 
-- regimen operation: **n=533, p99 11,739 ms, max 15,692 ms**
-- history operation: **n=812, p99 1,503 ms, max 14,097 ms**
-- named route GETs: p99 1,431–1,620 ms, max 1,669–1,765 ms
+- One read class has a **long tail well beyond ten seconds** at the 99th
+  percentile, and a worst legitimate completion somewhat higher again.
+- A second class is **an order of magnitude faster at the 99th percentile** but
+  has an occasional slow outlier of comparable size — so tail behaviour is not
+  predicted by typical behaviour.
+- The remaining named reads are **fast and tightly grouped**, with little spread
+  between their 99th percentile and their worst case.
 
 Two conclusions follow, and they answer different questions:
 
-- A bound of 30 s sits roughly 14 s above the worst legitimate completion, so it
+- A bound of 30 s sits comfortably above the worst legitimate completion, so it
   is a defensible **safety floor** — it will not kill slow-but-healthy requests.
 - It says nothing about whether 30 s is an acceptable **caregiver wait**. That is
   a product decision, recorded as OD-7, not something a p99 can answer.
@@ -192,8 +198,8 @@ cancellations, or manual retries.
 
 So there are two distinct baselines and they must never be conflated:
 
-- **Server safety baseline** — 0 medication invocations over 30 s; worst
-  legitimate completion 15.692 s. Established.
+- **Server safety baseline** — no medication invocation exceeded 30 s, and the
+  worst legitimate completion sits far below it. Established.
 - **User-harm baseline** — **unknown, not instrumented.** Quoting the server
   figure as the hang baseline would pass off completed backend work as
   client-visible trapping.
@@ -729,8 +735,8 @@ raised as OD-6.
   a prompt to a human, not a gate: a draft under active argument is healthy, and
   only silence is the signal.
 - **OD-7 and OD-8 are coupled, and cannot be answered separately.** Recorded
-  2026-08-04. The slowest legitimate read yet measured has a tail reaching
-  15.7 s (p99 11.7 s). Any *uniform* bound must clear that, or it kills
+  2026-08-04. The slowest legitimate read yet measured has a tail extending well
+  beyond ten seconds. Any *uniform* bound must clear that, or it kills
   healthy requests. So "30 s is too long to ask a caregiver to wait" and "one
   bound for every read" **cannot both hold** — shortening the wait necessarily
   means per-class bounds. Answering either one in isolation silently decides the
