@@ -24,7 +24,7 @@
 spec_id: "049"
 slug: "unicorn-diagnostics-recovery"
 title: "The app must never trap a caregiver — fatal client errors and silent hangs"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-08-04"
 author: "perocha"
 relates_to: "specs/034-auth-observability/ (origin of the `unicorn` term and of the per-install correlation id); .specify/memory/patterns.md §2 Operational shorthand (defines `unicorn`)"
@@ -734,26 +734,37 @@ raised as OD-6.
   from git, so it cannot drift from reality or be forgotten. It is deliberately
   a prompt to a human, not a gate: a draft under active argument is healthy, and
   only silence is the signal.
-- **OD-7 and OD-8 are coupled, and cannot be answered separately.** Recorded
-  2026-08-04. The slowest legitimate read yet measured has a tail extending well
+- **OD-7 and OD-8 are DEFERRED PENDING FR-018, not blocking.** Recorded
+  2026-08-04, when this spec was moved to `ready`. Neither can be answered from
+  the evidence that exists, and the instrument that would answer them is
+  FR-018 — which only gets built once this spec fans out. Holding the spec in
+  `draft` until they are settled therefore makes them permanently unanswerable.
+  That is exactly how spec 034 stalled, and repeating it here would reproduce
+  the failure this spec was written to explain. They are recorded as open
+  questions with provisional answers, and revisited at the 30-day review against
+  FR-018 data.
+- **OD-7 and OD-8 are coupled, and cannot be answered separately.** The slowest
+  legitimate read yet measured has a tail extending well
   beyond ten seconds. Any *uniform* bound must clear that, or it kills
   healthy requests. So "30 s is too long to ask a caregiver to wait" and "one
   bound for every read" **cannot both hold** — shortening the wait necessarily
   means per-class bounds. Answering either one in isolation silently decides the
   other.
-- **OD-7** What is an acceptable caregiver wait? Still open, and deferred **by
+- **OD-7** What is an acceptable caregiver wait? Deferred **by
   design rather than by neglect**: D9/FR-018 require instrumentation before
   enforcement, and the server-side evidence cannot answer this question, because
   it measures requests that completed rather than caregivers who gave up. 30 s
   stands as a **provisional safety floor** — explicitly not a settled answer to
   what a caregiver should be asked to tolerate. Revisit once FR-018 data exists,
   and record the number with its reason. Affects FR-022.
-- **OD-8** Uniform or per-class? Still open, but with one consequence already
-  settled: whichever is chosen, **FR-018 instrumentation MUST record enough
+- **OD-8** Uniform or per-class? Deferred on the same basis, with two things
+  already settled so that deferring costs nothing. First, **uniform is the
+  starting rule** — it matches the implementation already in flight, so no slice
+  is blocked waiting for this answer. Second, whichever is eventually chosen,
+  **FR-018 instrumentation MUST record enough
   per-route-class detail from the first day it ships**. If it does not, choosing
   per-class later means re-instrumenting and waiting out a second observation
-  window — so the cheap option now forecloses the better option later. Uniform
-  is the sensible starting rule, since it matches the implementation already in
-  flight; the scope/evidence mismatch (measurement covers medication routes, the
+  window — so the cheap option now forecloses the better option later. The
+  scope/evidence mismatch (measurement covers medication routes, the
   rule covers every read) is then closed by the widened measurement rather than
   by narrowing the rule.
