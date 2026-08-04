@@ -140,8 +140,15 @@ executing. Telemetry could not answer it, because:
   emits an exception; `patients.resolver` emits a *trace*), so any query filtered
   on one producer is silently blind to the other.
 - **64 sessions reached the page but only 53 tracked errors explain them.** At
-  least 11 sessions have no telemetry at all saying why — consistent with a
-  best-effort flush racing a page teardown.
+  least 11 sessions have no telemetry saying why. The intuitive explanation —
+  events lost to a page teardown — was checked against the code and does **not**
+  hold: `app-insights.service.ts` already flushes on `visibilitychange`,
+  `pagehide` and the native `appStateChange`/`pause` events, and
+  `GlobalErrorHandler` flushes explicitly. The surviving explanation is the
+  producer split above. A `trackTrace` is not an exception, so sessions arriving
+  via the resolver are missing from an exception-filtered query while being
+  recorded perfectly well. This is a **query-shape** gap, not a delivery gap —
+  which is exactly what one canonical event removes.
 
 ## What changes
 
@@ -161,10 +168,13 @@ that lies is not.
 
 ## Decisions
 
-- **D1 — The page is the emitter, not the handler.** `GlobalErrorHandler` runs
-  while the page is about to be replaced and its flush is best-effort. The page
-  component renders and then persists, so it can emit reliably. Producers hand
-  over a cause; the page owns the canonical event.
+- **D1 — The page is the emitter, not the handler.** Not because handler
+  telemetry is unreliable — flush is comprehensively wired, and that was
+  verified rather than assumed — but because there is more than one producer and
+  there always will be. An event emitted by a producer counts only the paths
+  that remembered to emit it; an event emitted by the page counts **every**
+  unicorn by construction, whatever routed there. Producers hand over a cause;
+  the page owns the canonical event.
 - **D2 — `unknown` is a first-class cause.** Producers that fail to tag are
   visible as an `unknown` rate rather than silently absent. We do not guess a
   cause we cannot evidence.
@@ -179,6 +189,14 @@ that lies is not.
   device is strictly worse than the unicorn it replaces.
 - **D6 — The error page may not itself be able to fail.** It must not depend on
   application services that may already be broken.
+- **D7 — The unicorn is not a recovery destination for recoverable failures.**
+  Carried forward from spec 034 (FR-012) and still unmet: a resolver that cannot
+  load data must produce a recoverable screen, not this page. Routing a transient
+  failure here converts a retryable condition into a dead end, and the fix for an
+  earlier hang did exactly that. Where a producer currently routes a recoverable
+  cause to `/global-error`, that is a defect to be retired. Part of the point of
+  the cause taxonomy is to make those cases **countable**, so they can be removed
+  on evidence rather than argued about.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -273,6 +291,18 @@ event without her describing anything about her child.
 - **FR-016** Native surfaces MUST be handled explicitly. Service-worker limbs of
   the recovery ladder MUST no-op safely where the service worker is disabled by
   design, and MUST NOT break the Capacitor shell.
+
+### Detection
+
+- **FR-017** A unicorn **rate alert** MUST exist, so the programme learns of a
+  spike from monitoring rather than from a maintainer personally crashing —
+  which is how the present work began. The measured baseline gives the threshold
+  a real starting point (~64 sessions per 30 days, median one view each), so the
+  alert can be tuned against observed behaviour instead of a guess. Carried
+  forward from spec 034 (FR-013), which specified the equivalent alert for auth
+  failures and was never delivered. Ownership follows whatever the programme
+  already uses for App Insights alert rules; this spec requires only that the
+  alert exists and is documented.
 
 ## Key Entities
 
@@ -390,6 +420,33 @@ No principle is weakened; no amendment is required.
   If it cannot, FR-003 needs a different mechanism and this becomes an open
   decision.
 
+## Relationship to spec 034
+
+Spec 034 (*auth-failure observability & diagnosability*, authored 2026-07-13) has
+sat at `status: draft` ever since, so it never fanned out. Much of it was
+nonetheless delivered through incident-driven work. The client-side position was
+**verified against the code on 2026-08-04**, not assumed:
+
+| 034 requirement | state today |
+|---|---|
+| FR-007 native reporting + flush before backgrounding | **delivered** — flush on `visibilitychange`, `pagehide`, native `appStateChange` and `pause` |
+| FR-008 `X-Rettx-Correlation-Id` / `X-Rettx-App-Version` on every call | **delivered** — `client-telemetry.interceptor.ts`, with specs |
+| FR-009 startup + auth-lifecycle breadcrumbs | **delivered** — `startup-telemetry.service.ts`, `auth_guard_pass`, `patients_resolve_*`, `native_auth.*` |
+| FR-011 no authed call before a real token | **substantially delivered** — refresh tokens enabled, silent-token probe, `patients_resolve_skipped_unauthenticated` |
+| FR-012 a resolver failure must never brick the app **or reach the unicorn** | **half delivered** — it no longer hangs, but it now routes to `/global-error`, which 034 explicitly forbade |
+| FR-013 proactive rate alert | **not delivered** |
+
+Two things are therefore carried into this spec rather than left in a stalled
+draft: **FR-012's principle**, as D7, and **FR-013's alert**, as FR-017. The
+backend half of 034 (FR-001–FR-006, rettxapi auth-failure shaping) is untouched
+by this spec and remains 034's to resolve.
+
+The governance lesson is worth stating plainly, because it cost the programme the
+same incident twice: 034 was correct, was never wrong, and stalled anyway — on
+four unanswered questions. Nothing in the pipeline makes a quiet draft visible,
+and silence is indistinguishable from success. That gap is not fixed here; it is
+raised as OD-6.
+
 ## Out of scope
 
 - **Preventing** stale-build failures by retaining superseded hashed assets —
@@ -416,3 +473,9 @@ No principle is weakened; no amendment is required.
   support; a truncation is easier to read aloud.
 - **OD-5** Does rettxadmin have a fatal-error surface today, or does this create
   one? Determines whether its slice is small or merely tiny.
+- **OD-6** How does the programme surface a spec that is authored, correct and
+  **stalled**? Spec 034 sat in `draft` for three weeks while the incident it
+  described recurred. Options: a scheduled staleness report over `status: draft`
+  older than N days, a required decision-by date in frontmatter, or accepting it
+  as a purely human review habit. Out of scope for the unicorn work itself, but
+  it is the reason this spec had to re-derive ground 034 already covered.
