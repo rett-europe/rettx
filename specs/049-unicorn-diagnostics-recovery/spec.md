@@ -681,12 +681,20 @@ raised as OD-6.
   support; a truncation is easier to read aloud.
 - **OD-5** Does rettxadmin have a fatal-error surface today, or does this create
   one? Determines whether its slice is small or merely tiny.
-- **OD-6** How does the programme surface a spec that is authored, correct and
-  **stalled**? Spec 034 sat in `draft` for three weeks while the incident it
-  described recurred. Options: a scheduled staleness report over `status: draft`
-  older than N days, a required decision-by date in frontmatter, or accepting it
-  as a purely human review habit. Out of scope for the unicorn work itself, but
-  it is the reason this spec had to re-derive ground 034 already covered.
+- **OD-6** ~~How does the programme surface a spec that is authored, correct and
+  **stalled**?~~ **Resolved 2026-08-04.** `scripts/status.mjs` now reports every
+  `draft` spec with the number of days since it was last edited, sorted
+  oldest-first, and flags any untouched for 21+ days. Run against this spec it
+  immediately named 034 at 22 days — the precise case that prompted the
+  question. Two rejected alternatives, recorded so they are not re-proposed: a
+  **scheduled workflow** cannot live here, because `rettx` is public and Actions
+  logs are world-readable, so a job reading the private repos would publish
+  their contents (patterns.md §11); and a **decision-by date in frontmatter**
+  puts the burden on the author at the moment they care least, and goes stale
+  silently exactly like the spec it is meant to police. Last-edited is derived
+  from git, so it cannot drift from reality or be forgotten. It is deliberately
+  a prompt to a human, not a gate: a draft under active argument is healthy, and
+  only silence is the signal.
 - **OD-7** What is an acceptable caregiver wait? The evidence establishes 30 s as
   a **safety floor** — roughly 14 s above the worst legitimate completion, so it
   will not kill healthy slow requests. It does not establish 30 s as a tolerable

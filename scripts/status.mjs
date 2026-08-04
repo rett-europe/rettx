@@ -115,6 +115,24 @@ function frontmatter(text) {
   };
 }
 
+// When a spec was last edited. A draft that is being argued over is healthy; a
+// draft nobody has touched in weeks is the 034 failure — authored, correct, and
+// silently going nowhere. Age is what tells those two apart, so the report has
+// to carry it. Returns null rather than throwing if git can't answer (shallow
+// clone, or the spec is not committed yet), and the caller just omits the age.
+function lastTouched(dir) {
+  try {
+    const out = execFileSync('git', ['log', '-1', '--format=%cI', '--', dir], {
+      cwd: root,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore']
+    }).trim();
+    return out || null;
+  } catch {
+    return null;
+  }
+}
+
 function loadSpecs() {
   if (!fs.existsSync(specsDir)) return [];
   return fs
@@ -125,7 +143,7 @@ function loadSpecs() {
       if (!fs.existsSync(file)) return null;
       const fm = frontmatter(fs.readFileSync(file, 'utf8'));
       if (!fm || !fm.slug) return null;
-      return { dir: d.name, ...fm };
+      return { dir: d.name, touched: lastTouched(path.join('specs', d.name)), ...fm };
     })
     .filter(Boolean)
     .sort((a, b) => String(a.spec_id).localeCompare(String(b.spec_id)));
@@ -267,7 +285,11 @@ if (!drift.length) {
 say('');
 
 // 2. Specs still awaiting a decision.
-const drafts = specs.filter(s => s.status === 'draft');
+// Sorted oldest-first: the drafts most likely to have been forgotten are the
+// ones you read first, rather than the ones with the lowest spec number.
+const drafts = specs
+  .filter(s => s.status === 'draft')
+  .sort((a, b) => (a.touched || '').localeCompare(b.touched || ''));
 say('## Waiting on a maintainer decision');
 say('');
 if (!drafts.length) {
@@ -275,12 +297,18 @@ if (!drafts.length) {
 } else {
   for (const s of drafts) {
     const o = openFor(s.slug);
-    say(`- **${s.spec_id} · ${s.slug}** — ${short(s.title, 70)}`);
+    const age = s.touched === null ? null : daysSince(s.touched);
+    const aged = age !== null && age >= staleDays;
+    say(`- **${s.spec_id} · ${s.slug}**${aged ? ' ⚠️' : ''} — ${short(s.title, 70)}`);
+    if (age !== null) {
+      say(`  - last edited ${age}d ago` + (aged ? ` — untouched for ${staleDays}+ days, so nothing is moving it` : ''));
+    }
     say(`  - \`draft\`, so it fans out nothing on merge` +
       (s.fanout.length ? ` (would route to: ${s.fanout.join(', ')})` : ''));
     if (o.prs.length) say(`  - ${o.prs.length} downstream PR(s) already open against it`);
   }
 }
+const agedDrafts = drafts.filter(s => s.touched !== null && daysSince(s.touched) >= staleDays);
 say('');
 if (specPrs.length) {
   say('Open spec PRs in the control plane:');
@@ -386,7 +414,7 @@ fs.writeFileSync(outPath, L.join('\n') + '\n', 'utf8');
 
 console.error('');
 console.error(`  drift:        ${drift.length} shipped spec(s) with delivery open`);
-console.error(`  decisions:    ${drafts.length} draft spec(s), ${specPrs.length} open spec PR(s)`);
+console.error(`  decisions:    ${drafts.length} draft spec(s)${agedDrafts.length ? ` (${agedDrafts.length} untouched ${staleDays}+d)` : ''}, ${specPrs.length} open spec PR(s)`);
 const overdue = incidents.filter(p => daysSince(p.createdAt) > INCIDENT_RECONCILE_DAYS).length;
 console.error(`  incidents:    ${incidents.length} open (${overdue} overdue)`);
 console.error(`  undeclared:   ${undeclared.length} downstream PR(s) with no spec declared`);
