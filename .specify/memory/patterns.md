@@ -494,6 +494,14 @@ earlier draft guessed from surrounding text and mis-filed a spec-036 pull
 request under spec 042 on the strength of an incidental mention; a ledger that
 guesses is worse than one that admits what it cannot account for.
 
+Drafts are listed **oldest-edited first**, with their age in days, and flagged
+once untouched for 21+ days. A draft being argued over is healthy; a draft
+nobody has touched in weeks is the real failure mode, and only age separates
+them. Spec 034 sat in `draft` for three weeks while the problem it described
+recurred, and nothing in the programme noticed. The age comes from git rather
+than from a date the author has to remember to write down, so it cannot itself
+go stale. It is a prompt, never a gate.
+
 **It is a local script and must never become a workflow in this repo.** `rettx`
 is public; the five downstream repos are private, and the report carries their
 issue and pull-request titles, which describe unfixed weaknesses in a codebase
