@@ -331,7 +331,14 @@ event without her describing anything about her child.
   `unicorn_shown` telemetry event per visit, after render.
 - **FR-002** The event MUST carry a `cause` from a closed, enum-like set.
   `unknown` MUST be a permitted value and MUST be counted, not suppressed.
-  Producers MUST be able to hand a cause to the page.
+  Producers MUST be able to hand a cause to the page. The `cause` MUST describe
+  **what went wrong**, and MUST NOT be set to the identity of the code path that
+  emitted it; where the failure is unclassified, the cause is `unknown` even
+  though the emitting path is known. The emitting path MUST be carried as a
+  **separate dimension** so that both questions can be asked independently.
+  Recorded 2026-08-05 after two implementation attempts collapsed the two: doing
+  so drives the `unknown` rate to near zero by renaming rather than by
+  classifying, and SC-1 then reports success while measuring nothing.
 - **FR-003** The event MUST carry **build identity** — a value that distinguishes
   one deployed build from another, independent of the release version. Blank MUST
   be impossible; if identity cannot be resolved the event MUST say so explicitly.
@@ -376,6 +383,9 @@ event without her describing anything about her child.
 
 - **FR-012** All page copy MUST be translated, `en` and `es` at minimum, with the
   existing English fallback behaviour preserved. No hardcoded user-facing strings.
+  This MUST NOT be satisfied by giving the page a runtime dependency on the
+  application's translation service, which would breach FR-015. See the
+  amendment of 2026-08-05.
 - **FR-015** The page MUST be defensive: it MUST render, capture and offer
   recovery even when application services are unavailable, and MUST NOT be
   capable of throwing an error that routes back to itself.
@@ -470,7 +480,9 @@ never checked is not a criterion.
 - **SC-1 Cause coverage.** Baseline **0%** — no page-level event exists, and a
   substantial share of tracked errors carry no cause at all. Target **≥90%** of
   `unicorn_shown` events carry a cause other than `unknown`. Instrument: share of
-  `unicorn_shown` by `cause`.
+  `unicorn_shown` by `cause`. This target is only meaningful while FR-002's
+  separation holds: if the emitting path is used as the cause, the criterion
+  passes on the day it ships and measures nothing.
 - **SC-2 Build identity.** Baseline **0%** — neither build identity nor a
   staleness verdict exists. Target **100%** of `unicorn_shown` events carry both.
   Instrument: null-rate of those two dimensions.
@@ -634,6 +646,40 @@ prose and enforced by nobody. Any future spec that depends on a "measure first"
 ordering should assume the same failure until something in the pipeline makes
 the ordering visible at review time.
 
+### Amendment 2026-08-05 — FR-012 and FR-015 are in tension
+
+Surfaced during phase 1 delivery, before phase 4 starts, and recorded here so
+that phase 4 opens with the conflict already visible rather than discovering it
+mid-implementation.
+
+**The conflict.** FR-012 requires every user-facing string on the fatal page to
+be translated. FR-015 requires that page to render, capture and offer recovery
+*when application services are unavailable*. The obvious way to satisfy FR-012
+is to resolve copy through the application's runtime translation service — which
+is an application service, and therefore exactly what FR-015 forbids the page to
+depend on. Satisfying either requirement naively defeats the other.
+
+**Why this is not hypothetical.** The failure mode the page exists to survive
+includes a partially initialised application. A translation runtime that has not
+loaded, or whose locale bundle was fetched from a stale build, is a plausible
+cause of arriving at the page in the first place. Copy that resolves through it
+would render blank or as raw keys precisely when a caregiver most needs a
+sentence they can act on — and a blank fatal page is worse than an untranslated
+one.
+
+**The constraint on phase 4.** Phase 4 MUST deliver translated copy without
+introducing a runtime service dependency on the fatal surface. The mechanism is
+the delivering repository's decision, but it MUST hold two properties: copy
+resolution cannot fail in a way that leaves the page without a readable message
+and a usable recovery action, and an unresolvable locale MUST fall back to
+English rather than to a key or to nothing. If those cannot both be met, FR-015
+wins and FR-012 is deferred with that fact recorded — an untranslated page that
+works outranks a translated page that might not render.
+
+**Standing note for reviewers.** Until phase 4 lands, hardcoded English on this
+page is expected, not an oversight, and a review that flags it as a defect is
+reading the wrong phase. The strings predate this spec.
+
 ## Risks
 
 - **R1 — Recovery loop.** A recovery that re-triggers the failure could loop on a
@@ -743,12 +789,29 @@ raised as OD-6.
   compare against, the verdict MUST be `unavailable` — never `fresh`, which
   would be a lie, and never blank.
 - **OD-3** ~~What is the initial cause taxonomy?~~ **Resolved 2026-08-04 —
-  `stale-build`, `auth`, `data-load`, `network`, `unknown`.** Grounded in the
-  producers that route to the page today rather than in anticipated ones. None
-  of them passes a cause at present, which is precisely why FR-014 requires that
-  an untagged producer surface as `unknown` rather than as silence. `auth`
+  `stale-build`, `auth`, `data-load`, `network`, `unknown`.** None of the
+  producers passes a cause at present, which is precisely why FR-014 requires
+  that an untagged producer surface as `unknown` rather than as silence. `auth`
   stays a single bucket until the classifier work lands; splitting it now would
   invent distinctions the data cannot support.
+
+  **Justification corrected 2026-08-05. The values stand; the reasoning given
+  for them did not.** The original wording claimed the set was "grounded in the
+  producers that route to the page today rather than in anticipated ones". That
+  is false for two of the five. Phase 1 delivery established that exactly two
+  producers route to the fatal page, yielding `stale-build`, `data-load` and
+  `unknown`. `auth` is not among them — authentication failures are deliberately
+  routed away from this page — and nothing produces `network` at all. Both
+  describe anticipated producers, which is the thing that sentence disclaimed.
+
+  **The values do not change**, for two reasons. A bucket that reads zero is
+  itself a finding, whereas a value never defined records nothing. And trimming
+  the set to today's producers would make the taxonomy a moving target across
+  the observation window, defeating the comparison the window exists for. What
+  changes is the claim: the set is grounded in the failure modes this programme
+  expects to distinguish, two of which are not yet reachable. Any review of the
+  cause distribution MUST read `auth` and `network` as structurally zero, not as
+  evidence that those failures do not occur.
 - **OD-4** ~~Should the incident code be the correlation id, a truncation of it,
   or a separate value?~~ **Resolved 2026-08-04 — a separate per-incident value,
   emitted alongside the existing correlation id.** That id is scoped to the
