@@ -318,13 +318,19 @@ say('');
 
 // 4. Work with no spec behind it — how #296/#297/#300 happened.
 //
-// Only dependency bumps are set aside. Other bot authors (the coding agent,
-// for instance) open real feature work, so hiding every `is_bot` PR would
-// quietly shrink the very list this report exists to show.
-const isDepBump = p => /dependabot/i.test(p.author?.login || '');
-const undeclared = prs.filter(p => !p.slug && !isDepBump(p));
+// Machine-generated dependency pull requests are excluded outright. They are
+// opened per-repo by a bot on its own schedule, express no programme intent,
+// and nobody will ever add a `Spec:` line to them, so counting them here would
+// be permanent noise in a ledger about spec delivery. Dependency hygiene is a
+// per-repo concern with its own cadence (patterns.md §11).
+//
+// Other bot authors are NOT excluded: the coding agent opens real feature work,
+// so filtering every `is_bot` PR would quietly shrink the very list this report
+// exists to show.
+const isDepBot = p => /dependabot|renovate/i.test(p.author?.login || '');
+const undeclared = prs.filter(p => !p.slug && !isDepBot(p));
 const declaredNone = prs.filter(p => p.slug === 'none');
-const botPrs = prs.filter(p => !p.slug && isDepBump(p));
+const depPrs = prs.filter(p => isDepBot(p));
 
 say('## Downstream work with no spec declared');
 say('');
@@ -349,22 +355,19 @@ if (declaredNone.length) {
     declaredNone.map(p => `\`${p.repo}#${p.number}\``).join(', '));
   say('');
 }
-if (botPrs.length) {
-  say(`Dependency bumps, excluded from the count above: ` +
-    botPrs.map(p => `\`${p.repo}#${p.number}\``).join(', '));
+if (depPrs.length) {
+  say(`_Excluded: ${depPrs.length} machine-generated dependency pull request(s). Per-repo`);
+  say('hygiene on its own cadence, not programme delivery — see patterns.md §11._');
   say('');
-  const oldBump = botPrs.filter(p => daysSince(p.updatedAt) >= staleDays);
-  if (oldBump.length) {
-    say(`${oldBump.length} of those have been open ${staleDays}+ days. Dependency bumps on a`);
-    say('private backend are security work; they should not sit indefinitely.');
-    say('');
-  }
 }
 
 // 4. Anything gone quiet.
+// 5. Anything gone quiet. Dependency bots are left out for the same reason as
+// above: they open and close on their own cadence, so their age says nothing
+// about whether programme work has stalled.
 const stale = [
   ...issues.map(i => ({ kind: 'issue', repo: i.repo, number: i.number, title: i.title, days: daysSince(i.updatedAt) })),
-  ...prs.map(p => ({ kind: 'PR', repo: p.repo, number: p.number, title: p.title, days: daysSince(p.updatedAt) }))
+  ...prs.filter(p => !isDepBot(p)).map(p => ({ kind: 'PR', repo: p.repo, number: p.number, title: p.title, days: daysSince(p.updatedAt) }))
 ].filter(x => x.days >= staleDays).sort((a, b) => b.days - a.days);
 
 say(`## Quiet for ${staleDays}+ days`);
@@ -385,5 +388,6 @@ const overdue = incidents.filter(p => daysSince(p.createdAt) > INCIDENT_RECONCIL
 console.error(`  incidents:    ${incidents.length} open (${overdue} overdue)`);
 console.error(`  undeclared:   ${undeclared.length} downstream PR(s) with no spec declared`);
 console.error(`  stale:        ${stale.length} item(s) quiet ${staleDays}+ days`);
+console.error(`  (excluded:    ${depPrs.length} dependency-bot PR(s) — per-repo hygiene)`);
 console.error('');
 console.error(`  written to ${path.relative(root, outPath)} (gitignored)`);
