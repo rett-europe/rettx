@@ -196,7 +196,7 @@ fanout:
       (ascending, untimed last) and show the time beside the dose — this is what
       makes "give this one 30 min before that one" legible to someone reading a
       column top to bottom (FR-016d). Header
-      shows the as-of date and the latest known `weight` reading with its date.
+      shows the as-of date. It does NOT carry weight or height (D7a).
       Keep component SCSS under the repo's size budget.
       (4) **Regimen editing writes history, never overwrites** — the edit flow
       must make "change the dose from today" vs "correct a mistake in the
@@ -204,11 +204,19 @@ fanout:
       second amends one. Stopping a medication sets `valid_to`; it does not
       delete the row.
       (5) **Share sheet (A4, one page, on-device PDF)** — ONE layout, built with
-      the ALREADY-PRESENT-BUT-UNUSED `jspdf` plus `jspdf-autotable`, used on
+      the ALREADY-PRESENT `jspdf` (`^4.2.1`, already used by
+      `document-scanner.component.ts`, which builds an A4 doc and emits a Blob —
+      copy that precedent) plus `jspdf-autotable`, used on
       every surface. On native, hand it to the OS share sheet via
       `@capacitor/share` (not currently installed) so the caregiver chooses the
-      recipient — including Android's own print service. On desktop, open it for
-      print/save. ⚠️ Do NOT build a `@media print` stylesheet as a second layout
+      recipient — including Android's own print service. `@capacitor/share` can
+      only attach a **file URI**, not a Blob, so **`@capacitor/filesystem` is
+      also required** to write the PDF to the cache directory first — three new
+      dependencies, not two. Delete the cached file once the share sheet
+      returns: it is a real file, and cache directories can ride into device
+      backups. On desktop, open it for print/save. The sheet must stay legible
+      **printed in black and white** — a school prints mono, so colour must
+      never be the only thing carrying meaning. ⚠️ Do NOT build a `@media print` stylesheet as a second layout
       and do NOT rely on `window.print()` in the Android WebView: WebView printing
       is unreliable, and two layouts of the same sheet is permanent duplicate
       maintenance. Must work offline. Filename must not contain the patient's
@@ -390,17 +398,27 @@ gap analysis in `rettxapi` and `rettxweb` (same day).
   Emailing the sheet is **Phase 2** and, if built, must send a **short-lived
   authenticated link, not an attachment** — see O1.
 - **D7 — Weight and height become first-class Pulse metrics** (numeric, `kg` and
-  `cm`, chartable), and the medication sheet header shows the latest known
-  readings with their dates. Weight is the one the sheet needs — paediatric doses
-  are mg/kg — but height is the same primitive, the same form, and the same
-  chart, and growth is clinically meaningful in Rett syndrome, so tracking it
-  costs one extra preset. Both require a **new `quantity` primitive** (decimal +
+  `cm`, chartable). Growth is clinically meaningful in Rett syndrome and
+  paediatric doses are mg/kg, so a caregiver wants both **in the app**, on a
+  chart, over time. Height is the same primitive, the same form and the same
+  chart as weight, so tracking it costs one extra preset. Both require a **new `quantity` primitive** (decimal +
   unit): `count` is an integer with no unit and cannot hold `28.4 kg` or
   `132.5 cm`, and reusing `dose` for a body measurement would corrupt dose
   analytics. Adding a primitive is a change to the program-level value-primitive
   vocabulary (035 Cross-Team Coordination §2), so it is made here, once, for all
   surfaces. Derived values (BMI, centiles, growth velocity) are **out of scope** —
   those are clinical interpretations.
+- **D7a — The shared sheet carries NO weight or height.** They stay in the app.
+  The sheet's most common recipient is a school or a respite carer, who needs to
+  know *what to give and when* and has no use for the child's body weight — it
+  is the most sensitive data on the page and the least necessary for the reader
+  it usually reaches. Because D6 mandates one layout on every surface, "include
+  it for clinicians only" would mean two sheets, so the lean sheet wins and a
+  clinician reads weight in the app or asks. Rejected: an include/exclude toggle
+  at generation (a privacy decision taken under time pressure at a school gate
+  is not a real decision, and the default would carry it anyway).
+  **Consequence:** the sheet no longer depends on the `quantity` primitive, so
+  phase 1.6 is no longer blocked by phase 1.2.
 - **D8 — MVP insights are client-side.** Medication change markers + exposure
   bands on the existing charts, plus a descriptive before/after comparison panel.
   The gap analysis confirms this needs ~5 calls (1 regimen list + 4
@@ -559,14 +577,14 @@ returns the new one. The original row is not mutated.
 
 I tap **Share sheet**, confirm the date, and get a one-page A4 PDF of the grid.
 Android's share sheet opens and I send it on WhatsApp — or pick Print, or Drive.
-It shows the date it was produced and my child's current weight and height, and
+It shows the date it was produced, and
 is legible without explanation. It works in the school car park with no signal.
 
 **Independent test**: generate the sheet on a native device with networking
-disabled → a one-page A4 PDF is produced on-device, with no app chrome, and the
+disabled → an A4 PDF is produced on-device, with no app chrome, and the
 OS share sheet opens with it attached. On desktop, the same PDF opens in a new
 tab where the browser offers print and save. In both cases the sheet carries the
-as-of date, latest weight and height, all rows and doses, the as-needed block,
+as-of date, all rows and doses, the as-needed block,
 a blank notes area and a non-clinical footer.
 
 ### User Story 4 — Caregiver records a missed dose (Priority: P2)
@@ -623,10 +641,10 @@ label; the medication metric no longer appears in the loggable metric picker.
   `medication_id` + `version`.
 - **Exception referencing a deleted medication** — the entry MUST still render
   (fall back to a neutral label), never crash the timeline.
-- **Weight never recorded** — the sheet header renders cleanly with no weight,
-  not "null kg".
-- **Stale weight** — a weight from 14 months ago is shown **with its date**, so
-  the reader can judge it. rettX MUST NOT warn, flag, or interpret.
+- **Stale weight** — a weight from 14 months ago is shown **in the app** with its
+  date, so the reader can judge it. rettX MUST NOT warn, flag, or interpret.
+- **Regimen too long for one page** — the sheet spills to further pages rather
+  than truncating; the as-needed block still appears (FR-019e).
 - **Not a medical device** — no dose checking, no interaction warnings, no
   maximum-dose validation, no adherence judgement. rettX records and displays
   what the caregiver entered.
@@ -806,12 +824,25 @@ label; the medication metric no longer appears in the loggable metric picker.
   a treatment change, and MUST NOT rely on `change_reason` to exclude corrections
   from the treatment history — corrections create no version, so nothing about
   them is in that history to exclude.
-- **FR-019** The client MUST produce a **one-page A4 PDF medication sheet**
+- **FR-019** The client MUST produce an **A4 PDF medication sheet**
   entirely **on-device**, from a single layout implementation used on every
-  surface, containing: the as-of date, the latest known weight and height with
-  their measurement dates, all rows and doses, a separate **as-needed** block,
+  surface, containing: the child's name, the as-of date,
+  all rows and doses, a separate **as-needed** block,
   a blank notes area, and a non-clinical provenance footer — with no app chrome.
-  It MUST work with no network connection.
+  It MUST NOT contain weight, height or the rettX ID (D7a). It MUST remain fully
+  legible **printed in black and white**: colour MUST NOT be the only carrier of
+  meaning. It MUST work with no network connection.
+- **FR-019e** The sheet SHOULD fit **one page**, and MUST degrade predictably
+  when it cannot: compress the flexible whitespace first (the notes area gives up
+  its lines before anything else), and only once the grid genuinely cannot fit,
+  spill to further pages — repeating the column headers, marking the header
+  "continued", numbering pages, and keeping the as-needed block and notes area on
+  the final page. The as-needed block MUST NEVER be dropped to save space: a
+  rescue medication is the most safety-critical thing on the page.
+- **FR-019f** The sheet MUST name the child as **first name + last initial** by
+  default (e.g. *"Amélie R."*). The reader is a school or respite carer who
+  already knows the child, so a full legal name adds no clarity — while the file
+  itself may be forwarded well beyond its first recipient.
 - **FR-019a** The client MUST offer the generated sheet to the **OS share sheet**
   on native (so the caregiver chooses the recipient, including the system print
   service), and MUST open it for print/save on desktop. rettX MUST NOT upload,
@@ -831,20 +862,44 @@ label; the medication metric no longer appears in the loggable metric picker.
 - **FR-020** The client MUST allow logging a **missed / extra / changed /
   rescue** dose against a medication; these render on the existing Pulse calendar
   and timeline.
-- **FR-021** The client MUST retire `medication` from the loggable metric list
-  while continuing to render historical medication entries (existing retired-
-  definition fallback path).
+- **FR-021** The client MUST retire `medication` from the loggable metric list.
+  Historical medication entries MUST remain readable and deletable on the day
+  they were logged (the existing retired-definition fallback path), but MUST NOT
+  appear in the aggregate browse surfaces — see FR-021c.
 - **FR-021a** The client MUST remove or repurpose the **"Doses" tile** in the
   Pulse calendar's month-totals row. Once medication is no longer logged daily
   that tile counts nothing, and leaving it in place tells caregivers the old
   model still applies.
-- **FR-021b** The medication surface MUST carry a short, plain-language
-  explanation of the new model for as long as the pilot cohort includes
-  caregivers who logged medication daily — to the effect that medication is no
-  longer logged each day, the timeline fills itself from each medication's start
-  and end dates, and an entry is only logged when something differs from the
-  plan. This is the single most important piece of copy in the feature: every
-  pilot caregiver has a daily habit to unlearn.
+- **FR-021b** ~~The medication surface MUST carry a short, plain-language
+  explanation of the new model...~~ **WITHDRAWN.** The pilot cohort is small and
+  known, and the change is being communicated to them directly, so a permanent
+  in-app note would outlive its usefulness and become clutter for everyone who
+  follows. The habit still has to be unlearned — the channel is just not the app.
+- **FR-021c** A **retired** metric MUST be excluded from the aggregate browse
+  surfaces — the timeline (rows *and* filter chips), the calendar dots, and the
+  metrics list — while its entries remain visible and deletable on the day they
+  were logged.
+
+  This is a general rule about what retirement means, not a medication special
+  case, and it exists because medication forced the question. Those surfaces
+  answer *"what has been happening"*, and a metric we have stopped collecting can
+  only distort that answer: the daily medication entries are now superseded by
+  the treatment plan, so leaving them in the timeline would show a caregiver two
+  competing accounts of the same medication, one of them frozen. Worse, once
+  `medication-exception` exists, a caregiver would face two near-identically
+  named medication filters side by side.
+
+  The exclusion deliberately stops at the day view. The record a caregiver made
+  is still theirs: opening that day shows it and lets them remove it. Hiding it
+  everywhere would strand entries that nothing but a migration could ever clear,
+  and would quietly erase months of a caregiver's own work from their view.
+
+  Retirement is a **client-side catalog** property (the frontend owns metric
+  display metadata; the API's `is_retired` governs only the admin catalog), so
+  this filter is applied in the Pulse data-source layer — once, where every
+  surface inherits it — rather than per screen. An **unknown** metric code MUST
+  NOT be treated as retired: a custom metric, or a preset newer than the running
+  client, must keep rendering rather than silently vanish.
 - **FR-022** The client MUST add **weight** and **height** logging and their
   history views.
 - **FR-023** The **Insights** view MUST render **medication exposure
@@ -917,7 +972,7 @@ One regimen model, rendered two ways for two different questions (D11).
 | --- | --- |
 | **Mobile (native Android)** | A full-screen route pushed from within Pulse, with its own back header: the current medication list, the treatment timeline, and per-medication detail with its version history and logged exceptions. No horizontal scroll. |
 | **Desktop** | A tab in the Pulse desktop shell (≥1024px): the treatment timeline with a range selector, the current-treatment and no-longer-taken lists, the chronological regimen-changes list, and the exceptions list — laid out side by side. Must not displace the existing default landing tab. |
-| **Sheet (A4 PDF)** | One page, no chrome, generated on-device. Header: patient, as-of date, latest weight and height with their dates. Body: the **slot grid** including empty cells (the paper sheet's structure), then a separate **as-needed** block, then a blank notes area for school staff. Footer: generated-on date, who keeps it, and "recorded by a caregiver in rettX; not a medical record and not medical advice". |
+| **Sheet (A4 PDF)** | One page where it fits, no chrome, generated on-device. Header: child's name (first name + last initial), as-of date. **No weight, height or rettX ID** (D7a). Body: the **slot grid** including empty cells (the paper sheet's structure), then a separate **as-needed** block, then a blank notes area for school staff. Footer: generated-on date, who keeps it, and "recorded by a caregiver in rettX; not a medical record and not medical advice". |
 
 The sheet is the artefact caregivers hand to schools and respite carers. It is
 **caregiver-controlled output about their own child** — it deliberately contains
@@ -971,17 +1026,20 @@ all. This ordering is a requirement, not a preference.
   from a single as-of read, and returns the doses that were in effect that day.
 - **SC-003** Changing a dose preserves the previous dose and its date range; no
   historical version is mutated.
-- **SC-004** The medication sheet generates as **one A4 page** carrying the
-  **slot grid**, with the as-of date, latest weight and height, legible without
-  explanation — on desktop and on native Android, **with networking disabled**,
-  and reaches the OS share sheet.
+- **SC-004** The medication sheet generates carrying the
+  **slot grid**, legible without
+  explanation and legible **printed in black and white** — on desktop and on
+  native Android, **with networking disabled**,
+  and reaches the OS share sheet. It fits one A4 page for a realistic regimen,
+  and where it cannot, it spills predictably without ever dropping the as-needed
+  block.
 - **SC-005** A missed dose logged against a medication appears on the Pulse
   calendar and timeline for that date.
 - **SC-006** After retirement, no caregiver can log a new `medication` Pulse
   entry, and **every** pre-existing medication entry still renders on calendar,
   day view, timeline and metric history.
-- **SC-007** Weight and height are loggable and chartable over time, and the
-  latest weight surfaces on the medication sheet header with its date.
+- **SC-007** Weight and height are loggable and chartable over time **in the
+  app**. Neither appears on the shared sheet (D7a).
 - **SC-008** The Insights view shows exposure bands and a before/after comparison
   around a medication start, computed client-side with no new backend endpoint,
   each panel carrying the non-clinical disclaimer.
@@ -1275,7 +1333,7 @@ requirement above.
   resolved with pilot caregivers rather than reasoned about: any phrasing built
   from *version* / *supersede* / *correction* vocabulary will be answered at
   random. The current lean is a single edit flow asking one question in
-  world terms — *"From when?"* → **"From \<date\>"** or **"It's always been this
+  world terms — *"From when?"* → **"From <date>"** or \*\*"It's always been this
   — I entered it wrong"** — because two separate entry points force the caregiver
   to categorise before they have seen what is being asked. The hi-fi prototype
   shows a single, unqualified edit affordance, so this is not yet designed.
