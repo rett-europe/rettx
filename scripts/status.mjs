@@ -151,7 +151,7 @@ for (const repo of DOWNSTREAM) {
   }
   for (const p of gh([
     'pr', 'list', '--repo', full, '--state', 'open',
-    '--limit', '200', '--json', 'number,title,body,updatedAt,isDraft,author'
+    '--limit', '200', '--json', 'number,title,body,updatedAt,createdAt,isDraft,author,labels'
   ])) {
     prs.push({ repo, ...p });
   }
@@ -183,20 +183,22 @@ for (const i of issues) {
  * passing. A ledger that guesses is worse than one that admits it does not
  * know, so the three accepted signals are all unambiguous:
  *
- *   1. a `Spec: <id|slug|none>` line in the body
+ *   1. a `Spec: <id|slug|none|incident>` line in the body
  *   2. a `[spec/<slug>]` prefix in the title
  *   3. a closing keyword pointing at a fan-out issue
  *
  * Anything else is reported as undeclared. Returns `none` when a maintainer has
- * explicitly recorded that no spec applies.
+ * explicitly recorded that no spec applies, and `incident` for the incident
+ * lane (patterns.md §11), which owes a reconciliation within 7 days.
  */
 function prSlug(pr) {
   const body = pr.body || '';
 
   const declared = body.match(/^\s*(?:\*\*)?Spec(?:\*\*)?:\s*([^\s*<]+)/mi);
   if (declared) {
-    const v = declared[1].toLowerCase().replace(/[.,]$/, '');
+    const v = declared[1].toLowerCase().replace(/[.,—-]$/, '');
     if (['none', 'n/a', 'na', '-'].includes(v)) return 'none';
+    if (v === 'incident') return 'incident';
     if (bySlug.has(v)) return v;
     const byId = specs.find(s => s.spec_id === v.padStart(3, '0'));
     if (byId) return byId.slug;
@@ -289,7 +291,32 @@ if (specPrs.length) {
 }
 say('');
 
-// 3. Work with no spec behind it — how #296/#297/#300 happened.
+// 3. Incidents awaiting reconciliation (patterns.md §11).
+//
+// The lane exists so production breakage can ship without a spec. The 7-day
+// reconciliation is what stops "ship first" from quietly becoming the norm, so
+// an overdue incident is reported as overdue rather than merely listed.
+const INCIDENT_RECONCILE_DAYS = 7;
+const hasIncidentLabel = p => (p.labels || []).some(l => /^incident$/i.test(l.name));
+const incidents = prs.filter(p => p.slug === 'incident' || hasIncidentLabel(p));
+
+say('## Incidents awaiting reconciliation');
+say('');
+say(`Shipped under the incident lane. Each owes a spec — or a recorded decision to`);
+say(`close it as a one-off — within ${INCIDENT_RECONCILE_DAYS} days.`);
+say('');
+if (!incidents.length) {
+  say('_None open._');
+} else {
+  for (const p of incidents.sort((a, b) => daysSince(b.createdAt) - daysSince(a.createdAt))) {
+    const age = daysSince(p.createdAt);
+    const flag = age > INCIDENT_RECONCILE_DAYS ? ' **← OVERDUE**' : '';
+    say(`- \`${p.repo}#${p.number}\` — ${short(p.title)} _(${age}d old)_${flag}`);
+  }
+}
+say('');
+
+// 4. Work with no spec behind it — how #296/#297/#300 happened.
 //
 // Only dependency bumps are set aside. Other bot authors (the coding agent,
 // for instance) open real feature work, so hiding every `is_bot` PR would
@@ -312,8 +339,9 @@ if (!undeclared.length) {
     say(`- \`${p.repo}#${p.number}\`${p.isDraft ? ' _(draft)_' : ''} — ${short(p.title)} _(${daysSince(p.updatedAt)}d quiet)_`);
   }
   say('');
-  say('Add `Spec: <id>` — or `Spec: none — <reason>` for genuine maintenance — to');
-  say('each of these and it drops off this list.');
+  say('Add `Spec: <id>` — `Spec: none — <reason>` for maintenance, or');
+  say('`Spec: incident — <link>` for production breakage — to each of these and');
+  say('they drop off this list. See patterns.md §11.');
 }
 say('');
 if (declaredNone.length) {
@@ -353,6 +381,8 @@ fs.writeFileSync(outPath, L.join('\n') + '\n', 'utf8');
 console.error('');
 console.error(`  drift:        ${drift.length} shipped spec(s) with delivery open`);
 console.error(`  decisions:    ${drafts.length} draft spec(s), ${specPrs.length} open spec PR(s)`);
+const overdue = incidents.filter(p => daysSince(p.createdAt) > INCIDENT_RECONCILE_DAYS).length;
+console.error(`  incidents:    ${incidents.length} open (${overdue} overdue)`);
 console.error(`  undeclared:   ${undeclared.length} downstream PR(s) with no spec declared`);
 console.error(`  stale:        ${stale.length} item(s) quiet ${staleDays}+ days`);
 console.error('');
