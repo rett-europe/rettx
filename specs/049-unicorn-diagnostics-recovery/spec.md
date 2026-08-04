@@ -733,10 +733,11 @@ No principle is weakened; no amendment is required.
 
 ## Relationship to spec 034
 
-Spec 034 (*auth-failure observability & diagnosability*, authored 2026-07-13) has
-sat at `status: draft` ever since, so it never fanned out. Much of it was
-nonetheless delivered through incident-driven work. The client-side position was
-**verified against the code on 2026-08-04**, not assumed:
+Spec 034 (*auth-failure observability & diagnosability*, authored 2026-07-13) sat
+at `status: draft` and never fanned out. It was **superseded on 2026-08-05**
+without being delivered as written. Much of it was nonetheless delivered through
+incident-driven work. The client-side position was **verified against the code on
+2026-08-04**, not assumed:
 
 | 034 requirement | state today |
 |---|---|
@@ -748,9 +749,18 @@ nonetheless delivered through incident-driven work. The client-side position was
 | FR-013 proactive rate alert | **not delivered** |
 
 Two things are therefore carried into this spec rather than left in a stalled
-draft: **FR-012's principle**, as D7, and **FR-013's alert**, as FR-017. The
-backend half of 034 (FR-001–FR-006, rettxapi auth-failure shaping) is untouched
-by this spec and remains 034's to resolve.
+draft: **FR-012's principle**, as D7, and **FR-013's alert**, as FR-017.
+
+The backend half of 034 (FR-001–FR-006, rettxapi auth-failure shaping) is
+untouched by this spec and was **not** inherited by it. When 034 was superseded on
+2026-08-05 that half was deliberately dropped rather than re-specified — the draft
+was over three weeks old and the programme chose to move on rather than keep it
+alive. It is nobody's outstanding commitment. If the behaviour is still wrong it
+will surface as a bug and be handled on its own merits.
+
+Reviewers should read one consequence of that into OD-3: the `auth` cause has no
+producer today and none is scheduled, so it stays structurally zero for the same
+reason `network` does. A zero there is not evidence that auth failures are rare.
 
 The governance lesson is worth stating plainly, because it cost the programme the
 same incident twice: 034 was correct, was never wrong, and stalled anyway — on
