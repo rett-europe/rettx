@@ -27,7 +27,7 @@ title: "The app must never trap a caregiver — fatal client errors and silent h
 status: draft   # draft | ready | accepted | superseded
 authored: "2026-08-04"
 author: "perocha"
-relates_to: "specs/034-auth-observability/ (origin of the `unicorn` term and of the per-install `correlationId`); .specify/memory/patterns.md §2 Operational shorthand (defines `unicorn`); rett-europe/rettxweb#298 (PwaUpdateService never checks at startup); rett-europe/rettxweb#299 (deploys delete superseded hashed assets — the structural root cause)"
+relates_to: "specs/034-auth-observability/ (origin of the `unicorn` term and of the per-install correlation id); .specify/memory/patterns.md §2 Operational shorthand (defines `unicorn`)"
 fanout:
   - repo: rettxweb
     summary: |
@@ -38,10 +38,10 @@ fanout:
 
       TRACK 1 — the dead end. Do:
       (1) Emit ONE canonical `unicorn_shown` telemetry event FROM the error page
-      component after it renders — not from `GlobalErrorHandler`. The reason is
+      after it renders — not from the error handler. The reason is
       producer-independence, NOT flush unreliability: flush is already wired on
-      `visibilitychange`, `pagehide` and the native `appStateChange`/`pause`
-      events, which was verified in code rather than assumed. A producer-level
+      page-hide and on the native backgrounding events, which was verified in
+      code rather than assumed. A producer-level
       event counts only the paths that remembered to emit it; a page-level event
       is complete BY CONSTRUCTION and cannot be bypassed by a producer added
       later.
@@ -49,10 +49,10 @@ fanout:
       one over. `unknown` is a permitted, COUNTED value — an `unknown` rate is
       itself the signal that a producer is not tagging.
       (3) Capture build identity and staleness (see FR-003, FR-004). This is the
-      dimension the program currently lacks: `appVersion` is the RELEASE version,
-      not the deployed build, so three deploys in one evening are
-      indistinguishable in telemetry.
-      (4) Replace the `routerLink="/"` placebo with a cause-aware recovery
+      dimension the program currently lacks: the version the client reports is
+      the RELEASE version, not the deployed build, so three deploys in one
+      evening are indistinguishable in telemetry.
+      (4) Replace the placebo home link with a cause-aware recovery
       ladder that can actually change the failing state (FR-008, FR-009).
       (5) Measure whether recovery worked (FR-011). Shipping an escape hatch
       without measuring it repeats the exact mistake this spec corrects.
@@ -100,77 +100,65 @@ It is the single richest diagnostic moment the app will ever have — we know
 exactly what broke, on which build, in which state — and today it throws all of
 that away and then offers a recovery that cannot work.
 
-**It captures nothing.** The page component's entire behaviour is:
+**It captures nothing.** The page writes a single line to the browser console
+and does nothing else — no telemetry event, no cause, no build identity. A log
+line to a console nobody is reading.
 
-```ts
-ngOnInit(): void {
-  console.warn('[PageGlobalErrorComponent] Entered unicorn page 🦄');
-}
-```
+**Its recovery is a placebo.** The only action offered is a client-side
+navigation back to the home route. That reuses the same broken JavaScript
+context: a stale bundle is still executing, a superseded build is still being
+served from cache, an absent token is still absent. It never re-fetches the
+application shell. For every failure cause measured below, that button is
+structurally incapable of fixing the thing it appears to fix.
 
-A `console.warn` to a console nobody is reading.
+**It is hardcoded English.** The apology, the explanation and the recovery link
+carry no i18n keys. A Spanish-speaking caregiver reaches her most confusing
+moment and the application silently switches language on her.
 
-**Its recovery is a placebo.** The only action offered is:
+### Measured evidence (client telemetry, 30 days to 2026-08-04)
 
-```html
-<a routerLink="/" class="home-link">Go Back Home</a>
-```
+The underlying figures were measured in the private client telemetry and are
+deliberately **not reproduced here**: production failure counts for a private
+application are operational detail, and this repository is public. What the
+measurement establishes — and what the requirements below rest on — is:
 
-`routerLink` performs a *client-side* navigation. It reuses the same broken
-JavaScript context: a stale bundle is still executing, the service worker is
-still serving a build that has been deleted from the server, an absent token is
-still absent. It never re-fetches `index.html`. For every failure cause measured
-below, that button is structurally incapable of fixing the thing it appears to
-fix.
-
-**It is hardcoded English.** "Uppsss...", "I don't exist... you're not seeing
-this" and "Go Back Home" carry no i18n keys. A Spanish-speaking caregiver
-reaches her most confusing moment and the application silently switches
-language on her.
-
-### Measured evidence (Azure Application Insights, 30 days to 2026-08-04)
-
-- **64 distinct sessions** reached `/global-error`, producing 197 page views.
-  The median session sees it **once**; 44 sessions saw it exactly once.
-- Of the errors carrying usable telemetry — **53** in total — the split by cause
-  was: **auth/session 28**, **untagged "other" 19**, **stale-deploy chunk 5**
-  (desktop only), **resolver/network 1**.
-- **The page-view count is not the incidence count.** Bursts of 3–6 page views
-  arrive inside a single second (measured: 4 in 0.500s, 3 in 0.504s, 3 in
-  0.498s, 6 in 3.4s), because `router.navigate()` is asynchronous and several
-  errors thrown in one tick all pass the handler's `router.url !== '/global-error'`
-  check. That guard defect is being corrected separately; it is recorded here as
-  the reason raw page views must never be read as incidents.
-- **187 of 197** page views carry the page name `rettX` — the default document
-  title, i.e. before any titled route resolves. Route attribution is effectively
-  absent.
-- Longest observed time trapped: **31 minutes**, with further sessions at 15 and
-  11 minutes. Small in number; severe for those affected.
+- The unicorn is **recurrent, not exceptional**, and it concentrates in a small
+  number of causes. Auth/session dominates; stale-deploy chunk failures are a
+  distinct and entirely desktop-side minority; a substantial share is untagged,
+  which is itself the finding.
+- **Page views are not incidents.** Several page views routinely arrive inside a
+  single second, because the navigation is asynchronous and multiple errors
+  thrown in one tick all pass the handler's guard. That guard defect is being
+  corrected separately; it is recorded here as the reason raw page views must
+  never be read as an incidence count.
+- **Route attribution is effectively absent.** The overwhelming majority of page
+  views carry the default document title — they are recorded before any titled
+  route resolves.
+- Some sessions stay trapped for **tens of minutes**. Small in number; severe
+  for those affected.
 
 ### What the evidence says about traceability
 
 Diagnosing a single unicorn on 2026-08-04 required manually fetching the live
-site and diffing asset hashes against the ones the crashed session had been
+site and comparing what it served against what the crashed session had been
 executing. Telemetry could not answer it, because:
 
-- `appVersion` is the **release** version (e.g. `1.0.31`), not build identity.
+- The version the client reports is the **release** version, not build identity.
   Several deploys can share one release version, so "is this user running a
   superseded build?" — the decisive question — is unanswerable. Some rows carry
-  a **blank** `appVersion` entirely.
-- There is no single event meaning "a user saw a unicorn". There are at least
-  two producers emitting two different telemetry shapes (`GlobalErrorHandler`
-  emits an exception; `patients.resolver` emits a *trace*), so any query filtered
-  on one producer is silently blind to the other.
-- **64 sessions reached the page but only 53 tracked errors explain them.** At
-  least 11 sessions have no telemetry saying why. The intuitive explanation —
-  events lost to a page teardown — was checked against the code and does **not**
-  hold: `app-insights.service.ts` already flushes on `visibilitychange`,
-  `pagehide` and the native `appStateChange`/`pause` events, and
-  `GlobalErrorHandler` flushes explicitly. The surviving explanation is the
-  producer split above. A `trackTrace` is not an exception, so sessions arriving
-  via the resolver are missing from an exception-filtered query while being
-  recorded perfectly well. This is a **query-shape** gap, not a delivery gap —
-  which is exactly what one canonical event removes.
+  no version at all.
+- There is no single event meaning "a user saw a unicorn". Two producers emit
+  two different telemetry shapes — one an exception, the other a trace — so any
+  query filtered on one producer is silently blind to the other.
+- **More sessions reach the page than tracked errors explain.** The intuitive
+  explanation — events lost to a page teardown — was checked against the code and
+  does **not** hold: the telemetry client already flushes on page-hide and on the
+  native backgrounding events, and the error handler flushes explicitly. The
+  surviving explanation is the producer split above. A trace is not an exception,
+  so sessions arriving via the second producer are missing from an
+  exception-filtered query while being recorded perfectly well. This is a
+  **query-shape** gap, not a delivery gap — which is exactly what one canonical
+  event removes.
 
 ### The second trap: the silent hang
 
@@ -418,7 +406,8 @@ through the unicorn — see D8.
 - **FR-017** A unicorn **rate alert** MUST exist, so the programme learns of a
   spike from monitoring rather than from a maintainer personally crashing —
   which is how the present work began. The measured baseline gives the threshold
-  a real starting point (~64 sessions per 30 days, median one view each), so the
+  a real starting point (a modest number of affected sessions per 30 days,
+  median one view each), so the
   alert can be tuned against observed behaviour instead of a guess. Carried
   forward from spec 034 (FR-013), which specified the equivalent alert for auth
   failures and was never delivered. Ownership follows whatever the programme
@@ -469,15 +458,15 @@ All targets are assessed **30 days after rollout**, and the result — met or
 missed — is written back into this spec as an amendment. A criterion that is
 never checked is not a criterion.
 
-- **SC-1 Cause coverage.** Baseline **0%** — no page-level event exists, and 19
-  of 53 tracked errors carry no cause. Target **≥90%** of `unicorn_shown` events
-  carry a cause other than `unknown`. Instrument: share of `unicorn_shown` by
-  `cause`.
+- **SC-1 Cause coverage.** Baseline **0%** — no page-level event exists, and a
+  substantial share of tracked errors carry no cause at all. Target **≥90%** of
+  `unicorn_shown` events carry a cause other than `unknown`. Instrument: share of
+  `unicorn_shown` by `cause`.
 - **SC-2 Build identity.** Baseline **0%** — neither build identity nor a
   staleness verdict exists. Target **100%** of `unicorn_shown` events carry both.
   Instrument: null-rate of those two dimensions.
 - **SC-3 Diagnosis without touching production.** Baseline: diagnosing the
-  2026-08-04 unicorn required fetching the live site and diffing asset hashes by
+  2026-08-04 unicorn required fetching the live site and comparing assets by
   hand. Target: that same diagnosis is reachable **from telemetry alone**.
   Instrument: re-run that specific diagnosis against the new event and reach the
   same verdict with no network request. Binary, and it either works or it does
@@ -492,17 +481,17 @@ never checked is not a criterion.
   for the remaining causes are deliberately **not invented now** — they are set
   at the 30-day review against real data and recorded here. Instrument: paired
   recovery-attempted / recovery-outcome events.
-- **SC-5 One event per incident.** Baseline: **197 page views across 64
-  sessions** (3.1 per session), with bursts of up to 6 inside 3.4 seconds.
+- **SC-5 One event per incident.** Baseline: page views substantially exceed
+  sessions — roughly three to one — with bursts of several inside a few seconds.
   Target: **≤1.2** page views per session, and **zero** bursts of more than one
   `unicorn_shown` within a 5-second window. Instrument: page views per session,
   and event counts bucketed by session and second.
-- **SC-6 Time trapped.** Baseline: **31 minutes** worst observed, with further
-  sessions at 15 and 11 minutes. Measured as the interval from the first unicorn
-  page view to the next successful route activation, or to session end where
-  none follows. Target: **95th percentile under 60 seconds**, and **no session
-  above 10 minutes**. "Trends to zero" was the earlier wording and it is not a
-  target — it cannot be failed.
+- **SC-6 Time trapped.** Baseline: worst observed is **tens of minutes**, with
+  several further sessions in the same range. Measured as the interval from the
+  first unicorn page view to the next successful route activation, or to session
+  end where none follows. Target: **95th percentile under 60 seconds**, and **no
+  session above 10 minutes**. "Trends to zero" was the earlier wording and it is
+  not a target — it cannot be failed.
 - **SC-7 No free text.** Baseline: none today, and none permitted ever. Target:
   **zero** free-text input fields on the error surface, enforced by a test in CI
   so that a future well-meaning change fails the build rather than a privacy
@@ -527,7 +516,7 @@ never checked is not a criterion.
   time trapped on the unicorn. The same measure MUST be reportable for silent
   hangs once SC-8 lands, so the programme can state total time caregivers spent
   unable to proceed, whatever the mechanism. Baseline: only the unicorn half
-  exists today (31 minutes worst observed). Target: both halves reportable, and
+  exists today. Target: both halves reportable, and
   the combined figure is the number that matters.
 
 ### Measurement plan
@@ -537,9 +526,16 @@ never checked is not a criterion.
   canonical event changes that shape, and once it changes the before/after
   comparison cannot be reconstructed. This is the operational reason the
   implementation PRs are held rather than merged ahead of the spec.
-- The queries that produced every baseline above are recorded alongside this
-  spec, so the 30-day review re-runs the *same* measurement rather than a
-  plausible-looking substitute. A baseline that cannot be re-run is an anecdote.
+- **The precise baseline figures, and the queries that produced them, are held
+  privately** — they are production telemetry for a private codebase and this is
+  a public repository. This spec therefore states baselines by shape, and the
+  exact values live with the implementing repo. Two properties must hold there
+  and are the implementing repo's obligation to keep: the baseline is **frozen
+  and dated before implementation begins**, and the **post-rollout queries are
+  written at the same time**, so the 30-day review re-runs the *same*
+  measurement rather than a plausible-looking substitute chosen afterwards by
+  whoever wants a particular answer. A baseline that cannot be re-run is an
+  anecdote; a review query written after the result is not a review.
 - Three findings during this investigation turned out to be **measurement
   artefacts** rather than defects — a misleading chart, a miscounted test
   baseline, and an assumed telemetry-delivery failure that the code disproved.
@@ -600,15 +596,15 @@ recovery work.
   Mitigation: FR-015.
 - **R5 — Native divergence.** The service worker is disabled by design on native,
   so parts of the ladder are inert there. Mitigation: FR-016, and native causes
-  skew auth rather than staleness — consistent with all 5 measured stale-chunk
-  cases being desktop.
+  skew auth rather than staleness — consistent with every measured stale-build
+  case being desktop.
 - **R6 — Cause taxonomy sprawl.** An open-ended set becomes unqueryable.
   Mitigation: closed set, extended deliberately.
 
 ## Constitution Check
 
 - **I. Patients & caregivers come first (NON-NEGOTIABLE)** — Aligned, and the
-  primary motivation. A caregiver stranded for 31 minutes by a button incapable
+  primary motivation. A caregiver stranded for half an hour by a button incapable
   of helping her is a direct failure of this principle.
 - **II. Privacy by design (NON-NEGOTIABLE)** — Engaged deliberately. Collection
   increases, so the spec constrains it: data minimisation, an explicit free-text
@@ -642,11 +638,11 @@ nonetheless delivered through incident-driven work. The client-side position was
 
 | 034 requirement | state today |
 |---|---|
-| FR-007 native reporting + flush before backgrounding | **delivered** — flush on `visibilitychange`, `pagehide`, native `appStateChange` and `pause` |
-| FR-008 `X-Rettx-Correlation-Id` / `X-Rettx-App-Version` on every call | **delivered** — `client-telemetry.interceptor.ts`, with specs |
-| FR-009 startup + auth-lifecycle breadcrumbs | **delivered** — `startup-telemetry.service.ts`, `auth_guard_pass`, `patients_resolve_*`, `native_auth.*` |
-| FR-011 no authed call before a real token | **substantially delivered** — refresh tokens enabled, silent-token probe, `patients_resolve_skipped_unauthenticated` |
-| FR-012 a resolver failure must never brick the app **or reach the unicorn** | **half delivered** — it no longer hangs, but it now routes to `/global-error`, which 034 explicitly forbade |
+| FR-007 native reporting + flush before backgrounding | **delivered** — flushes on page-hide and on the native backgrounding events |
+| FR-008 correlation id + client version on every call | **delivered**, with tests |
+| FR-009 startup + auth-lifecycle breadcrumbs | **delivered** — startup, auth-guard, patient-resolution and native-auth breadcrumbs all emit |
+| FR-011 no authed call before a real token | **substantially delivered** — refresh tokens enabled, silent-token probe, and an explicit skipped-because-unauthenticated signal |
+| FR-012 a resolver failure must never brick the app **or reach the unicorn** | **half delivered** — it no longer hangs, but it now routes to the unicorn, which 034 explicitly forbade |
 | FR-013 proactive rate alert | **not delivered** |
 
 Two things are therefore carried into this spec rather than left in a stalled
@@ -662,11 +658,11 @@ raised as OD-6.
 
 ## Out of scope
 
-- **Preventing** stale-build failures by retaining superseded hashed assets —
-  the structural root cause, tracked as rettxweb#299. This spec makes the failure
-  survivable; #299 makes it stop happening.
-- Prompting for updates earlier — rettxweb#298.
-- The racy navigation guard in `GlobalErrorHandler`, in flight separately.
+- **Preventing** stale-build failures at their source, rather than surviving
+  them. That is tracked in the implementing repo. This spec makes the failure
+  survivable; stopping it happening is separate work.
+- Prompting for updates earlier — tracked in the implementing repo.
+- The racy navigation guard behind the burst behaviour, in flight separately.
 - Patient identifiers appearing in **server-side** operation names — a rettxapi
   route-template concern, related but distinct.
 - Redesigning the unicorn illustration or the empathetic tone. Both are working.
