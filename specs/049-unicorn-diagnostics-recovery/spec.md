@@ -339,21 +339,70 @@ directly and deliberately.
 
 ## Success Criteria *(mandatory)*
 
-- **SC-1** Within 30 days of rollout, at least 90% of unicorn events carry a
-  cause other than `unknown`. Today the figure is effectively 0%: 19 of 53
-  tracked errors are untagged and no page-level event exists at all.
-- **SC-2** Every unicorn event carries a resolvable build identity and staleness
-  verdict. Today: neither exists.
-- **SC-3** Diagnosing a stale-build unicorn requires no manual inspection of the
-  live site. Today it required exactly that.
-- **SC-4** Recovery outcome is reportable per cause — we can state what
-  proportion of attempted recoveries succeeded. Today: unknowable.
-- **SC-5** No session records more than one unicorn event per incident. Today:
-  bursts of up to 6 within 3.4 seconds.
-- **SC-6** Median time trapped trends to zero. Today: sessions at 31, 15 and 11
-  minutes.
-- **SC-7** Zero free-text user input fields on the error surface, verified by
-  test.
+Every criterion below states a **baseline** measured on 2026-08-04, a **target**,
+and the **instrument** that will decide it. Where a value cannot be measured
+today, that unmeasurability *is* the defect being fixed, and is recorded as the
+baseline rather than glossed.
+
+All targets are assessed **30 days after rollout**, and the result — met or
+missed — is written back into this spec as an amendment. A criterion that is
+never checked is not a criterion.
+
+- **SC-1 Cause coverage.** Baseline **0%** — no page-level event exists, and 19
+  of 53 tracked errors carry no cause. Target **≥90%** of `unicorn_shown` events
+  carry a cause other than `unknown`. Instrument: share of `unicorn_shown` by
+  `cause`.
+- **SC-2 Build identity.** Baseline **0%** — neither build identity nor a
+  staleness verdict exists. Target **100%** of `unicorn_shown` events carry both.
+  Instrument: null-rate of those two dimensions.
+- **SC-3 Diagnosis without touching production.** Baseline: diagnosing the
+  2026-08-04 unicorn required fetching the live site and diffing asset hashes by
+  hand. Target: that same diagnosis is reachable **from telemetry alone**.
+  Instrument: re-run that specific diagnosis against the new event and reach the
+  same verdict with no network request. Binary, and it either works or it does
+  not.
+- **SC-4 Recovery effectiveness — the headline criterion.** Baseline
+  **unknowable**: no recovery outcome is recorded at all, so the honest current
+  answer to "does the button work?" is that nobody knows. Target, in two parts.
+  First, within 30 days the success rate is **reportable per cause**. Second, the
+  stale-build limb specifically achieves **≥90%** success, because a hard reload
+  is a mechanism we understand and it should essentially always resolve a stale
+  build; a lower figure means the recovery is not doing what we think. Targets
+  for the remaining causes are deliberately **not invented now** — they are set
+  at the 30-day review against real data and recorded here. Instrument: paired
+  recovery-attempted / recovery-outcome events.
+- **SC-5 One event per incident.** Baseline: **197 page views across 64
+  sessions** (3.1 per session), with bursts of up to 6 inside 3.4 seconds.
+  Target: **≤1.2** page views per session, and **zero** bursts of more than one
+  `unicorn_shown` within a 5-second window. Instrument: page views per session,
+  and event counts bucketed by session and second.
+- **SC-6 Time trapped.** Baseline: **31 minutes** worst observed, with further
+  sessions at 15 and 11 minutes. Measured as the interval from the first unicorn
+  page view to the next successful route activation, or to session end where
+  none follows. Target: **95th percentile under 60 seconds**, and **no session
+  above 10 minutes**. "Trends to zero" was the earlier wording and it is not a
+  target — it cannot be failed.
+- **SC-7 No free text.** Baseline: none today, and none permitted ever. Target:
+  **zero** free-text input fields on the error surface, enforced by a test in CI
+  so that a future well-meaning change fails the build rather than a privacy
+  review. See D3.
+
+### Measurement plan
+
+- **The baseline must be frozen before any implementation merges.** These
+  numbers were measured against the *current* telemetry shape. Shipping the
+  canonical event changes that shape, and once it changes the before/after
+  comparison cannot be reconstructed. This is the operational reason the
+  implementation PRs are held rather than merged ahead of the spec.
+- The queries that produced every baseline above are recorded alongside this
+  spec, so the 30-day review re-runs the *same* measurement rather than a
+  plausible-looking substitute. A baseline that cannot be re-run is an anecdote.
+- Three findings during this investigation turned out to be **measurement
+  artefacts** rather than defects — a misleading chart, a miscounted test
+  baseline, and an assumed telemetry-delivery failure that the code disproved.
+  Each was withdrawn on evidence. The review must be equally willing to conclude
+  that a criterion was met for the wrong reason, or that the instrument was
+  wrong, rather than defending the spec.
 
 ## Phased delivery
 
