@@ -282,7 +282,10 @@ that lies is not.
   instrumentation that measures the harm it claims to fix. This is the same rule
   the unicorn work is under: a fix that lands before its baseline can never be
   shown to have worked. It costs one release ordering and buys the ability to
-  answer "did this help?" with a number.
+  answer "did this help?" with a number. **This decision was breached on
+  2026-08-04** — the bound shipped first. See the amendment under *Phased
+  delivery* for what that cost and what still binds. D9 is not weakened by the
+  breach; it applies in full to any future tightening of the bound.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -508,8 +511,15 @@ never checked is not a criterion.
   measure of waits, spinner dwell, cancellations or manual retries at all. Target:
   after the instrumentation slice ships, the programme can state **how many
   caregiver waits exceeded the bound, on which screens, over a stated window**.
-  This criterion is met by being able to answer the question, and it must be
-  answered **before** the bound is enforced. Instrument: client request
+  This criterion is met by being able to answer the question.
+  **Amended 2026-08-04.** As originally written this criterion also required the
+  question to be answered *before* the bound was enforced. That clause is now
+  **failed and unrecoverable** — the bound shipped first, so waits beyond it no
+  longer occur and their duration can never be measured. It is recorded as failed
+  rather than deleted. The remaining, still-achievable target is **incidence**:
+  how often a wait reaches the bound, by route class, over a stated window. That
+  requires FR-018 to record bound-cancellation as a state distinct from ordinary
+  failure. Instrument: client request
   start/finish/timeout events.
 - **SC-9 Bounded waits actually recover.** Baseline: unknown, pending SC-8.
   Target: **zero** caregiver waits above the bound end in a blank screen, a
@@ -583,6 +593,46 @@ countable event.
 
 Phases 1, 2 and A are independently valuable and MUST NOT be blocked on the
 recovery work.
+
+### Amendment 2026-08-04 — Phase B shipped before Phase A, in breach of D9
+
+Recorded as a violation rather than folded into the plan, because a spec that
+quietly rewrites itself to match what happened stops being able to hold anything
+to account.
+
+**What happened.** The read bound (FR-019, FR-021, and part of FR-020) was
+implemented, reviewed and merged to production before FR-018 instrumentation
+existed. D9 and FR-018 both require the reverse order. Nothing caught it: no
+gate enforces phase ordering, and the pull request was assessed on its own merits
+rather than against the spec's sequencing.
+
+**The reasoning that was offered, and why it was only half right.** The argument
+for merging was that the bound is a safety floor sitting well above the slowest
+legitimate read, so caregivers who abandon a wait do so far below it and remain
+observable. That much holds. What it missed is that the harm which motivated the
+waiting track is not early abandonment but the **unbounded tail** — requests that
+never returned at all. Those are now cancelled at the bound, so the distribution
+of waits above it can never be observed. The before-figure is gone.
+
+**What is lost, and what survives.** Lost: the *duration* of waits beyond the
+bound, and therefore any statement of the form "waits ran to N minutes before,
+and are capped now". Surviving: the *incidence* of bound-hits, which remains a
+usable proxy for how often a caregiver would have been stranded, provided
+FR-018 records bound-cancellation as a state distinct from ordinary failure.
+FR-018 MUST therefore distinguish completion, failure, user abandonment and
+bound-cancellation. Conflating the last two destroys the only remaining signal.
+
+**What still binds.** D9 is unchanged and applies with full force to any future
+*tightening* of the bound under OD-7. The floor was cheap to get wrong; a bound
+set at a caregiver-acceptable value is not, because that is the change whose
+effect the programme will actually need to demonstrate. Tightening ships only
+after FR-018 data exists.
+
+**The governance point.** This is the second time in this spec's short life that
+sequencing failed silently — OD-6 recorded the first. Phase ordering is stated in
+prose and enforced by nobody. Any future spec that depends on a "measure first"
+ordering should assume the same failure until something in the pipeline makes
+the ordering visible at review time.
 
 ## Risks
 
