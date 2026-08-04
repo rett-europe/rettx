@@ -302,8 +302,9 @@ const incidents = prs.filter(p => p.slug === 'incident' || hasIncidentLabel(p));
 
 say('## Incidents awaiting reconciliation');
 say('');
-say(`Shipped under the incident lane. Each owes a spec — or a recorded decision to`);
-say(`close it as a one-off — within ${INCIDENT_RECONCILE_DAYS} days.`);
+say('**Open pull requests** labelled `incident` — shipped without a spec because');
+say(`production was broken. Each owes a spec, or a recorded decision to close it as`);
+say(`a one-off, within ${INCIDENT_RECONCILE_DAYS} days.`);
 say('');
 if (!incidents.length) {
   say('_None open._');
@@ -311,7 +312,7 @@ if (!incidents.length) {
   for (const p of incidents.sort((a, b) => daysSince(b.createdAt) - daysSince(a.createdAt))) {
     const age = daysSince(p.createdAt);
     const flag = age > INCIDENT_RECONCILE_DAYS ? ' **← OVERDUE**' : '';
-    say(`- \`${p.repo}#${p.number}\` — ${short(p.title)} _(${age}d old)_${flag}`);
+    say(`- PR \`${p.repo}#${p.number}\` — ${short(p.title)} _(${age}d old)_${flag}`);
   }
 }
 say('');
@@ -334,15 +335,17 @@ const depPrs = prs.filter(p => isDepBot(p));
 
 say('## Downstream work with no spec declared');
 say('');
-say('Attribution is by explicit declaration only — a `Spec:` line, a `[spec/<slug>]`');
-say('title, or a closing keyword aimed at a fan-out issue. Nothing here is guessed,');
-say('so this list is the true set of work the control plane cannot account for.');
+say('**Open pull requests** in the private downstream repos that do not say which');
+say('spec they serve. Attribution is by explicit declaration only — a `Spec:` line,');
+say('a `[spec/<slug>]` title, or a closing keyword aimed at a fan-out issue. Nothing');
+say('here is guessed, so this is the true set of work the control plane cannot');
+say('account for.');
 say('');
 if (!undeclared.length) {
   say('_None._');
 } else {
   for (const p of undeclared.sort((a, b) => daysSince(b.updatedAt) - daysSince(a.updatedAt))) {
-    say(`- \`${p.repo}#${p.number}\`${p.isDraft ? ' _(draft)_' : ''} — ${short(p.title)} _(${daysSince(p.updatedAt)}d quiet)_`);
+    say(`- PR \`${p.repo}#${p.number}\`${p.isDraft ? ' _(draft)_' : ''} — ${short(p.title)} _(${daysSince(p.updatedAt)}d quiet)_`);
   }
   say('');
   say('Add `Spec: <id>` — `Spec: none — <reason>` for maintenance, or');
