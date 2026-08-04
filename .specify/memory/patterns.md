@@ -477,6 +477,26 @@ A `[spec/<slug>]` title prefix, or a closing keyword (`Closes #NNN`) aimed at a
 fan-out issue, counts as a declaration on its own — the fan-out issue already
 carries the slug.
 
+**Use a closing keyword only when the pull request completes the whole spec for
+that repo.** A fan-out issue is an umbrella: most specs land as several slices,
+and `Closes` on the first one to merge shuts the umbrella while the rest are
+still outstanding. The remaining slices then have nothing open to attach to, so
+the return path goes dark exactly when there is most left to deliver — and a
+half-delivered spec reads as shipped, which is one of the three failures this
+section exists to prevent.
+
+A slice therefore declares:
+
+```
+Spec: 049
+
+Part of #NNN — does not close it; further slices remain.
+```
+
+The `Spec:` line is the declaration; the bare issue reference supplies the link
+without closing. The last slice may use `Closes #NNN`, or the fan-out issue is
+closed by hand once the spec is delivered.
+
 `Spec: none` is a first-class answer, not a failure. The point is not that all
 work descends from a spec; it is that **unaccounted work is visible as such**.
 
