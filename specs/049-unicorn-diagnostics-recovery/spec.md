@@ -339,8 +339,10 @@ event without her describing anything about her child.
   one deployed build from another, independent of the release version. Blank MUST
   be impossible; if identity cannot be resolved the event MUST say so explicitly.
 - **FR-004** The event MUST carry a **staleness verdict**: whether the running
-  build is the build the server is currently serving. Comparing the running build
-  stamp against the deployed service-worker manifest is a sufficient mechanism.
+  build is the build the server is currently serving. Where a surface has no
+  served build to compare against — the native shell, where the service worker
+  is absent by design — the verdict MUST be `unavailable`, stated explicitly,
+  rather than a claim of freshness that cannot be established (OD-2).
 - **FR-005** The event MUST carry client state relevant to recovery: service
   worker registration state (active / waiting / installing / unsupported /
   disabled) and connectivity.
@@ -392,7 +394,10 @@ through the unicorn — see D8.
 - **FR-018** Client-side request instrumentation MUST exist and MUST ship
   **before** any bound is enforced (D9). It MUST record, per request: start,
   completion or failure, elapsed time, and whether the caller was still waiting
-  when the view was destroyed. Identifier-free, per the privacy rules below.
+  when the view was destroyed. It MUST also record a **route class**, so that a
+  later move to per-class bounds does not require re-instrumenting and waiting
+  out a second observation window (OD-8). Identifier-free, per the privacy rules
+  below.
 - **FR-019** Every read request to rettxapi MUST be bounded. A request that
   exceeds its bound MUST be cancelled rather than left outstanding, so the
   connection and the caller's waiting state are both released.
@@ -668,19 +673,51 @@ raised as OD-6.
 
 ## Open decisions
 
-- **OD-1** What is the build identity mechanism — an injected build-time stamp,
-  the entry bundle hash, or the service-worker manifest hash? Affects FR-003.
-- **OD-2** Is the staleness check (FR-004) performed eagerly on every unicorn, or
-  only for causes where it is plausibly relevant? Eager is simpler and one extra
-  request on an already-failed page is cheap; lazy is tidier.
-- **OD-3** What is the initial cause taxonomy? Measurement supports at least
-  `stale-build`, an auth family, `network`, and `unknown`. Splitting the auth
-  family further should wait for the classifier work now in progress.
-- **OD-4** Should the incident code be the `correlationId`, a truncation of it,
-  or a separate per-incident value? A per-incident value is more precise for
-  support; a truncation is easier to read aloud.
-- **OD-5** Does rettxadmin have a fatal-error surface today, or does this create
-  one? Determines whether its slice is small or merely tiny.
+- **OD-1** ~~What is the build identity mechanism?~~ **Resolved 2026-08-04 — a
+  value injected at build time, distinct from the release version.** The release
+  version cannot serve: two deploys of the same version are indistinguishable by
+  it, which is exactly the case FR-003 exists for. Any mechanism that depends on
+  the service worker also cannot serve, because the worker is absent on the
+  native surface by design, and FR-003 forbids blank. One requirement is
+  cross-cutting and stays here: **the build MUST fail if the identity is not
+  substituted**, so "blank is impossible" is enforced rather than merely
+  intended. How the value is injected and guarded is the implementing repo's
+  choice.
+- **OD-2** ~~Is the staleness check eager or lazy?~~ **Resolved 2026-08-04 —
+  eager.** Lazy is circular: it proposes checking staleness only where staleness
+  is plausibly relevant, but the verdict is frequently *what establishes* the
+  cause, so the input cannot be gated on the output. Eager costs one request on
+  a page that has already failed. Where the surface has no served build to
+  compare against, the verdict MUST be `unavailable` — never `fresh`, which
+  would be a lie, and never blank.
+- **OD-3** ~~What is the initial cause taxonomy?~~ **Resolved 2026-08-04 —
+  `stale-build`, `auth`, `data-load`, `network`, `unknown`.** Grounded in the
+  producers that route to the page today rather than in anticipated ones. None
+  of them passes a cause at present, which is precisely why FR-014 requires that
+  an untagged producer surface as `unknown` rather than as silence. `auth`
+  stays a single bucket until the classifier work lands; splitting it now would
+  invent distinctions the data cannot support.
+- **OD-4** ~~Should the incident code be the correlation id, a truncation of it,
+  or a separate value?~~ **Resolved 2026-08-04 — a separate per-incident value,
+  emitted alongside the existing correlation id.** That id is scoped to the
+  install and persists across sessions by design, so every unicorn on a device
+  shares it permanently. FR-007 requires a code that resolves to **the exact
+  event**, and an install-scoped id resolves instead to a device's entire
+  history; a truncation is strictly worse, being shorter and still not unique.
+  Emitting both is not redundancy — one gives support the history, the other
+  points at the row being discussed.
+- **OD-5** ~~Does rettxadmin have a fatal-error surface today?~~ **Resolved
+  2026-08-04 — no, and its slice is phase 2, gated.** Neither offered answer
+  ("small or merely tiny") was right, because both assumed an existing surface to
+  extend. There is none: rettxadmin would be creating one, and the prerequisites
+  for doing so are a body of work in their own right rather than a slice of this
+  spec. The two apps also serve different populations — caregivers and staff —
+  and this spec is named for the first. rettxadmin is **kept in scope by
+  decision**, but explicitly **phase 2 and gated on its prerequisites**, so the
+  caregiver-facing surface is never held up behind a staff tool. Read the
+  fan-out with that asymmetry in mind: these are not comparable slices of the
+  same work. What those prerequisites are, and how they are met, belongs to
+  rettxadmin's own repo and constitution.
 - **OD-6** ~~How does the programme surface a spec that is authored, correct and
   **stalled**?~~ **Resolved 2026-08-04.** `scripts/status.mjs` now reports every
   `draft` spec with the number of days since it was last edited, sorted
@@ -695,15 +732,26 @@ raised as OD-6.
   from git, so it cannot drift from reality or be forgotten. It is deliberately
   a prompt to a human, not a gate: a draft under active argument is healthy, and
   only silence is the signal.
-- **OD-7** What is an acceptable caregiver wait? The evidence establishes 30 s as
-  a **safety floor** — roughly 14 s above the worst legitimate completion, so it
-  will not kill healthy slow requests. It does not establish 30 s as a tolerable
-  time to stare at a spinner, and those are different questions. A shorter bound
-  with a retry affordance may serve a caregiver better than a long silent one.
-  Decide the number, and record why. Affects FR-022.
-- **OD-8** Does the bound apply uniformly to all rettxapi reads, or per class?
-  The measured evidence covers medication routes; the implementation under
-  consideration bounds every read. Uniform is simpler and easier to reason about;
-  per-class better fits routes whose legitimate tail differs by an order of
-  magnitude. Affects FR-019, and the scope/evidence mismatch should be closed
-  either by widening the measurement or narrowing the rule.
+- **OD-7 and OD-8 are coupled, and cannot be answered separately.** Recorded
+  2026-08-04. The slowest legitimate read yet measured has a tail reaching
+  15.7 s (p99 11.7 s). Any *uniform* bound must clear that, or it kills
+  healthy requests. So "30 s is too long to ask a caregiver to wait" and "one
+  bound for every read" **cannot both hold** — shortening the wait necessarily
+  means per-class bounds. Answering either one in isolation silently decides the
+  other.
+- **OD-7** What is an acceptable caregiver wait? Still open, and deferred **by
+  design rather than by neglect**: D9/FR-018 require instrumentation before
+  enforcement, and the server-side evidence cannot answer this question, because
+  it measures requests that completed rather than caregivers who gave up. 30 s
+  stands as a **provisional safety floor** — explicitly not a settled answer to
+  what a caregiver should be asked to tolerate. Revisit once FR-018 data exists,
+  and record the number with its reason. Affects FR-022.
+- **OD-8** Uniform or per-class? Still open, but with one consequence already
+  settled: whichever is chosen, **FR-018 instrumentation MUST record enough
+  per-route-class detail from the first day it ships**. If it does not, choosing
+  per-class later means re-instrumenting and waiting out a second observation
+  window — so the cheap option now forecloses the better option later. Uniform
+  is the sensible starting rule, since it matches the implementation already in
+  flight; the scope/evidence mismatch (measurement covers medication routes, the
+  rule covers every read) is then closed by the widened measurement rather than
+  by narrowing the rule.
