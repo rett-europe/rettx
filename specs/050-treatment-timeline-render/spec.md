@@ -301,6 +301,20 @@ number of medications.
   final position from the moment the chart is first rendered. Rows MUST NOT be
   inserted, removed or moved as further data resolves.
 
+- **FR-001a** FR-001 governs *when* the set of rows is decided, not *whether*
+  rows may be filtered. Omitting a medication whose course never ran in the
+  caregiver's selected window is established behaviour from spec 046 and
+  remains correct: a drug stopped long ago has no business occupying a row in a
+  three-month view, and a patient with a long medication history would otherwise
+  be shown a chart padded with rows reading "not on treatment". That filter
+  therefore stays — but the decision MUST be made before the chart is first
+  rendered, from data already held at that point. A row MUST NOT appear and then
+  be removed once its data resolves; that is the same defect as a row that moves.
+  Where a case genuinely cannot be decided before first paint, the row MUST be
+  kept rather than dropped late: a slightly noisier chart is preferable to one
+  that rearranges itself, and it fails safe toward showing the caregiver more
+  rather than less.
+
 - **FR-002** Row order MUST be the order supplied by the backend, established
   once, before any per-row data resolves. The client MUST NOT re-sort the chart.
 
@@ -351,9 +365,26 @@ number of medications.
   dose-change markers the chart already displays. Any period, dose or change
   the chart can render today MUST remain renderable from the single response.
 
+  If the response is ever narrowed to the caregiver's selected window to bound
+  its size, it MUST still include the version already in force when that window
+  opened, not only versions beginning inside it. A medication whose dose last
+  changed before the window has no version starting within it, yet governs the
+  whole window; filtering on "starts inside the window" would drop that
+  medication's track entirely while leaving the response looking complete.
+
 - **FR-012** FR-011 MUST be additive and backward compatible. Existing request
   and response shapes MUST continue to behave exactly as they do today, and the
   per-medication history route MUST remain available.
+
+  "Exactly as today" is deliberately strict, and it is scoped to this
+  requirement. FR-011 expands an existing route that other consumers already
+  depend on, and the entire justification for expanding it rather than adding a
+  new one is that a caller which does not opt in cannot tell the difference.
+  That standard is stricter than the programme's general rule for additive
+  evolution, and it is **not** a new general rule: it does not forbid additive
+  optional fields elsewhere, and it should not be cited as precedent for that.
+  Where a future change adds a field on its own terms rather than behind an
+  opt-in, the constitution's additive-evolution principle governs as before.
 
 - **FR-013** The number of requests required to render the chart MUST NOT grow
   with the number of medications a patient is taking.
@@ -391,6 +422,13 @@ number of medications.
   and reason without those outcomes appearing in exception telemetry, and the
   API's exception rate reflects only unexpected failures.
 
+  The first half is provable from code and MUST be pinned by tests. The second
+  half is only observable after deployment, because platform auto-instrumentation
+  may record outcomes independently of the application. SC-005 is therefore
+  verified against real telemetry once shipped; if the exception rate does not
+  move, the residual source is auto-instrumentation rather than the application
+  path this spec changes.
+
 - **SC-006** Automated tests fail if a row changes position after first paint,
   or if a loading row renders as empty space.
 
@@ -404,7 +442,14 @@ number of medications.
 - **The printable treatment sheet.** A different artefact with different
   rendering, unaffected by these defects.
 - **Any change to the medication data model, indexing or query strategy.** The
-  reads were examined and found sound.
+  reads were examined and found sound. This excludes changes made *to improve
+  latency* — remodelling, new indexes, or reshaping existing queries on the
+  theory that they are slow. It does not exclude the read that FR-011 and FR-013
+  necessarily require: serving a whole chart from one request means asking for
+  data the API was not previously asked for. That read is in scope provided it
+  needs no new index and no indexing-policy change, and provided it does not
+  replace one request from the client with one query per medication on the
+  server — which would be a fix in name only.
 - **Any change to how unknown or malformed patient identifiers are answered.**
   Explicitly excluded by D4 and FR-016.
 
@@ -436,3 +481,22 @@ number of medications.
   third-party client, or a misconfigured base path somewhere in the ecosystem.
   Worth identifying and then dismissing or giving its own item; it must not
   delay this spec.
+
+- **OD-3 — Should the batched chart response be bounded, and if so by what?**
+  FR-011 asks for data sufficient to draw the caregiver's selected window, but
+  nothing in this spec gives the API that window, and FR-013 bounds the number
+  of requests rather than the size of the response. The result is a response
+  that carries every medication's complete history, so it grows with the length
+  of a patient's recorded treatment rather than with what is on screen. For a
+  patient a few months in this is nothing; for a patient with a decade of dose
+  titration it may not be.
+
+  Leaving it unbounded is the right initial choice: a complete response is
+  cacheable and lets the caregiver change the window without another request,
+  and the failure mode of too much data is slowness, whereas the failure mode of
+  a wrong boundary is a chart that misrepresents a child's treatment. Those are
+  not symmetric. Like OD-1, the honest answer needs production measurement
+  rather than a number agreed in advance.
+
+  If it is later bounded, FR-011a governs how: selection MUST be by overlap with
+  the window, never by when a version was created or took effect.
