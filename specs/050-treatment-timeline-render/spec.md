@@ -315,6 +315,24 @@ number of medications.
   that rearranges itself, and it fails safe toward showing the caregiver more
   rather than less.
 
+  FR-001a also governs *which inputs* may inform that decision, which is a
+  separate question from when it is taken. The row set MUST be settled from the
+  data that establishes the rows themselves. A chart may draw additional
+  material onto a row from a source loaded separately — markers for what a
+  caregiver reported against a course, for instance — and such a source can in
+  principle argue for keeping a row that the primary data alone would exclude.
+  That argument MAY be honoured only where the secondary source is already in
+  hand when the view is established. It MUST NOT delay the first paint, and it
+  MUST NOT reopen the decision once taken. The consequence is deliberate and
+  accepted: a row that a late-arriving secondary source would have justified is
+  absent until the caregiver next establishes a view. Both alternatives are
+  worse — one makes every caregiver wait on data almost none of them need, and
+  the other makes a row appear after the chart has been read, which is the
+  defect this spec exists to remove. Implementations MUST NOT record the
+  keep-rule as though it applied on first load when it cannot; a comment or
+  contract that promises more than the code delivers will be closed by a future
+  reader in exactly the way this requirement forbids.
+
 - **FR-002** Row order MUST be the order supplied by the backend, established
   once, before any per-row data resolves. The client MUST NOT re-sort the chart.
 
