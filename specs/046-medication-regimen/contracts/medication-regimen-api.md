@@ -182,10 +182,17 @@ Returns, per `medication_id`, the latest `version` whose
   This is deliberate and MUST NOT be "improved" to a locale-aware
   comparison: the response is shared and cacheable, so a locale-sensitive order
   would let the same data come back in different orders for different callers,
-  which is unorderable in a client that is required not to re-sort. Any client
-  fixture or mock MUST fold the same way; one that compares with a locale-aware
-  collation renders a plausible chart whose row positions differ from
-  production, and nothing fails.
+  which is unorderable in a client that is required not to re-sort.
+
+  Anything standing in for the server in a test — a mock, a fixture, a stub —
+  MUST NOT produce an order the server would not produce. How it achieves that
+  is the client's decision, and the obligation is not "reimplement the fold": a
+  stand-in that can only guarantee agreement over part of the input range
+  satisfies this by **failing loudly** on anything outside that range, rather
+  than ordering it plausibly. What is forbidden is the silent case, where the
+  stand-in orders unfamiliar input by some rule of its own, every test passes,
+  and the chart it renders disagrees with the one caregivers see. A stand-in
+  that stops is a failed test; a stand-in that guesses is a false one.
 
   Known consequence, recorded rather than hidden: code-point comparison places
   every accented name after every unaccented one, so a name beginning `É` sorts
