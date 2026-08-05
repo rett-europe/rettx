@@ -194,6 +194,14 @@ Returns, per `medication_id`, the latest `version` whose
   and the chart it renders disagrees with the one caregivers see. A stand-in
   that stops is a failed test; a stand-in that guesses is a false one.
 
+  The obligation follows the stand-in, not the test. Where the same stand-in
+  also backs a runnable surface — a development or demonstration mode — it holds
+  there too, and "loudly" then has a second half: the failure MUST reach someone
+  who can act on it, and MUST NOT be shown to a person using the surface as
+  though it were data. Which layer refuses is the client's choice; refusing
+  where the row set is assembled generally satisfies both halves, refusing
+  during render generally satisfies neither.
+
   Known consequence, recorded rather than hidden: code-point comparison places
   every accented name after every unaccented one, so a name beginning `É` sorts
   past `Z`. For a European register of drug names that is visibly odd. Whether
