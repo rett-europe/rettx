@@ -156,7 +156,58 @@ Returns, per `medication_id`, the latest `version` whose
 }
 ```
 
-- Ordering: `name` ascending, `as_needed` rows last (they print as a block).
+- Ordering: `name` ascending, `as_needed` rows last (they print as a block), and
+  ties broken by `medication_id` so the order is total. The tie-break is not
+  cosmetic: two prescriptions of the same drug at different doses share both
+  `name` and `as_needed`, and without a unique final key their relative order
+  falls through to storage order and may differ between reads. Clients are
+  required to render server order without re-sorting (spec 050, FR-002/FR-002a),
+  so an ordering that is not total surfaces as a chart that rearranges itself
+  between refreshes. This applies to every response that carries medications in
+  a list, including the batched version chains below.
+
+  `name` ascending is compared **case-folded, by code point** — not by locale
+  collation. "Case-folded" here means **full Unicode case folding** (the full
+  form defined by Unicode's `CaseFolding` data), not lowercasing. The two are
+  not interchangeable and the difference is reachable in drug names: full
+  folding maps `ß` to `ss`, the micro sign `µ` to Greek mu `μ`, the `ﬁ` ligature
+  to `fi`, and Greek final sigma `ς` to `σ`; lowercasing maps none of them. `µg`
+  is an ordinary dose unit, and a keyboard emits the micro sign where a document
+  may carry Greek mu, so two names differing only in which character they use
+  fold together on the server and stay apart under a naive lowercase.
+  Implementations MUST name and use the standard rather than accumulate
+  character replacements: a hand-maintained substitution list matches until it
+  meets the next character nobody thought of, and produces no error when it
+  fails.
+  This is deliberate and MUST NOT be "improved" to a locale-aware
+  comparison: the response is shared and cacheable, so a locale-sensitive order
+  would let the same data come back in different orders for different callers,
+  which is unorderable in a client that is required not to re-sort.
+
+  Anything standing in for the server in a test — a mock, a fixture, a stub —
+  MUST NOT produce an order the server would not produce. How it achieves that
+  is the client's decision, and the obligation is not "reimplement the fold": a
+  stand-in that can only guarantee agreement over part of the input range
+  satisfies this by **failing loudly** on anything outside that range, rather
+  than ordering it plausibly. What is forbidden is the silent case, where the
+  stand-in orders unfamiliar input by some rule of its own, every test passes,
+  and the chart it renders disagrees with the one caregivers see. A stand-in
+  that stops is a failed test; a stand-in that guesses is a false one.
+
+  The obligation follows the stand-in, not the test. Where the same stand-in
+  also backs a runnable surface — a development or demonstration mode — it holds
+  there too, and "loudly" then has a second half: the failure MUST reach someone
+  who can act on it, and MUST NOT be shown to a person using the surface as
+  though it were data. Which layer refuses is the client's choice; refusing
+  where the row set is assembled generally satisfies both halves, refusing
+  during render generally satisfies neither.
+
+  Known consequence, recorded rather than hidden: code-point comparison places
+  every accented name after every unaccented one, so a name beginning `É` sorts
+  past `Z`. For a European register of drug names that is visibly odd. Whether
+  the sort key should additionally fold diacritics — which would keep the order
+  locale-independent and deterministic while placing `É` beside `E` — is an
+  open decision (spec 050, OD-4), not a licence to switch to collation.
 - A patient with no medications returns `"medications": []` and HTTP 200 — never
   404.
 - `latest_weight` / `latest_height` are `null` when no such entry exists. The
