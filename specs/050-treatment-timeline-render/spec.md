@@ -281,7 +281,10 @@ number of medications.
   distinct identities and MUST be treated independently, including under
   out-of-order resolution. This is the case that exposed the defect.
 - **A drug whose dose changed inside the window** — the chart MUST still depict
-  the earlier period at the earlier dose. This is the case that makes D1 true.
+  the earlier period at the earlier dose, AND MUST still mark the day the dose
+  changed as distinct from an ordinary day in treatment. This is the case that
+  makes D1 true, and the marker is the detail most likely to be lost by an
+  incomplete batching implementation.
 - **A drug started or stopped inside the window** — partial tracks MUST render
   correctly and MUST NOT be confused with a loading state.
 - **Data that never arrives** — a row whose data fails MUST resolve to an
@@ -337,6 +340,14 @@ number of medications.
   together with their full recorded history in a single request, sufficient to
   draw the treatment chart over the caregiver's selected window without further
   per-medication requests.
+
+- **FR-011a** "Sufficient" in FR-011 means every superseded period a caregiver
+  can see, not merely the boundaries of the current one. The chart distinguishes
+  a day on which the dose changed from an ordinary day in treatment, so a
+  response that describes only when each medication started and stopped is NOT
+  sufficient: it would satisfy FR-011 read loosely while silently losing the
+  dose-change markers the chart already displays. Any period, dose or change
+  the chart can render today MUST remain renderable from the single response.
 
 - **FR-012** FR-011 MUST be additive and backward compatible. Existing request
   and response shapes MUST continue to behave exactly as they do today, and the
