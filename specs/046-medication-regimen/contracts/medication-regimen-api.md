@@ -156,7 +156,15 @@ Returns, per `medication_id`, the latest `version` whose
 }
 ```
 
-- Ordering: `name` ascending, `as_needed` rows last (they print as a block).
+- Ordering: `name` ascending, `as_needed` rows last (they print as a block), and
+  ties broken by `medication_id` so the order is total. The tie-break is not
+  cosmetic: two prescriptions of the same drug at different doses share both
+  `name` and `as_needed`, and without a unique final key their relative order
+  falls through to storage order and may differ between reads. Clients are
+  required to render server order without re-sorting (spec 050, FR-002/FR-002a),
+  so an ordering that is not total surfaces as a chart that rearranges itself
+  between refreshes. This applies to every response that carries medications in
+  a list, including the batched version chains below.
 - A patient with no medications returns `"medications": []` and HTTP 200 — never
   404.
 - `latest_weight` / `latest_height` are `null` when no such entry exists. The

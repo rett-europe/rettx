@@ -318,6 +318,19 @@ number of medications.
 - **FR-002** Row order MUST be the order supplied by the backend, established
   once, before any per-row data resolves. The client MUST NOT re-sort the chart.
 
+- **FR-002a** FR-002 places the whole ordering guarantee on the backend, so the
+  order the backend supplies MUST be total: for a given set of records it MUST
+  be identical on every read. An ordering rule whose keys two records can share
+  does not meet this, however sensible it looks — the records that tie then fall
+  back to whatever order storage happened to return, which may differ between
+  two reads of unchanged data. The visible result is a chart that reorders
+  itself between refreshes, which is the defect this spec exists to remove,
+  reached by a different route and not fixable by any client that honours
+  FR-002. Ordering rules MUST therefore end in a key that is unique per record.
+  Two prescriptions of the same drug are the ordinary case that exposes this,
+  not a contrived one: the same medication is legitimately recorded twice at
+  different doses, and every human-meaningful sort key it has is shared.
+
 - **FR-003** The ordering guarantee in FR-001 MUST hold regardless of the order,
   timing or interleaving in which underlying responses arrive, and MUST hold
   when two rows carry the same displayed medication name with different
