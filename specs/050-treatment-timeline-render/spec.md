@@ -210,8 +210,10 @@ because it is the one that would have shipped. See D1.
 
 - **D4 — Do not "improve" the response to an unknown or malformed patient
   identifier.** Telemetry showing repeated not-found responses against a
-  patient-shaped identifier prompted a review of this path. The review found the
-  behaviour correct and deliberate: format is validated before any lookup
+  patient-shaped identifier prompted a review of this path. Those particular
+  responses turned out not to originate from identifier handling at all (see
+  OD-2), but the review stands on its own and its finding is what matters here:
+  the behaviour is correct and deliberate. Format is validated before any lookup
   occurs, an access grant is required before existence is ever tested, and the
   caller therefore learns nothing about which patients exist. A more "helpful"
   or more specific error here would convert a sound privacy property into an
@@ -417,11 +419,20 @@ number of medications.
   batched shape has been measured in production.
 
 - **OD-2 — Repeated not-found responses were observed against a patient-shaped
-  identifier that does not match the programme's identifier format.** The client
-  was cleared as their source: the value appears nowhere in client code, and the
-  client never retries these responses. The remaining candidates are a synthetic
-  monitoring probe, a telemetry rule that masks identifiers before recording
-  them, or a real value returned by an upstream listing. It is NOT a cause of
-  the behaviour this spec addresses, and is recorded here only so it is not
-  lost. It should be identified and then either dismissed or given its own item;
-  it should not delay this spec.
+  identifier that does not match the programme's identifier format.** The
+  mechanism is now resolved: those requests used a path that does not exist on
+  the API, so they terminated at routing within milliseconds and never reached
+  authentication, identifier validation, an access check, or storage. The
+  malformed identifier was therefore never even parsed. There was no security
+  exposure at any point, and no connection to the behaviour this spec addresses
+  — the requests did no backend work and delayed nothing.
+
+  Two points survive. First, these responses are a concrete example of the
+  telemetry defect in FR-014: a caller's wrong URL produced stack-bearing
+  exception telemetry indistinguishable from a genuine fault. Second, the caller
+  itself is still unidentified. It is not the treatment chart — the caregiver
+  client was cleared, the value appears nowhere in its code, and it never
+  retries these responses. Candidates are a monitoring probe, an outdated or
+  third-party client, or a misconfigured base path somewhere in the ecosystem.
+  Worth identifying and then dismissing or giving its own item; it must not
+  delay this spec.
