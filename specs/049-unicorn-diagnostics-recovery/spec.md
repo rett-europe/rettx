@@ -349,7 +349,11 @@ event without her describing anything about her child.
   rather than a claim of freshness that cannot be established (OD-2).
 - **FR-005** The event MUST carry client state relevant to recovery: service
   worker registration state (active / waiting / installing / unsupported /
-  disabled) and connectivity.
+  disabled / `unresolved`) and connectivity. `unresolved` covers a lookup that
+  threw, rejected or timed out: the state could not be established, and
+  reporting any of the other five would be a false claim. The same principle
+  governs FR-003 and FR-004 — a value that cannot be established MUST say so
+  rather than be guessed.
 - **FR-006** The event MUST NOT contain personal data. Specifically: no free-text
   user input, no raw URLs, no un-normalised route (routes MUST be reduced to a
   stable non-identifying form), no patient identifiers, no tokens, and no error
@@ -679,6 +683,36 @@ works outranks a translated page that might not render.
 **Standing note for reviewers.** Until phase 4 lands, hardcoded English on this
 page is expected, not an oversight, and a review that flags it as a defect is
 reading the wrong phase. The strings predate this spec.
+
+### Amendment 2026-08-05 — FR-005 gains a sixth service-worker state
+
+FR-005 originally fixed the service-worker state at five values: active,
+waiting, installing, unsupported, disabled. Phase 2 added a sixth, `unresolved`,
+and it is now part of the requirement.
+
+The reason is the one OD-2 already gives for `unavailable`. Those five values are
+all *findings* — each asserts something established about the registration. A
+lookup that throws, rejects or times out establishes nothing, so reporting any of
+the five would be a false claim, and reporting nothing would be blank, which
+FR-003 forbids on the same grounds. `unresolved` is the honest answer, and it is
+also the operationally useful one: a rising `unresolved` rate is itself a signal,
+whereas a lookup failure disguised as `disabled` is indistinguishable from a
+caregiver who genuinely has no worker registered.
+
+Two things are worth recording about how this arrived, because the process
+matters as much as the value.
+
+The implementation proposed the sixth value and **disclosed it explicitly** as an
+extension rather than shipping it inside a diff. That is the behaviour this spec
+wants. An implementation that widens a fixed taxonomy silently leaves the code as
+the real specification and this document as fiction — which is exactly the failure
+the 2026-08-05 amendment to FR-002 was written to prevent. Disclosure is what
+makes the extension reviewable.
+
+The corollary is that disclosure alone does not settle anything. It was only half
+the job; the requirement was not actually amended until this section was written.
+A spec that lags what production emits is not a lesser problem than code that
+drifts from its spec — it is the same problem seen from the other end.
 
 ## Risks
 
