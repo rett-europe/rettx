@@ -378,6 +378,13 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
     the cross-repo requirement. (This rule exists because a fixture-ordering
     clause was written naming full Unicode case folding — one call in the
     backend's language, absent from the frontend's.)
+    - *Why it is hard to catch*: a clause naming a standard **reads as
+      neutral**. "Conform to X" looks like it imposes no cost on anyone,
+      because on the author's side it genuinely doesn't — the cost is invisible
+      from the only vantage point the author has. The tell is always the same:
+      nobody has run it on the other side. Treat "surely that's cheap
+      everywhere" as the same unverified assertion as "that case can't occur",
+      and get the affected repo to price it before the spec is `ready`.
 - **The umbrella spec hosts the shared API contract** under
   `specs/NNNN-slug/contracts/`. The control plane owns the contract's location
   as the single source of truth; `rettxapi` **implements and versions** it.
