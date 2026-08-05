@@ -333,6 +333,26 @@ number of medications.
   contract that promises more than the code delivers will be closed by a future
   reader in exactly the way this requirement forbids.
 
+  The residual case this leaves is known, and is named here so that nobody
+  mistakes it for a defect or "fixes" it by weakening FR-001. Absence can be
+  proven up front only for a course that had already finished before the window
+  opened. A course that stopped and later restarted cannot be ruled out that
+  way: viewed in the interval between the two, it is still an active course, and
+  only its full history shows that it covered no part of the window. Such a row
+  MUST therefore be kept and will render as an unoccupied row for that view.
+  This is a first-paint artefact, not a permanent one — when the caregiver next
+  establishes a view the full history is in hand, the case becomes decidable,
+  and the row correctly disappears. It requires a stop, a restart, and a view
+  landing in the gap between them, so it is rare; and it is strictly preferable
+  to the alternative, which is a row vanishing from a chart the caregiver has
+  already started reading.
+
+  This class of problem is an artefact of history arriving after the rows do. It
+  disappears entirely once the chart obtains every version in the same response
+  that establishes the rows (FR-007, FR-011), at which point every inclusion
+  case is decidable before first paint. The keep-rule above is what correctness
+  requires in the interim, not a permanent accommodation.
+
 - **FR-002** Row order MUST be the order supplied by the backend, established
   once, before any per-row data resolves. The client MUST NOT re-sort the chart.
 
