@@ -167,7 +167,19 @@ Returns, per `medication_id`, the latest `version` whose
   a list, including the batched version chains below.
 
   `name` ascending is compared **case-folded, by code point** — not by locale
-  collation. This is deliberate and MUST NOT be "improved" to a locale-aware
+  collation. "Case-folded" here means **full Unicode case folding** (the full
+  form defined by Unicode's `CaseFolding` data), not lowercasing. The two are
+  not interchangeable and the difference is reachable in drug names: full
+  folding maps `ß` to `ss`, the micro sign `µ` to Greek mu `μ`, the `ﬁ` ligature
+  to `fi`, and Greek final sigma `ς` to `σ`; lowercasing maps none of them. `µg`
+  is an ordinary dose unit, and a keyboard emits the micro sign where a document
+  may carry Greek mu, so two names differing only in which character they use
+  fold together on the server and stay apart under a naive lowercase.
+  Implementations MUST name and use the standard rather than accumulate
+  character replacements: a hand-maintained substitution list matches until it
+  meets the next character nobody thought of, and produces no error when it
+  fails.
+  This is deliberate and MUST NOT be "improved" to a locale-aware
   comparison: the response is shared and cacheable, so a locale-sensitive order
   would let the same data come back in different orders for different callers,
   which is unorderable in a client that is required not to re-sort. Any client
