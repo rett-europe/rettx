@@ -367,6 +367,35 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
     push spec was nearly written for Web Push/VAPID when `rettxweb` had already
     become a Capacitor native Android app — the registry, not the issue text, is
     the source of truth for platform facts.)
+  - **A clause that names a standard prices differently in each repo.** "Use
+    the standard X" reads as one obligation but is not one: the same words can
+    be a single stdlib call in one repo and a generated table or a new
+    dependency — chargeable against the bundle budget — in another. The author
+    is usually fluent in one of the affected stacks and prices the clause from
+    there. So state the **outcome that must hold** and let each repo choose how
+    to reach it, including by restricting its input range and failing loudly
+    outside it. Name a specific mechanism only where the mechanism itself is
+    the cross-repo requirement. (This rule exists because a fixture-ordering
+    clause was written naming full Unicode case folding — one call in the
+    backend's language, absent from the frontend's.)
+    - *Why it is hard to catch*: a clause naming a standard **reads as
+      neutral**. "Conform to X" looks like it imposes no cost on anyone,
+      because on the author's side it genuinely doesn't — the cost is invisible
+      from the only vantage point the author has. The tell is always the same:
+      nobody has run it on the other side. Treat "surely that's cheap
+      everywhere" as the same unverified assertion as "that case can't occur",
+      and get the affected repo to price it before the spec is `ready`.
+  - **A cross-repo clause is provisional until the repo that implements it has
+    read it against its own deployment reality.** Not a counsel of care — the
+    round trip is the mechanism, in the same way a test is provisional until it
+    has been seen to fail. What such a clause gets wrong is reliably a
+    *deployment or lifecycle fact*, not a logic error: which inputs are actually
+    in hand at the moment a decision must be made, or whether a thing believed
+    to be test-only also ships. Neither is visible from the authoring side at
+    any level of diligence, and both were found this way rather than by review.
+    A corollary worth keeping: **write the clause concretely enough to picture
+    running.** A vague clause draws no objection because there is nothing to
+    picture — the specificity is what makes the missing fact surface.
 - **The umbrella spec hosts the shared API contract** under
   `specs/NNNN-slug/contracts/`. The control plane owns the contract's location
   as the single source of truth; `rettxapi` **implements and versions** it.
@@ -580,3 +609,5 @@ private repo.
 | 2026-08-02 | §6: registered the **`credentials`** label — a per-repo rolling credential-expiry report issue owned by each repo's own `credential-expiry.yml` workflow (not Iris, not hand-filed). Prompted by [spec 047](../../specs/047-credential-expiry-monitor/spec.md): a manual pre-holiday sweep found already-expired directory credentials still in place, and no expiry set on any vault secret, so nothing in the estate was being watched. Monitoring is split per repo (`rettxapi` = cloud identity / vault / TLS, `rettxweb` = mobile store and signing) because the checkers reference infrastructure identifiers that must not land in the public control plane — which is also why the findings are summarised by class rather than enumerated. |
 | 2026-08-04 | Added §11 **Delivery accounting** — the return path for fan-out. `spec-fanout` pushes intent outward and stops, so the control plane could state what it had asked for but never what it got: a stalled spec looked like a healthy one, a half-delivered spec read as shipped, and work with no spec behind it did not register at all. Three conventions close the loop: every downstream PR declares `Spec: <id>` / `Spec: none — <reason>` / `Spec: incident — <link>`; a new **`incident`** label (§6) gives production breakage a legitimate route that ships without a spec but must be reconciled within 7 days; and `scripts/status.mjs` reconciles specs against downstream issues/PRs on demand, attributing work by explicit declaration only. Machine-generated dependency PRs (Dependabot et al.) are explicitly **outside** this convention — they are opened per repo on their own schedule and express no programme intent, so dependency hygiene stays a per-repo responsibility with its own escalation path and the report excludes them rather than reporting them as unaccounted work. The report stays **local** — `rettx` is public, the downstream repos are private, and Actions logs on a public repo are world-readable, so it is gitignored and refuses to run in CI. Renumbered the change log to §12. Prompted by three urgent fixes shipping with no spec and being retro-fitted to one written afterwards, and by spec 001's fan-out issue sitting open for 94 days unnoticed. |
 | 2026-08-04 | §2: added an **Operational shorthand** subsection and defined **unicorn** — the `/global-error` page reached when an unhandled client error escapes to `GlobalErrorHandler`. Already used as vocabulary in [spec 034](../../specs/034-auth-observability/spec.md) but undiscoverable outside it, so newcomers and AI assistants misread "I saw a unicorn" as whimsy rather than a crash report. Includes how a unicorn appears in telemetry (`pageViews` on `/global-error`; `exceptions` with `source: GlobalErrorHandler` + `correlationId`) so unicorns-per-hour is usable as a post-deploy health check. |
+| 2026-08-05 | §7: added the rule that a spec clause naming a standard prices differently in each repo — state the outcome and let each repo choose the mechanism, including restricting its input range and failing loudly outside it. Prompted by spec 050, where a fixture-ordering clause named full Unicode case folding: one call in the backend's language, absent from the frontend's and reachable only via a generated table or a dependency. |
+| 2026-08-05 | §7: a cross-repo clause is provisional until the implementing repo has read it against its own deployment reality — the round trip is the mechanism, not extra care. What such clauses get wrong is reliably a deployment or lifecycle fact rather than a logic error. Corollary: write the clause concretely enough to picture running, since a vague one draws no objection. Prompted by two gaps in spec 050 found this way (FR-001a, and a fixture that also ships). |
