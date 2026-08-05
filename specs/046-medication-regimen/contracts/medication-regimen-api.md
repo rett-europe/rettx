@@ -165,6 +165,22 @@ Returns, per `medication_id`, the latest `version` whose
   so an ordering that is not total surfaces as a chart that rearranges itself
   between refreshes. This applies to every response that carries medications in
   a list, including the batched version chains below.
+
+  `name` ascending is compared **case-folded, by code point** — not by locale
+  collation. This is deliberate and MUST NOT be "improved" to a locale-aware
+  comparison: the response is shared and cacheable, so a locale-sensitive order
+  would let the same data come back in different orders for different callers,
+  which is unorderable in a client that is required not to re-sort. Any client
+  fixture or mock MUST fold the same way; one that compares with a locale-aware
+  collation renders a plausible chart whose row positions differ from
+  production, and nothing fails.
+
+  Known consequence, recorded rather than hidden: code-point comparison places
+  every accented name after every unaccented one, so a name beginning `É` sorts
+  past `Z`. For a European register of drug names that is visibly odd. Whether
+  the sort key should additionally fold diacritics — which would keep the order
+  locale-independent and deterministic while placing `É` beside `E` — is an
+  open decision (spec 050, OD-4), not a licence to switch to collation.
 - A patient with no medications returns `"medications": []` and HTTP 200 — never
   404.
 - `latest_weight` / `latest_height` are `null` when no such entry exists. The

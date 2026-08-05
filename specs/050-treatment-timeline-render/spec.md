@@ -331,6 +331,16 @@ number of medications.
   not a contrived one: the same medication is legitimately recorded twice at
   different doses, and every human-meaningful sort key it has is shared.
 
+  Stability also means stable *across callers*, not only across reads. An
+  ordering that depends on the caller's locale is not stable in this sense: the
+  same shared, cacheable response can then be legitimately ordered two ways,
+  and a client forbidden to re-sort has no way to reconcile them or even to
+  detect the difference. Comparison rules MUST therefore be fixed by the
+  contract and locale-independent, and any client fixture standing in for the
+  server MUST reproduce them — a fixture that orders differently produces a
+  plausible chart whose row positions silently differ from production, and no
+  test fails.
+
 - **FR-003** The ordering guarantee in FR-001 MUST hold regardless of the order,
   timing or interleaving in which underlying responses arrive, and MUST hold
   when two rows carry the same displayed medication name with different
@@ -513,3 +523,19 @@ number of medications.
 
   If it is later bounded, FR-011a governs how: selection MUST be by overlap with
   the window, never by when a version was created or took effect.
+
+- **OD-4 — Should the name sort key fold diacritics?** The order is compared
+  case-folded by code point, which is deterministic and locale-independent and
+  must stay that way (FR-002a). The side effect is that every accented name
+  sorts after every unaccented one, so a drug beginning `É` lands past `Z`. On a
+  European register of drug names that is visibly wrong to a caregiver, who sees
+  an alphabetical list with a handful of drugs stranded at the end.
+
+  Folding diacritics into the sort key would place `É` beside `E` while keeping
+  the order deterministic and locale-independent, so it does not reopen the
+  question FR-002a settles. It is recorded as an open decision rather than a
+  requirement because it changes the order of existing responses, which is a
+  product judgement about what caregivers should see and not a defect to be
+  fixed silently. What is NOT open: switching to a locale-aware collation to
+  achieve the same effect, which FR-002a forbids for reasons that have nothing
+  to do with how the result looks.
