@@ -123,6 +123,7 @@ Base: `/v2/patients/{rettxid}/pulse/medications`
 |---|---|---|
 | GET | `` | List the regimen **as of a date** (default today) |
 | GET | `?include=all` | List every medication ever recorded (current version each) |
+| GET | `?history=true` | Additionally return each listed medication's full version chain |
 | GET | `/{medication_id}` | One medication, current version |
 | GET | `/{medication_id}/history` | All versions, newest first |
 | POST | `` | Add a medication (creates `version: 1`) |
@@ -132,7 +133,8 @@ Base: `/v2/patients/{rettxid}/pulse/medications`
 
 ### `GET /v2/patients/{rettxid}/pulse/medications`
 
-Query: `as_of` (ISO date, default today) · `include` (`current` default | `all`)
+Query: `as_of` (ISO date, default today) · `include` (`current` default | `all`) ·
+`history` (`false` default | `true`)
 
 Returns, per `medication_id`, the latest `version` whose
 `valid_from ≤ as_of ≤ (valid_to ?? ∞)`. Single-partition read on `/patient_id`.
@@ -160,6 +162,41 @@ Returns, per `medication_id`, the latest `version` whose
 - `latest_weight` / `latest_height` are `null` when no such entry exists. The
   client renders the date alongside the value; rettX never warns that a
   measurement is stale.
+
+#### Batched version chains — `history=true` (added by spec 050)
+
+Opt-in, and opt-in only. When `history` is omitted or `false` the response body is
+exactly as above: the `history` key is **absent entirely**, not `null`. Existing
+callers see no change.
+
+When `history=true`:
+
+```jsonc
+{
+  "as_of": "2026-08-01",
+  "medications": [ /* unchanged — one MedicationRegimenRow per medication */ ],
+  "latest_weight": null,
+  "latest_height": null,
+  "history": {
+    "med-a1b2c3": [ /* MedicationRegimenRow[] — every version, newest first */ ]
+  }
+}
+```
+
+- Each value is the same as the `versions` array from
+  `GET /{medication_id}/history` for that medication — same row shape, same
+  order — so a client can feed either into the same code.
+- Keys are exactly the `medication_id`s present in `medications`.
+- `history` and `include` are orthogonal: `include` chooses **which medications**
+  appear, `history` never truncates the chain of the ones that do.
+- `{}` means "requested, none recorded". An absent key means "not requested".
+
+This exists so that a client painting a treatment chart across several
+medications can do so in **one request**. Without it the only way to obtain
+earlier dose periods is one `/history` call per medication, which is what
+spec 050 removes. `include=all` alone is not sufficient: it returns the current
+version of each medication, so every superseded period — and every dose change
+within it — is missing.
 
 ### `POST /v2/patients/{rettxid}/pulse/medications`
 
