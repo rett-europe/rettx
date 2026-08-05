@@ -20,7 +20,7 @@
 spec_id: "034"
 slug: "auth-observability"
 title: "rettX Auth-Failure Observability & Diagnosability"
-status: draft   # draft | ready | accepted | superseded
+status: superseded   # draft | ready | accepted | superseded
 authored: "2026-07-13"
 author: "perocha"
 source_issue: "rett-europe/rettx#31"
@@ -127,7 +127,27 @@ fanout:
 
 # Feature Specification: rettX Auth-Failure Observability & Diagnosability
 
-**Spec ID**: `034-auth-observability` · **Status**: Draft · **Created**: 2026-07-13
+**Spec ID**: `034-auth-observability` · **Status**: Superseded · **Created**: 2026-07-13
+
+> **Superseded on 2026-08-05.** This spec never left `draft`, and it is now closed
+> without being delivered as written. Everything below is retained as a record of
+> what was asked for and why; none of it is an outstanding commitment.
+>
+> Its client-side requirements were either delivered through incident-driven work
+> or carried into [spec 049](../049-unicorn-diagnostics-recovery/spec.md), which
+> audits them one by one against the code. Two were carried forward explicitly:
+> FR-012's principle as 049's D7, and FR-013's alert as 049's FR-017.
+>
+> Its backend half was **not** carried forward and is **not** being re-specified.
+> That is a deliberate decision, not an oversight: this spec is over three weeks
+> old, it stalled on unanswered questions rather than on disagreement, and the
+> programme is choosing to move on rather than keep a stale draft alive. If the
+> behaviour it describes is still wrong, it will surface as a bug and be handled
+> on its own merits.
+>
+> The governance lesson is recorded in 049 (OD-6) and in `patterns.md`: a correct
+> spec that nobody rejects can still die of silence, and nothing in the pipeline
+> makes that visible.
 **Source issue**: [rett-europe/rettx#31](https://github.com/rett-europe/rettx/issues/31) (cross-cutting)
 **Owner**: rettX control plane (this repo) — authored and coordinated here; scoped work is fanned out to the affected repos via the `spec-fanout` workflow on merge.
 **Input**: A pilot user's native app hangs on cold start; the only signal is a burst of context-free `403 {'detail': 'Not authenticated'}` server exceptions on `GET /v2/patients`. Diagnosing it required hours of code archaeology. "How will we detect when something is going south, when all we see is a cryptic burst of 403?"
