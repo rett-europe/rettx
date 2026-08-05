@@ -539,3 +539,9 @@ number of medications.
   fixed silently. What is NOT open: switching to a locale-aware collation to
   achieve the same effect, which FR-002a forbids for reasons that have nothing
   to do with how the result looks.
+
+  If OD-4 is ever taken, the server's rule and every fixture standing in for it
+  MUST change in the same step. Moving either alone recreates precisely the
+  divergence that made this requirement necessary, and recreates it silently —
+  the fixture keeps passing, and the chart it renders stops matching the one
+  caregivers see.
