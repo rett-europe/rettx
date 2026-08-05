@@ -301,6 +301,20 @@ number of medications.
   final position from the moment the chart is first rendered. Rows MUST NOT be
   inserted, removed or moved as further data resolves.
 
+- **FR-001a** FR-001 governs *when* the set of rows is decided, not *whether*
+  rows may be filtered. Omitting a medication whose course never ran in the
+  caregiver's selected window is established behaviour from spec 046 and
+  remains correct: a drug stopped long ago has no business occupying a row in a
+  three-month view, and a patient with a long medication history would otherwise
+  be shown a chart padded with rows reading "not on treatment". That filter
+  therefore stays — but the decision MUST be made before the chart is first
+  rendered, from data already held at that point. A row MUST NOT appear and then
+  be removed once its data resolves; that is the same defect as a row that moves.
+  Where a case genuinely cannot be decided before first paint, the row MUST be
+  kept rather than dropped late: a slightly noisier chart is preferable to one
+  that rearranges itself, and it fails safe toward showing the caregiver more
+  rather than less.
+
 - **FR-002** Row order MUST be the order supplied by the backend, established
   once, before any per-row data resolves. The client MUST NOT re-sort the chart.
 
@@ -350,6 +364,13 @@ number of medications.
   sufficient: it would satisfy FR-011 read loosely while silently losing the
   dose-change markers the chart already displays. Any period, dose or change
   the chart can render today MUST remain renderable from the single response.
+
+  If the response is ever narrowed to the caregiver's selected window to bound
+  its size, it MUST still include the version already in force when that window
+  opened, not only versions beginning inside it. A medication whose dose last
+  changed before the window has no version starting within it, yet governs the
+  whole window; filtering on "starts inside the window" would drop that
+  medication's track entirely while leaving the response looking complete.
 
 - **FR-012** FR-011 MUST be additive and backward compatible. Existing request
   and response shapes MUST continue to behave exactly as they do today, and the
