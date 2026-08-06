@@ -22,7 +22,7 @@
 spec_id: "051"
 slug: "error-screen-parity"
 title: "No error screen may trap a caregiver, and none may go unseen"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-08-06"
 author: "perocha"
 relates_to: "specs/049-unicorn-diagnostics-recovery/ (established the treatment this spec generalises, and left the gaps this spec closes); specs/034-auth-observability/ (per-install correlation id)"
