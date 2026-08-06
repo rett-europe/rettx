@@ -342,9 +342,12 @@ rather than reported as an improvement from zero.
 - The five screens named here are the complete set of caregiver-facing error
   surfaces in the caregiver application as of 2026-08-06. Any surface added
   later inherits these requirements.
-- The diagnostic payload established by 049 is adequate for these screens and
-  does not need extending. If it does, that is an amendment here, not a parallel
-  payload.
+- The diagnostic payload established by 049 is the basis for these screens.
+  FR-002 and FR-004 require two additive fields it does not yet carry —
+  `screen` (which surface appeared) and `arrival_reason` (the machine-readable
+  cause, where a producer states one). Adding these is the additive amendment
+  this section anticipated: it stays one shared 049-derived payload, not a
+  parallel one.
 
 ## Out of scope
 
