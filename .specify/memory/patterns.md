@@ -506,6 +506,47 @@ A `[spec/<slug>]` title prefix, or a closing keyword (`Closes #NNN`) aimed at a
 fan-out issue, counts as a declaration on its own — the fan-out issue already
 carries the slug.
 
+### Every spec-derived issue and pull request names its spec in its title
+
+The `Spec:` line above is authoritative but invisible: it lives in the body, so
+a list of twenty open pull requests gives no clue which spec any of them serves.
+Reconstructing that costs an open-and-read per row, and in practice it simply
+does not get done — so work drifts out of view while still in flight.
+
+Titles therefore carry the spec **number**:
+
+| Artefact | Title form | Example |
+|---|---|---|
+| Fan-out squad issue (automated) | `[spec/<NNN>-<slug>] <spec title>` | `[spec/051-error-screen-parity] No error screen may trap a caregiver` |
+| Pull request implementing a slice | `[<NNN>] <ordinary subject>` | `[049] feat(error): translate fatal recovery page` |
+| Issue opened by hand for spec work | `[<NNN>] <ordinary subject>` | `[051] Instrument the remaining error screens` |
+
+Rules:
+
+- The number is the zero-padded `spec_id`, so it sorts and greps cleanly and
+  cannot be confused with an issue or pull request number.
+- The prefix goes **before** the conventional-commit type, not inside it. No
+  repo lints pull request titles, and `[049] feat(error): …` keeps both the
+  prefix and a valid conventional subject readable.
+- Work with no spec behind it takes **no prefix**. An absent prefix means
+  "not spec work", which the body's `Spec: none — <reason>` states properly.
+- Spec-authoring pull requests **in this repo** already name the number in their
+  subject (`docs(spec): 051 — …`) and take no additional prefix. This convention
+  is about the downstream work a spec produces, which is where the number
+  otherwise disappears.
+- **The title prefix is a navigation aid, never the declaration.** Attribution
+  is by the `Spec:` line only. A title may be edited by anyone at any time, and
+  a number in a title with no matching declaration in the body attributes
+  nothing. This is the same rule as *attribute by declaration, never by
+  inference* — a prefix is a convenience for humans reading a list, and
+  `scripts/status.mjs` must keep reading declarations.
+
+Fan-out issue titles are produced by `spec-fanout.yml`, which matches **both**
+the current `[spec/<NNN>-<slug>]` form and the older slug-only form when
+checking for an existing issue. That matching must stay format-agnostic:
+specs fanned out before this convention carry the old titles, and a
+format-sensitive check would open a duplicate squad issue on any re-run.
+
 **Use a closing keyword only when the pull request completes the whole spec for
 that repo.** A fan-out issue is an umbrella: most specs land as several slices,
 and `Closes` on the first one to merge shuts the umbrella while the rest are
@@ -611,3 +652,4 @@ private repo.
 | 2026-08-04 | §2: added an **Operational shorthand** subsection and defined **unicorn** — the `/global-error` page reached when an unhandled client error escapes to `GlobalErrorHandler`. Already used as vocabulary in [spec 034](../../specs/034-auth-observability/spec.md) but undiscoverable outside it, so newcomers and AI assistants misread "I saw a unicorn" as whimsy rather than a crash report. Includes how a unicorn appears in telemetry (`pageViews` on `/global-error`; `exceptions` with `source: GlobalErrorHandler` + `correlationId`) so unicorns-per-hour is usable as a post-deploy health check. |
 | 2026-08-05 | §7: added the rule that a spec clause naming a standard prices differently in each repo — state the outcome and let each repo choose the mechanism, including restricting its input range and failing loudly outside it. Prompted by spec 050, where a fixture-ordering clause named full Unicode case folding: one call in the backend's language, absent from the frontend's and reachable only via a generated table or a dependency. |
 | 2026-08-05 | §7: a cross-repo clause is provisional until the implementing repo has read it against its own deployment reality — the round trip is the mechanism, not extra care. What such clauses get wrong is reliably a deployment or lifecycle fact rather than a logic error. Corollary: write the clause concretely enough to picture running, since a vague one draws no objection. Prompted by two gaps in spec 050 found this way (FR-001a, and a fixture that also ships). |
+| 2026-08-06 | §11: spec-derived issues and pull requests now carry the spec **number** in the title — `[spec/<NNN>-<slug>]` for fan-out issues, `[<NNN>]` for pull requests and hand-opened issues. The `Spec:` body line remains the sole basis for attribution; the prefix is a navigation aid only. `spec-fanout.yml` updated to emit the new form and to match **both** forms when checking for an existing issue, since a format-sensitive check would open duplicate squad issues for specs fanned out before this change. Its duplicate check also stopped using `--search`, whose false negatives would have the same effect. Prompted by a maintainer being unable to tell which spec any open issue or pull request belonged to without opening each one. |

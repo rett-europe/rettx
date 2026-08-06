@@ -5,14 +5,15 @@ name: Iris — spec fanout
 # entry in the spec's `fanout:` block in the matching downstream repo.
 #
 # Each downstream issue:
-#   - is titled `[spec/<slug>] <spec title>`,
+#   - is titled `[spec/<NNN>-<slug>] <spec title>`,
 #   - carries the `squad` label,
 #   - links back to the merged spec on GitHub,
 #   - includes the per-repo `summary` from the frontmatter as the
 #     starting brief for the squad.
 #
 # Idempotency: if the target repo already has an open or closed issue
-# whose title starts with `[spec/<slug>]`, that target is skipped.
+# for this spec — in either the current `[spec/<NNN>-<slug>]` form or the
+# older `[spec/<slug>]` form — that target is skipped.
 # Re-running fanout on an amended spec therefore won't duplicate.
 #
 # Skips:
@@ -117,6 +118,7 @@ jobs:
             slug=$(jq -r '.frontmatter.slug // empty' /tmp/spec.json)
             title=$(jq -r '.frontmatter.title // empty' /tmp/spec.json)
             status=$(jq -r '.frontmatter.status // "draft"' /tmp/spec.json)
+            spec_id=$(jq -r '.frontmatter.spec_id // empty' /tmp/spec.json)
 
             if [[ -z "$slug" || -z "$title" ]]; then
               echo "::warning file=$spec_path::missing slug or title in frontmatter; skipping"
@@ -156,15 +158,30 @@ jobs:
                 continue
               fi
 
-              issue_title="[spec/${slug}] ${title}"
+              # Title carries the spec NUMBER as well as the slug, so a squad
+              # issue is identifiable at a glance in a list without opening it.
+              # Falls back to the slug-only form if spec_id is absent.
+              if [[ -n "$spec_id" ]]; then
+                issue_title="[spec/${spec_id}-${slug}] ${title}"
+              else
+                issue_title="[spec/${slug}] ${title}"
+              fi
 
-              # Idempotency: skip if any issue with this title prefix already exists.
+              # Idempotency: skip if an issue for this spec already exists, in
+              # EITHER title format. Matching must stay format-agnostic or a
+              # re-run against a spec fanned out under the old format would
+              # open a duplicate.
+              #
+              # Deliberately no `--search`: the search index returns false
+              # negatives (the same trap as `gh label list --search`), and a
+              # false negative here means a duplicate squad issue. Listing and
+              # filtering locally is slower and reliable.
               existing=$(gh issue list \
                 --repo "rett-europe/${target}" \
-                --search "in:title \"[spec/${slug}]\"" \
                 --state all \
+                --limit 1000 \
                 --json number,title \
-                --jq '.[] | select(.title | startswith("[spec/'"${slug}"']")) | .number' \
+                --jq '.[] | select(.title | test("^\\[spec/([0-9]{3}-)?'"${slug}"'\\]")) | .number' \
                 | head -n1)
 
               if [[ -n "$existing" ]]; then
