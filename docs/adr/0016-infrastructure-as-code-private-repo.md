@@ -1,6 +1,6 @@
 # ADR 0016 — Infrastructure as code in a dedicated private repository (`rettxinfra`)
 
-- **Status**: Proposed (2026-11-13)
+- **Status**: Accepted (2026-11-13)
 - **Date**: 2026-11-13
 - **Decision-makers**: rettX maintainers
 - **Relates to**: [ADR 0001](0001-control-plane-repo.md) (control plane &
