@@ -57,6 +57,7 @@ body:
         - label: Mutation extraction library (rettxmutation)
         - label: rettX ID library (rettxid)
         - label: Public documentation site
+        - label: Hosting / environments / cloud infrastructure (rettxinfra)
         - label: Cross-cutting / not sure
 
   - type: checkboxes

@@ -11,7 +11,7 @@ adopted, and reference it from cross-cutting specs.
 
 ## 1. Repositories and roles
 
-The ecosystem has **five kinds** of repository. They are governed by the same
+The ecosystem has **six kinds** of repository. They are governed by the same
 program constitution but differ in lifecycle and deployment model.
 
 ### Control plane
@@ -91,6 +91,32 @@ Content lifecycle differs from the code repos:
   rename. Per-channel file suffixes: `<locale>.html` + `<locale>.subject.txt`
   (email), `<locale>.inapp.txt` (optional dedicated in-app body),
   `<locale>.push.subject.txt` + `<locale>.push.txt` (push).
+
+### Infrastructure (cloud resources as code)
+
+`rettxinfra` holds **no application code**. It is the source of truth for the
+cloud resources rettX runs on, and for the identities and permissions that let
+the other repos deploy into them.
+
+| Repo | Visibility | Purpose | Deploys to |
+|---|---|---|---|
+| `rettxinfra` | 🔒 Private | Infrastructure as code for every rettX environment: resources, identities, role assignments, deploy federation, budget alert, runbooks | Azure, through its own reviewed and previewed pipeline. A production apply needs the lead maintainer's approval |
+
+Infrastructure lifecycle differs from the code repos:
+
+- **It owns the environment; app repos own their code.** Each app repo keeps
+  deploying its own artefact, into a **named environment** that `rettxinfra`
+  provides and publishes. An app repo does not create or configure cloud
+  resources. A spec needing a new resource or permission fans a slice out to
+  `rettxinfra`.
+- **Production is adopted, not rebuilt.** Production stays under its current
+  names. A change is previewed on its pull request before any apply.
+- **Test environments are isolated and hold synthetic data only.**
+  Maintainers create and destroy them on demand.
+- It is private because its content describes the attack surface
+  (constitution VII). See
+  [ADR 0016](../../docs/adr/0016-infrastructure-as-code-private-repo.md) and
+  [spec 052](../../specs/052-rettxinfra/spec.md).
 
 ## 2. Shared vocabulary
 
@@ -311,6 +337,7 @@ form the contract between intake and execution.
 | `route:mutation` | Should land in `rettxmutation` | Iris |
 | `route:id` | Should land in `rettxid` | Iris |
 | `route:templates` | Should land in `templates` (content assets) | Iris |
+| `route:infra` | Should land in `rettxinfra` (cloud infrastructure) | Iris |
 | `cross-cutting` | Affects more than one repo | Iris |
 | `triaged` | Iris has classified; awaiting maintainer routing | Iris |
 | `routed` | Maintainer confirmed `/route`; downstream issues opened | Iris |
@@ -405,10 +432,13 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
   each entry is `{ repo, summary }` — and opens one `[spec/<slug>]` squad issue
   per listed repo on merge. Fan-out runs **only** when the spec's `status` is
   `ready` or `accepted`; a `draft` spec never fans out. Allowed repos:
-  `rettxweb, rettxadmin, rettxapi, rettxmutation, rettxid, templates`.
+  `rettxweb, rettxadmin, rettxapi, rettxmutation, rettxid, templates, rettxinfra`.
   A spec that adds or changes **rendered content** (email/in-app/push templates,
   consent forms, surveys) MUST include a `templates` fan-out slice — the
   rendering repo (`rettxapi`) consumes template files but does not author them.
+  Likewise, a spec that needs a **new or changed cloud resource, identity or
+  permission** MUST include a `rettxinfra` slice. The app repos deploy into
+  environments but do not create them (§1).
 - Single-repo work does not require a cross-cutting spec; it can flow
   directly through the downstream repo's local spec-kit workflow (reached via
   the `/route confirm` path — see §6).
@@ -432,6 +462,7 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 | `rettx{web,admin,api}/docs/` | Per-repo internal docs |
 | `rettx{mutation,id}/README.md` | Library reference & API documentation |
 | PyPI: `rettxmutation`, `rettxid` | Released library distributions |
+| `rettxinfra/docs/` | Infrastructure architecture, secrets inventory (names only), recovery, runbooks (private) |
 
 ## 9. Branching, commits, releases
 
@@ -653,3 +684,4 @@ private repo.
 | 2026-08-05 | §7: added the rule that a spec clause naming a standard prices differently in each repo — state the outcome and let each repo choose the mechanism, including restricting its input range and failing loudly outside it. Prompted by spec 050, where a fixture-ordering clause named full Unicode case folding: one call in the backend's language, absent from the frontend's and reachable only via a generated table or a dependency. |
 | 2026-08-05 | §7: a cross-repo clause is provisional until the implementing repo has read it against its own deployment reality — the round trip is the mechanism, not extra care. What such clauses get wrong is reliably a deployment or lifecycle fact rather than a logic error. Corollary: write the clause concretely enough to picture running, since a vague one draws no objection. Prompted by two gaps in spec 050 found this way (FR-001a, and a fixture that also ships). |
 | 2026-08-06 | §11: spec-derived issues and pull requests now carry the spec **number** in the title — `[spec/<NNN>-<slug>]` for fan-out issues, `[<NNN>]` for pull requests and hand-opened issues. The `Spec:` body line remains the sole basis for attribution; the prefix is a navigation aid only. `spec-fanout.yml` updated to emit the new form and to match **both** forms when checking for an existing issue, since a format-sensitive check would open duplicate squad issues for specs fanned out before this change. Its duplicate check also stopped using `--search`, whose false negatives would have the same effect. Prompted by a maintainer being unable to tell which spec any open issue or pull request belonged to without opening each one. |
+| 2026-11-13 | §1: registered **`rettxinfra`** as a sixth repo kind, *Infrastructure*. It is private, holds the cloud resources, identities, role assignments and deploy federation for every rettX environment, and lets app repos deploy their own code into named environments it provides. §6: added the `route:infra` label. §7: put `rettxinfra` in the fan-out allow-list and required specs needing a new cloud resource, identity or permission to fan a slice out to it. §8: listed its private docs. The fan-out, routing and triage workflows and `scripts/status.mjs` are updated to match. This had to land before [spec 052](../../specs/052-rettxinfra/spec.md) flips to `ready`, or its main slice would be silently skipped. See [ADR 0016](../../docs/adr/0016-infrastructure-as-code-private-repo.md). |

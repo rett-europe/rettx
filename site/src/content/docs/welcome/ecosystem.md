@@ -1,6 +1,6 @@
 ---
 title: The rettX ecosystem
-description: The six repositories that make up rettX, their roles, and their visibility.
+description: The seven repositories that make up rettX, their roles, and their visibility.
 ---
 
 rettX is a small constellation of repositories. Each has a clear job;
@@ -16,11 +16,17 @@ each follows the same program constitution.
 | `rettxapi` | 🔒 Private | **Backend API.** Python service that owns the registry data model, consent state, and access controls. |
 | `rettxmutation` | 🌍 Public | **Library.** HGVS-aware mutation parsing and normalisation, published to PyPI; consumed by `rettxapi`. |
 | `rettxid` | 🌍 Public | **Library.** Pseudonymous registry identifier generator, published to PyPI; consumed by `rettxapi`. |
+| `rettxinfra` | 🔒 Private | **Infrastructure.** Azure infrastructure as code: the resources, environments, identities and permissions the other repositories deploy into. |
 
 Application repositories that handle patient data (`rettxweb`,
 `rettxadmin`, `rettxapi`) are private. We treat patient data as the
 asset most worth protecting; locking down the surfaces that touch it
 is part of that protection.
+
+`rettxinfra` is private for a different reason: a description of how
+the platform is built and secured is also a map of its attack surface.
+The decision is recorded in
+[ADR 0016](https://github.com/rett-europe/rettx/blob/main/docs/adr/0016-infrastructure-as-code-private-repo.md).
 
 The two libraries are public because they encapsulate generally useful
 domain logic with no patient context, and publishing them on PyPI
@@ -43,7 +49,7 @@ issues in each downstream repository.
    change.
 2. The **Iris** automation classifies the issue and labels it with the
    target route (`route:web`, `route:admin`, `route:api`,
-   `route:mutation`, `route:id`, or `cross-cutting`).
+   `route:mutation`, `route:id`, `route:infra`, or `cross-cutting`).
 3. **For point fixes** (a single repo), a maintainer with `write`
    permission or above confirms the routing with a `/route confirm`
    comment, and Iris opens a linked issue in that repository.
