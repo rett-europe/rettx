@@ -21,6 +21,9 @@ application code repository.
 - Library code for mutation extraction or rettX ID generation. Those
   live in `rettxmutation` and `rettxid` respectively (released to PyPI,
   consumed by `rettxapi`).
+- Infrastructure as code (cloud resources, environments, identities,
+  permissions). That lives in the private `rettxinfra` repo
+  ([ADR 0016](../docs/adr/0016-infrastructure-as-code-private-repo.md)).
 - Per-repo technical decisions. Each downstream repo has its own
   constitution and owns its stack-level choices.
 - Storing patient data, credentials, or any non-public material.
@@ -31,7 +34,7 @@ application code repository.
   Actions workflows and small helper scripts under `scripts/`.
 - **Ask `scripts/status.mjs` before answering "what's the status?"** It
   reconciles specs here against open squad issues and pull requests in the
-  five downstream repos. Do not assemble a programme picture by hand or from
+  six downstream repos. Do not assemble a programme picture by hand or from
   memory — that is how it goes stale. Output is written to `status.local.md`,
   which is gitignored and must never be committed or quoted here (it contains
   private repo titles). The script refuses to run in CI for the same reason.
@@ -46,7 +49,7 @@ application code repository.
 ## Cross-repo work
 
 If a task here implies changes in `rettxweb`, `rettxadmin`, `rettxapi`,
-`rettxmutation`, or `rettxid`, **do not edit those repos directly from
+`rettxmutation`, `rettxid` or `rettxinfra`, **do not edit those repos directly from
 this repo's context** — and do not run commands inside a downstream
 checkout, which may be a live working tree someone is using. Instead:
 
@@ -73,8 +76,8 @@ required, `non_fast_forward`, no `deletion` (downstream repos add
 rejected with `GH013` *after* the work is done and then has to be moved onto a
 branch. Run `git checkout -b <name>` before the first edit, never after.
 
-**This repo is PUBLIC. `rettxweb`, `rettxadmin`, `rettxapi`, `rettxmutation`
-and `rettxid` are PRIVATE.** Anything that lands here — files, PR bodies, commit
+**This repo is PUBLIC. `rettxweb`, `rettxadmin`, `rettxapi`, `rettxmutation`,
+`rettxid` and `rettxinfra` are PRIVATE.** Anything that lands here — files, PR bodies, commit
 messages, issue comments, and **GitHub Actions logs and job summaries** — is
 world-readable. Never paste private-repo issue or PR titles, code, telemetry
 output, or infrastructure detail into this repo. Actions logs are the

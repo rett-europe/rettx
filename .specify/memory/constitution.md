@@ -2,7 +2,7 @@
 ═══════════════════════════════════════════════════════════════════════════════
 SYNC IMPACT REPORT
 ═══════════════════════════════════════════════════════════════════════════════
-Version Change: Initial → 1.0.0 → 1.0.1
+Version Change: Initial → 1.0.0 → 1.0.1 → 1.0.2
 Action: Establish program-level constitution for the rettX patient registry,
         sitting above the per-repo technical constitutions in rettxweb,
         rettxadmin, and rettxapi.
@@ -28,7 +28,7 @@ ecosystem repository:
 - **Surfaces**: `rettxweb`, `rettxadmin`
 - **Backend**: `rettxapi`
 - **Libraries**: `rettxmutation`, `rettxid`
-
+- **Infrastructure**: `rettxinfra`
 The same principles bind all of them. Lifecycle and deployment model
 differ — see [`patterns.md`](./patterns.md) for the per-category
 conventions.
@@ -192,9 +192,12 @@ public.
 
 **Current state**: this control-plane repo is public. All ecosystem
 repositories (`rettxweb`, `rettxadmin`, `rettxapi`, `rettxmutation`,
-`rettxid`) are currently private — a deliberate position reflecting
+`rettxid`, `rettxinfra`) are currently private — a deliberate position reflecting
 the registry's risk posture for code that directly handles or supports
-patient data. This position is intended to be revisited as the project
+patient data. `rettxinfra` is private for a further reason that does not
+lapse as the project matures: its content describes the attack surface
+([ADR 0016](../../docs/adr/0016-infrastructure-as-code-private-repo.md)).
+This position is intended to be revisited as the project
 matures, in line with this principle.
 
 **Posture vs. gaps — applied to security and other reviews**:
@@ -316,9 +319,13 @@ for stack-specific technical principles within their own scope.
 This constitution evolves with the project. Maintainers SHOULD review it
 at least annually and after any major incident or scope change.
 
-**Version**: 1.0.1 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-05-01
+**Version**: 1.0.2 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-11-13
 
 <!--
+1.0.2 (PATCH): Added `rettxinfra` (Infrastructure) to the ecosystem
+repo list and to the "Current state" privacy paragraph, per ADR 0016.
+No principle changed.
+
 1.0.1 (PATCH): Clarified Principle VII to explicitly cover the
 *content* of public-facing posture artefacts (aggregate security page,
 docs.rettx.eu): controls in place are public; gap analyses and

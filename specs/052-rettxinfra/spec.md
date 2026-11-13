@@ -4,13 +4,7 @@
   repos get a `[spec/<slug>] <title>` issue with the `squad` label. Set
   `status: ready` when this spec should fan out on merge — drafts will not.
 
-  Allowed fanout repos: rettxweb, rettxadmin, rettxapi, rettxmutation, rettxid, templates.
-
-  BLOCKER BEFORE `ready`: `rettxinfra` is NOT yet in the allow-list above, and
-  it does not exist yet. ADR 0016's follow-ups must land first: create the repo,
-  register it in patterns.md §1 and §7, and add it to the fan-out, routing and
-  triage workflows. If this spec is flipped to `ready` before then, the
-  `rettxinfra` slice — the main one — is silently skipped.
+  Allowed fanout repos: rettxweb, rettxadmin, rettxapi, rettxmutation, rettxid, templates, rettxinfra.
 
   STACK & DELIVERY PRE-FLIGHT (patterns.md §1 / §7): `rettxapi`, `rettxweb`,
   `rettxadmin` and `templates` each deploy their own artefact into Azure today,

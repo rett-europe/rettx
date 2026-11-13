@@ -4,8 +4,8 @@
 //
 // WHY THIS IS A LOCAL SCRIPT AND NOT A WORKFLOW
 // --------------------------------------------
-// `rettx` is PUBLIC. `rettxweb`, `rettxapi`, `rettxadmin`, `rettxmutation` and
-// `rettxid` are PRIVATE. The report this produces contains private issue and
+// `rettx` is PUBLIC. `rettxweb`, `rettxapi`, `rettxadmin`, `rettxmutation`,
+// `rettxid` and `rettxinfra` are PRIVATE. The report this produces contains private issue and
 // pull-request titles, which describe unfixed weaknesses in a codebase that
 // handles caregiver data. That must never become public.
 //
@@ -41,7 +41,7 @@ const outPath = path.join(root, 'status.local.md');
 
 const OWNER = 'rett-europe';
 const CONTROL_PLANE = 'rettx';
-const DOWNSTREAM = ['rettxweb', 'rettxapi', 'rettxadmin', 'rettxmutation', 'rettxid'];
+const DOWNSTREAM = ['rettxweb', 'rettxapi', 'rettxadmin', 'rettxmutation', 'rettxid', 'rettxinfra'];
 
 // A spec whose delivery has been quiet for longer than this is called out.
 const DEFAULT_STALE_DAYS = 21;

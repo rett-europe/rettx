@@ -65,12 +65,19 @@ backend are open and published to PyPI.
 | [`rettxmutation`](https://github.com/rett-europe/rettxmutation) | 🌍 Public · [PyPI](https://pypi.org/project/rettxmutation/) | Agentic extraction & HGVS validation of genetic mutations from clinical reports |
 | [`rettxid`](https://github.com/rett-europe/rettxid) | 🌍 Public · [PyPI](https://pypi.org/project/rettxid/) | Reference implementation of the pseudonymous **rettX ID** format |
 
+### Infrastructure (cloud resources as code)
+
+| Repository | Visibility | Role |
+|---|---|---|
+| `rettxinfra` | 🔒 Private | Azure infrastructure as code: the resources, environments, identities and permissions the other repos deploy into ([ADR 0016](docs/adr/0016-infrastructure-as-code-private-repo.md)) |
+
 > **On visibility.** Our program constitution sets a default of
 > "open by default, private only when justified". The current private
 > status of the surfaces and backend reflects the registry's risk posture
 > for code that directly handles patient data; this position is intended
-> to be revisited as the project matures. The governance, specs, and
-> reusable libraries are public.
+> to be revisited as the project matures. The infrastructure repo is
+> private for a different reason: it describes the attack surface. The
+> governance, specs, and reusable libraries are public.
 
 ## How work flows here
 

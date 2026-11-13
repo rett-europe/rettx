@@ -48,7 +48,7 @@ jobs:
           app-id: ${{ secrets.IRIS_APP_ID }}
           private-key: ${{ secrets.IRIS_PRIVATE_KEY }}
           owner: rett-europe
-          repositories: rettx,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid,templates
+          repositories: rettx,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid,templates,rettxinfra
 
       - name: Fan out sub-issues
         env:
@@ -77,7 +77,7 @@ jobs:
             exit 0
           fi
 
-          declare -A repo_for=( [route:web]=rettxweb [route:admin]=rettxadmin [route:api]=rettxapi [route:mutation]=rettxmutation [route:id]=rettxid [route:templates]=templates )
+          declare -A repo_for=( [route:web]=rettxweb [route:admin]=rettxadmin [route:api]=rettxapi [route:mutation]=rettxmutation [route:id]=rettxid [route:templates]=templates [route:infra]=rettxinfra )
 
           # Collect the route:* labels actually present on the parent.
           mapfile -t parent_labels < <(echo "$existing" | tr ',' '\n')
