@@ -22,7 +22,7 @@
 spec_id: "052"
 slug: "rettxinfra"
 title: "Infrastructure as code for rettX (rettxinfra)"
-status: draft   # draft | ready | accepted | superseded  -- KEEP as draft so it does NOT fan out until a maintainer flips it to ready
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-11-13"
 author: "perocha"
 source_issue: ""
@@ -85,7 +85,7 @@ fanout:
 
 **Feature Branch**: `052-rettxinfra`
 **Created**: 2026-11-13
-**Status**: Draft
+**Status**: Ready
 **Input**: "I want to automatize and document the Azure infrastructure we have
 in rettX. The starting point is the infra we have running in Azure for
 production, there's no test or pre-prod environment. The current environment
