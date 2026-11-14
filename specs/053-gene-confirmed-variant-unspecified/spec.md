@@ -21,8 +21,8 @@
 spec_id: "053"
 slug: "gene-confirmed-variant-unspecified"
 title: "A confirmed gene without an identified variant is a complete diagnosis"
-status: draft   # draft | ready | accepted | superseded
-authored: "2026-08-08"
+status: ready   # draft | ready | accepted | superseded
+authored: "2026-11-14"
 author: "perocha"
 relates_to: "specs/040-pulse-diagnosis-gate/ (defines 'confirmed diagnosis' for feature gating; unaffected, see Assumptions)"
 fanout:
