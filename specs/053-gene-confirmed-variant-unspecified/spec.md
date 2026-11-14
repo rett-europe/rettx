@@ -13,8 +13,8 @@
   Nothing here depends on the delivery mechanism, push, or offline behaviour.
   No new cloud resource, identity or permission, so there is NO rettxinfra slice.
   No rendered template (email, push, consent, survey) changes, so there is NO
-  templates slice. rettxmutation already reports which genes it detected and
-  needs no change, so there is NO rettxmutation slice. rettxid encodes no
+  templates slice. Variant extraction is unchanged, so there is NO
+  rettxmutation slice. rettxid encodes no
   patient attributes and is unaffected.
 -->
 ---
@@ -38,23 +38,19 @@ fanout:
 
       Do:
       (1) Add the "variant unspecified" marker to the main diagnosis
-          (Contract C1). Enforce its invariants (FR-001..FR-005).
-      (2) Recompute lifecycle CONFIRMED (FR-010..FR-012). This includes
+          (Contract C1). Enforce its invariants (FR-001..FR-004, FR-007).
+      (2) Recompute lifecycle CONFIRMED (FR-010, FR-011). This includes
           clinical-only diagnoses, which today never reach CONFIRMED unless
-          locked.
+          locked. The lifecycle precedence order is unchanged.
       (3) Expose the new state in the mutation summary (Contract C2), so no
-          client has to infer it.
-      (4) Every uploaded genetic report reaches human review, ALWAYS. No
-          automated outcome is final, including "no variant found" and
-          "unreadable". Keep the extractor's gene-detected signal for the
-          reviewer (D6, FR-020..FR-023).
-      (5) Make the case lockable for identity without a variant (FR-030,
-          FR-031).
-      (6) Close the diagnosis-model gene gap: every gene diagnosis type the
+          client has to infer it (FR-012).
+      (4) Close the diagnosis-model gene gap: every gene diagnosis type the
           API accepts must be treated as a gene type by the diagnosis rules
           (FR-006).
-      Do NOT infer a variant from the gene, set the marker automatically from
-      extraction, or migrate existing diagnoses automatically (FR-024, FR-040).
+      (5) Let rettxadmin filter and count these patients (FR-054, FR-057).
+      Do NOT infer a variant from the gene, set the marker automatically, or
+      migrate existing diagnoses automatically (FR-024, FR-040). The report
+      pipeline, rejected reports and identity locking are unchanged.
   - repo: rettxadmin
     summary: |
       The admin is the ONLY place this state is established. Today the
@@ -66,15 +62,13 @@ fanout:
           gene diagnosis type, both when creating and when editing
           (FR-050, FR-051).
       (2) Let an admin accept a report under review as this state, from the
-          report review flow, and show them the extractor's gene-detected hint
-          when present (FR-052).
+          report review flow (FR-052).
       (3) Show the state wherever the diagnosis is shown: the patient detail,
           the list label and the filter. Never show it as "Clinical" or
           "Unknown" (FR-053, FR-054).
-      (4) Make identity locking available for it (FR-055).
-      (5) Explain a rejected diagnosis in words, not as a raw error
+      (4) Explain a rejected diagnosis in words, not as a raw error
           (FR-056).
-      (6) Make these patients countable in the overview, and say so where the
+      (5) Make these patients countable in the overview, and say so where the
           MECP2 distribution cannot plot them (FR-057).
   - repo: rettxweb
     summary: |
@@ -114,11 +108,11 @@ either have both or be recorded as having neither.
 
 ### What is true today
 
-Verified against the main branch of each affected repository on 2026-08-08:
+Verified against the main branch of each affected repository on 2026-11-14:
 
 | Step | What happens |
 |---|---|
-| Caregiver uploads the report | Extraction finds no variant. The report is marked invalid, a terminal state that admins cannot act on from the review flow. The caregiver is shown "pending validation", which is not true. |
+| Caregiver uploads the report | Extraction finds no variant, so no mutation is created. The report goes to admin review like every analysed report. |
 | Admin records the gene as the diagnosis type | **Rejected.** A gene diagnosis type requires a validated variant in that gene. The admin sees the raw error text. |
 | Admin uses the only accepted alternative, "unknown mutation / clinical" | Accepted, but the confirmed gene is lost. The patient still **does not reach CONFIRMED**, because CONFIRMED requires a validated variant. They stay in DRAFT unless their identity is locked. |
 | Admin asks the caregiver for more information instead | The caregiver is told "Mutation not found in report. Please upload a complete report." **No such report exists.** |
@@ -189,18 +183,22 @@ These were also found but are **out of scope**. They are tracked separately
   same reporting limitation applies to the other genes, and a MECP2-only rule
   would be special-cased in every repo.
 - **D3 Admin-established only.** Caregivers upload reports. They do not declare
-  diagnoses, and this spec does not change that. The extractor's gene-detected
-  signal is a hint for the reviewer. It never sets the marker.
+  diagnoses, and this spec does not change that. Nothing automated sets the
+  marker.
 - **D4 It is a complete diagnosis.** The patient reaches CONFIRMED without an
   identity lock, exactly as a patient with a validated variant does.
 - **D5 No new visual asset.** The caregiver sees the existing gene badge, plus a
   localized line explaining that the specific variant was not identified.
 - **D6 Every report is reviewed by an admin, always.** This is the intended
   process. The admin checks each report and manually records the diagnosis and
-  the mutation information. Extraction pre-fills and hints; it never decides an
-  outcome. Today, extracted variants already wait for an admin to validate them.
-  Reports with no extractable variant, or that cannot be read, are the only
-  ones that end automatically. This spec closes that exception.
+  the mutation information. Extraction pre-fills; it never decides an outcome.
+  This already holds today: every analysed report, including one where no
+  variant was found, lands in admin review. This spec does not change the
+  report pipeline.
+- **D7 No caregiver upload after confirmation.** Once a patient is CONFIRMED,
+  the caregiver cannot upload another report. This is today's behaviour and is
+  unchanged. A variant identified later is recorded by an admin, who also
+  clears the marker.
 
 ## Contract
 
@@ -228,26 +226,23 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
 ## User Scenarios & Testing *(mandatory)*
 
 1. **Older patient, gene known, variant never reported.** A caregiver uploads a
-   report stating an MECP2 mutation with no variant. The caregiver sees "under
-   review", not "pending validation" or "invalid". An admin reviews it and
+   report stating an MECP2 mutation with no variant. It goes to admin review as
+   today. An admin reviews it and
    accepts it as "MECP2, variant unspecified". The patient becomes CONFIRMED.
    The caregiver sees the confirmed banner, the MECP2 badge, and "The specific
    MECP2 variant was not identified in the genetic report", in their language.
    The caregiver is not asked to upload anything.
-2. **The variant is identified later.** The same caregiver later uploads a newer
-   report naming the variant. It is validated as usual, and the marker is
-   cleared, so the patient now displays the variant. The patient remains
-   CONFIRMED throughout.
-3. **The variant found is in a different gene.** The new variant is in FOXG1,
-   while the diagnosis says MECP2. The marker is not silently cleared. The
-   inconsistency is surfaced to an admin to resolve.
-4. **An existing workaround patient.** A patient previously recorded as
+2. **The variant is identified later.** The caregiver cannot upload once the
+   patient is CONFIRMED (D7). The family shares the newer report with the
+   association, and an admin records the validated variant and clears the
+   marker. The patient remains CONFIRMED throughout.
+3. **An existing workaround patient.** A patient previously recorded as
    "unknown mutation / clinical" has an MECP2 report on file. An admin edits the
    diagnosis to MECP2 with variant unspecified. Nothing changes until the admin
    does this.
-5. **An existing clinical-only patient** with a current diagnosis now shows as
+4. **An existing clinical-only patient** with a current diagnosis now shows as
    CONFIRMED instead of DRAFT.
-6. **Every badge in the caregiver app** renders either a real image or no
+5. **Every badge in the caregiver app** renders either a real image or no
    image, for every diagnosis name and type.
 
 ## Requirements *(mandatory)*
@@ -264,10 +259,8 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
   keeps today's requirement unchanged.
 - **FR-004** The API MUST reject `variant_unspecified = true` when the patient
   already has a validated variant in that gene.
-- **FR-005** When a validated variant in the diagnosed gene is later added, the
-  marker MUST be cleared. When a validated variant in a *different* gene is
-  added, the marker MUST NOT be cleared silently, and the inconsistency MUST be
-  visible to admins (Scenario 3).
+- **FR-005** Clearing the marker when a validated variant is later recorded is
+  an admin edit (D7, Scenario 2). The API does not clear it automatically.
 - **FR-006** Every gene diagnosis type the API accepts MUST be treated as a gene
   type by all diagnosis consistency rules.
 - **FR-007** Setting, changing or clearing the marker MUST be recorded in the
@@ -280,43 +273,31 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
   - a gene diagnosis with a validated variant in that gene,
   - a gene diagnosis with `variant_unspecified = true`, or
   - a clinical diagnosis.
-- **FR-011** Higher-priority lifecycle states keep their precedence: LOCKED,
-  and an open request for more information or a review in progress.
+- **FR-011** The lifecycle precedence order is unchanged (LOCKED, then
+  CONFIRMED, then the in-progress states). FR-010 only broadens what counts as
+  CONFIRMED.
 - **FR-012** The mutation summary MUST report `VARIANT_UNSPECIFIED` for this
-  case (C2), and MUST NOT report `PENDING_VALIDATION` for a report that has
-  reached a terminal outcome.
+  case (C2).
 
-### Every report is reviewed (rettxapi)
+### Report review (rettxapi)
 
-- **FR-020** Every uploaded genetic report MUST reach human review, whatever
-  extraction produced: variants, no variant, or an unreadable document. No
-  automated step may give a report a final outcome. A transient technical
-  failure may be retried, but MUST NOT end the report without review.
-- **FR-021** While a report awaits review, the caregiver MUST see that it is
-  under review.
-- **FR-022** The genes the extractor detected, when it reports any, MUST be
-  retained with the report and made available to the reviewer.
-- **FR-023** Rejecting a report, for example one that is not a genetic report
-  or cannot be read, is an admin decision. The caregiver outcome of a rejection
-  is unchanged from today.
+- **FR-020** The report pipeline is unchanged. Every analysed report already
+  reaches admin review (D6).
+- **FR-023** Rejecting a report is an admin decision. Rejected reports are
+  unchanged from today.
 - **FR-024** No automated step may set `variant_unspecified`, or infer a
   variant from a gene.
 
-### Identity (rettxapi)
+### Identity
 
-- **FR-030** A patient with a gene-confirmed, variant-unspecified diagnosis MUST
-  be lockable without a variant, with readiness reporting it as a recognised
-  resolution rather than as "no validated mutation".
-- **FR-031** The identity record MUST stay consistent with how rettxapi already
-  treats genetic confirmation without exact coordinates. When a variant is later
-  identified, the existing re-lock behaviour applies. The canonical form is
-  rettxapi's decision, within its identity-locking specification.
+- **FR-030** Identity locking is unchanged. A gene-confirmed,
+  variant-unspecified patient already meets today's lock conditions.
 
 ### Migration (rettxapi, rettxadmin)
 
 - **FR-040** Existing diagnoses MUST NOT be changed automatically. Converting a
   "unknown mutation / clinical" patient to a gene with the variant unspecified
-  is an admin edit (Scenario 4).
+  is an admin edit (Scenario 3).
 - **FR-041** Existing clinical-only patients become CONFIRMED by FR-010. No data
   change is needed, and this is an intended, visible change for caregivers.
 
@@ -328,14 +309,11 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
 - **FR-051** The existing derivation of `clinical_diagnosis` from
   `unknown_mutation` is unchanged.
 - **FR-052** From the report review flow, an admin MUST be able to accept a
-  report as "gene confirmed, variant unspecified" for a chosen gene. The
-  extractor's detected genes are shown as a hint.
+  report as "gene confirmed, variant unspecified" for a chosen gene.
 - **FR-053** Wherever a diagnosis is displayed (patient detail, patient list,
   bulk views), this state MUST read as the gene plus "variant unspecified". It
   MUST NOT read as "Clinical" or "Unknown".
 - **FR-054** The patient list MUST be filterable to this state.
-- **FR-055** Identity locking MUST be offered for this state (FR-030), and MUST
-  explain the resolution in place of a primary-mutation selection.
 - **FR-056** A diagnosis the API rejects MUST be explained to the admin in
   words, not as a raw error string.
 - **FR-057** The overview MUST be able to count confirmed patients whose variant
@@ -388,7 +366,7 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
 
 ## Phased delivery
 
-1. **rettxapi:** contract C1–C3, lifecycle, report review routing and identity.
+1. **rettxapi:** contract C1–C3, lifecycle, and the admin filter and count.
    Backwards-compatible: the marker defaults to `false`.
 2. **rettxadmin and rettxweb, in parallel.** Both tolerate the API not yet
    exposing C1/C2.
@@ -402,14 +380,12 @@ patients with a report on file, and convert those whose report confirms a gene
 - **R1** *Clinical-only patients suddenly appear confirmed.* This is intended,
   but caregivers will see a new banner. Mitigation: confirm the count before
   release, and brief support.
-- **R2** *Admin load rises slightly*, because reports that ended automatically
-  now reach review, including uploads that are not genetic reports at all. This
-  is accepted (D6). Mitigation: rejecting a report stays a single admin step
-  (FR-023).
-- **R3** *The marker outlives the evidence.* A later variant in the same gene
-  must clear it (FR-005). Otherwise the patient shows both "variant not
-  identified" and a variant.
-- **R4** *Copy reads as a medical statement.* FR-062 constrains it. Translations
+- **R2** *The marker outlives the evidence.* If an admin records a variant
+  later but forgets to clear the marker, the patient shows both "variant not
+  identified" and a variant. Mitigation: FR-004 stops the marker being set when
+  a validated variant in that gene exists, and the admin clears it as part of
+  recording the variant (FR-005).
+- **R3** *Copy reads as a medical statement.* FR-062 constrains it. Translations
   should be reviewed by a native speaker.
 
 ## Constitution Check
@@ -427,8 +403,6 @@ patients with a report on file, and convert those whose report confirms a gene
 - Feature gating on "confirmed diagnosis" (spec 040) depends on a current
   diagnosis with a valid Rett diagnosis name, not on a variant. It already
   admits these patients once a diagnosis exists and needs no change.
-- rettxmutation already reports detected genes alongside extracted variants.
-  This spec only requires that signal to be kept, not changed.
 - rettxid encodes no patient attributes and is unaffected.
 
 ## Out of scope
@@ -448,10 +422,26 @@ separately:
 Also out of scope:
 
 - Caregiver-declared diagnoses (D3).
-- Any change to how variants are extracted.
+- Any change to how variants are extracted, or to the report pipeline (D6).
+- Caregiver uploads after confirmation (D7).
+- How rejected reports appear in the mutation summary.
+- An admin overview list of files that need attention: empty uploads marked
+  invalid, and files stuck in a processing error. To be raised separately.
 
 ## Open decisions
 
 - ~~**OD-1**~~ Resolved 2026-11-14 as D6: every report goes to review, always.
 - ~~**OD-2**~~ Resolved 2026-11-14 in FR-062: the caregiver statement names the
   gene in the sentence.
+
+## Amendments
+
+- **2026-11-14, after fan-out.** Aligned with the scope agreed while planning
+  the rettxapi slice. The report pipeline already sends every analysed report
+  to review, so FR-021 and FR-022 are dropped, FR-020 records that the pipeline
+  is unchanged, and the AS IS is corrected. A
+  confirmed patient cannot upload again (D7), so a later variant is an admin
+  edit and the automatic clearing and conflict flag (old FR-005, old Scenario 3)
+  are dropped. Identity locking needs no change (old FR-030, FR-031, FR-055).
+  Rejected reports are unchanged (old FR-012 second clause). Lifecycle
+  precedence is unchanged (FR-011).
