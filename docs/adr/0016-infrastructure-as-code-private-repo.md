@@ -1,6 +1,7 @@
 # ADR 0016 — Infrastructure as code in a dedicated private repository (`rettxinfra`)
 
-- **Status**: Accepted (2026-11-13)
+- **Status**: Accepted (2026-11-13); scope of third-party services amended
+  2026-11-15
 - **Date**: 2026-11-13
 - **Decision-makers**: rettX maintainers
 - **Relates to**: [ADR 0001](0001-control-plane-repo.md) (control plane &
@@ -63,8 +64,21 @@ Describe and operate rettX's Azure infrastructure **as code**, in a new
   subscription as production, isolated from it, and hold **synthetic data
   only**. Nothing creates or removes them on a schedule.
 - **Scope.** rettX only. Other Rett Syndrome Europe properties that share the
-  subscription are out of scope. Third-party services (identity provider,
-  email, push, app stores, DNS) are **documented, not managed**.
+  subscription are out of scope. Third-party services are split by how far
+  they can be safely automated (amended 2026-11-15):
+  - **Identity providers** (caregiver sign-in and admin sign-in) are
+    **managed as code**, through the same preview-and-approved-apply path as
+    the Azure estate. Production configuration is adopted first with **no
+    changes**, exactly as the Azure estate was.
+  - **Email and push** credentials are **provisioned by script** where the
+    provider allows it, written straight to the secret store and never to the
+    repository. Steps the provider keeps manual stay documented.
+  - **App stores, DNS registrar and package registry** stay **documented, not
+    managed**.
+
+  Delivered in phases, identity providers first. Each managing credential this
+  adds is held by `rettxinfra` alone, with the narrowest permission the
+  provider offers.
 
 ### Why private (constitution VII record)
 

@@ -235,10 +235,12 @@ destroy.
   a test environment created with that area switched on.
 - **A forgotten test environment.** There is no automatic clean-up, by
   choice. The budget alert is the safety net.
-- **Things outside the subscription.** Third-party services (identity
-  provider, email, push, app stores, DNS) are documented, not managed. A test
-  environment that needs them uses separately registered test
-  configurations, never production ones.
+- **Things outside the subscription.** Identity providers are managed as
+  code; email and push credentials are provisioned by script where the
+  provider allows; app stores, DNS registrar and package registry are
+  documented, not managed ([ADR 0016](../../docs/adr/0016-infrastructure-as-code-private-repo.md),
+  amended 2026-11-15). A test environment that needs any of them uses
+  separately registered test configurations, never production ones.
 - **Two test environments at once.** Names keep them isolated from each other.
 
 ---
@@ -290,12 +292,24 @@ destroy.
   deploy credentials MUST be removed in Phase 1. A deploy MUST be confirmed to
   still work afterwards, and each removal MUST be recorded on a private
   checklist in `rettxinfra`.
+- **FR-015** (added 2026-11-15) Identity-provider configuration for
+  caregiver and admin sign-in, production and test, MUST be managed as code
+  through the same preview and approved apply as the Azure estate.
+  Production's configuration MUST first be adopted with a preview that reports
+  no changes. Email and push credentials for a new environment SHOULD be
+  provisioned by script where the provider allows, straight into the secret
+  store. Each managing credential MUST be held only by `rettxinfra`, with the
+  narrowest permission the provider offers.
 
 ### rettxinfra slice
 
-Owns FR-001 – FR-006 and FR-008 – FR-013, publishes what FR-007 needs, and
-keeps the FR-014 checklist. Phase 2 hardening is delivered as reviewed changes
-afterwards, and tracked privately.
+Owns FR-001 – FR-006, FR-008 – FR-013 and FR-015, publishes what FR-007
+needs, and keeps the FR-014 checklist. Phase 2 hardening is delivered as
+reviewed changes afterwards, and tracked privately.
+
+**Third-party services.** FR-015 is delivered in phases: identity providers
+first (admin sign-in, then caregiver sign-in), then email and push
+provisioning. Push is lower priority while notifications go by email.
 
 ### rettxapi, rettxweb, rettxadmin, templates slices
 
@@ -306,8 +320,9 @@ test environment MUST NOT reach production.
 ### Explicitly out of scope
 
 - Other Rett Syndrome Europe properties that share the subscription.
-- Managing third-party services as code (identity provider, email, push, app
-  stores, DNS). They are documented only.
+- Managing app stores, the DNS registrar or the package registry as code.
+  They are documented only. (Identity providers, email and push moved into
+  scope on 2026-11-15 as FR-015.)
 - Renaming resources or consolidating regions. That is a later decision, if
   it is ever worth the migration cost.
 - Automatic expiry or scheduled clean-up of test environments.
