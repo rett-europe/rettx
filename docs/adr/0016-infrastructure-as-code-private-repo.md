@@ -41,10 +41,13 @@ Describe and operate rettX's Azure infrastructure **as code**, in a new
   configuration, the deploy pipeline and the operational documentation
   (architecture, runbooks, recovery, secrets inventory by name) live in
   `rettxinfra`. They do not live in an application repo.
-- **Declarative, Azure-native tooling.** Infrastructure is declared with
+- **Declarative, Azure-native tooling.** Azure infrastructure is declared with
   **Bicep**. The platform tracks deployed state itself, so there is no
-  separate state file to host, lock and protect. Detailed stack choices beyond
-  this belong to `rettxinfra`'s own constitution.
+  separate state file to host, lock and protect. Identity-provider
+  configuration, which Bicep cannot preview, is declared with **Terraform**
+  (amended 2026-11-15). Its state holds no credentials, so the concern that
+  rejected option C for the Azure estate doesn't apply to it. Detailed stack
+  choices beyond this belong to `rettxinfra`'s own constitution.
 - **Ownership split.** `rettxinfra` owns **resources, identities, role
   assignments, and the deploy federation** that lets each application repo
   deploy, and it publishes the outputs those repos need. Application repos
@@ -101,10 +104,12 @@ Describe and operate rettX's Azure infrastructure **as code**, in a new
   infrastructure releases to API releases, and it leaves the frontends'
   hosting, shared monitoring and shared identities owned by a repo that
   doesn't use them.
-- **Option C — Terraform / OpenTofu.** Rejected for now. It adds a remote
-  state backend to host, secure and back up. That state would itself contain
-  sensitive values, and the portability it offers doesn't pay off for an
-  estate that is entirely Azure.
+- **Option C — Terraform / OpenTofu.** Rejected for now for the Azure estate.
+  It adds a remote state backend to host, secure and back up. That state would
+  itself contain sensitive values, and the portability it offers doesn't pay
+  off for an estate that is entirely Azure. Adopted on 2026-11-15 for
+  identity-provider configuration only, where Bicep has no preview and the
+  state holds no credentials.
 - **Option D — document the manual setup only.** Rejected. Documentation
   without enforcement drifts, and it gives neither review nor a test
   environment.
