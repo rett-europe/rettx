@@ -21,7 +21,7 @@
 spec_id: "054"
 slug: "admin-access-control"
 title: "Admin access control: every admin action needs a named permission"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-11-16"
 author: "perocha"
 source_issue: ""
@@ -72,14 +72,16 @@ fanout:
       assignments for a viewer and an admin to smoke-test the rollout. After
       cutover, remove the `read_only` role. Adding a future job role is a
       role definition here plus a capability bundle stored by super_admin,
-      with no app code.
+      with no app code. Do not assign `viewer` to anyone outside the core
+      team until small-count protection for aggregate figures has shipped
+      (its own spec).
 ---
 
 # Feature Specification: Admin access control
 
 **Feature Branch**: `054-admin-access-control`
 **Created**: 2026-11-16
-**Status**: Draft
+**Status**: Ready
 **Input**: "We need an holistic plan for this, involving rettxapi. We should be
 able to restrict access to certain endpoints." … "I want to have a first MVP of
 RBAC and at the same time, design a solution that is future-proof."
@@ -162,7 +164,8 @@ New capabilities are marked ★. Capabilities from spec 043 keep their names.
 | `users.manage_access` | Grant, change or revoke caregiver access and features | Identified |
 | `surveys.view` / `surveys.manage` | Read / change surveys and their assignments | Identified |
 | `campaigns.view` / `campaigns.manage` | Read / prepare messaging campaigns | Identified |
-| `campaigns.send` | Send, resend or retry any message, push notification or campaign | Identified |
+| `messages.send` ★ | Send or resend an individual message to one patient's caregivers | Identified |
+| `campaigns.send` | Send or retry bulk email campaigns and push notifications | Identified |
 | `pulse_catalog.view` / `pulse_catalog.manage` | Read / change the Pulse metric catalog | Reference |
 | `data.export` ★ | Take any report, extract or snapshot of registry data out of the dashboard | Any |
 | `audit.view` | Read any audit trail, including delivery statistics | Identified |
@@ -215,8 +218,10 @@ before, except edit roles.
 ### User Story 3 — A sensitive action can be withheld on its own (P1)
 
 super_admin removes `campaigns.send` from a role. Holders of that role can
-still prepare campaigns but cannot send anything; the send buttons disappear
-and a direct attempt is refused within 5 minutes of the change.
+still prepare campaigns and, if they hold `messages.send`, write to an
+individual family, but cannot send a bulk campaign or push notification; those
+send buttons disappear and a direct attempt is refused within 5 minutes of the
+change.
 
 ### User Story 4 — A new kind of staff role without code (P2)
 
@@ -318,6 +323,7 @@ telemetry.
 - A de-identified genetics curation feature and its role (its own spec).
 - Per-person permissions; permissions are per role only.
 - Moving admins off Entra, or any change to caregiver sign-in.
+- Small-count protection for aggregate figures (its own spec; see Assumptions).
 
 ---
 
@@ -341,18 +347,19 @@ telemetry.
   updated to include the new capabilities at rollout.
 - Today only the owner holds an admin role, so renaming `read_only` affects
   nobody.
+- Viewers see the same exact aggregate figures admins see today. In a
+  rare-disease registry a very small count can single someone out, so no
+  viewer from outside the core team is assigned until small-count protection
+  ships through its own spec.
 
-## Open questions
+## Resolved questions (2026-11-16)
 
-- **Individual messages vs. bulk sends.** Should sending one message to a
-  patient's caregivers (welcome, reminders, requests for information) be a
-  separate capability from bulk campaigns and push notifications? It would let
-  a future patient-support role write to families without being able to
-  message everyone. Recommendation: split now (`messages.send` and
-  `campaigns.send`), since the mapping is done once.
-- **Small numbers in aggregates.** Should figures shown to a viewer suppress
-  very small counts, which in a rare-disease registry could single someone
-  out? Recommendation: decide before the first real viewer is assigned.
+- **Individual messages vs. bulk sends:** split now. `messages.send` covers an
+  individual message to one family; `campaigns.send` covers bulk campaigns and
+  push notifications. A future patient-support role can then write to a family
+  without being able to message the whole registry.
+- **Small numbers in aggregates:** out of scope here; its own spec, gating the
+  assignment of any external viewer (see Assumptions).
 
 ## Relationships
 
