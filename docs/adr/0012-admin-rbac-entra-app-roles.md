@@ -161,8 +161,30 @@ directory change and without ever attaching a role to a caregiver `Principal`.
   can bypass a hidden menu item by calling the API directly. Client gating stays,
   but only as UX on top of server-side enforcement.
 
+## Amendment — 2026-11-16: open role set and one capability per operation
+
+[Spec 054](../../specs/054-admin-access-control/spec.md) keeps the hybrid model
+and changes three things in the decision above:
+
+1. **The role set is data, not fixed.** Decision 2's "no custom roles" is
+   lifted. Any Entra role that has a capability bundle stored in rettX is
+   honoured; a role without one grants nothing. Adding a job role needs a role
+   definition and assignments as code in `rettxinfra`
+   ([ADR 0016](0016-infrastructure-as-code-private-repo.md)) plus a bundle
+   stored by `super_admin`, and no application code. Permissions stay per role,
+   never per person.
+2. **Every admin operation needs exactly one capability**, chosen by the action
+   and the class of data it touches, not by area and HTTP method. Operations
+   without a declared capability are refused (deny by default).
+3. **`read_only` is replaced by `viewer`**, which sees aggregate figures only.
+   `admin` keeps everything except `rbac.manage`; `super_admin` is unchanged.
+
+The client now reflects the caller's effective **capabilities**, read from the
+API, rather than raw role names (decision 8 otherwise stands).
+
 ## Cross-links
 
+- [spec 054 — Admin access control](../../specs/054-admin-access-control/spec.md) (amendment)
 - [spec 043 — Admin RBAC MVP](../../specs/043-admin-rbac-mvp/spec.md)
 - [spec 042 — Admin app shell](../../specs/042-admin-app-shell/spec.md)
 - [patterns.md §4 — Authentication & authorization](../../.specify/memory/patterns.md)

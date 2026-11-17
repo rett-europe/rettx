@@ -76,20 +76,21 @@ fanout:
       "Diagnosis confirmed", then a mutation card that says "Mutation details
       are not available." The care profile says "No diagnosis data", because
       it decides "MECP2 confirmed" by counting mutations, not by reading the
-      diagnosis. Four of the seven diagnosis badges reference images that do
-      not exist, and three gene types are unknown to the app.
+      diagnosis. Three gene types are unknown to the app.
 
       Do:
       (1) For a confirmed patient whose variant is unspecified, show the gene
           and a localized "specific variant not identified" explanation in
-          place of the empty mutation card. Add no new image asset (FR-060,
-          FR-061, FR-062).
+          place of the empty mutation card. Show no diagnosis badge; badges
+          are retired from the caregiver app (FR-060, FR-061, FR-062).
       (2) Never ask the caregiver to upload a "complete" report for this
           state, and never call it "unknown mutation" (FR-063).
       (3) Derive the care-profile diagnosis statement from the diagnosis
           itself, not from the number of mutations (FR-064).
       (4) Recognise all seven gene diagnosis types (FR-065).
-      (5) Never render a broken badge image (FR-066).
+      (5) A confirmed patient with a gene diagnosis and no listed variant
+          shows at least the gene, never "Mutation details are not
+          available" (FR-069).
       (6) Ship every new string in every supported caregiver locale
           (FR-067).
       (7) Add a demo/mock scenario for this state (FR-068).
@@ -123,12 +124,9 @@ identity lock):
 - A "Diagnosis confirmed" banner at 100%, followed by a mutation card that
   reads "Mutation details are not available."
 - A care profile that says "Clinical Rett", not "MECP2 confirmed".
-- The Rett syndrome badge only. The gene badge is deliberately hidden for
-  "unknown mutation".
 
-If the gene type were simply allowed without a variant, the caregiver app would
-show the MECP2 badge. The care profile, though, would say **"No diagnosis
-data"**, because it decides "MECP2 confirmed" by whether any mutation exists. It
+If the gene type were simply allowed without a variant, the care profile would
+say **"No diagnosis data"**, because it decides "MECP2 confirmed" by whether any mutation exists. It
 ignores the diagnosis, and it doesn't check which gene the mutation is in.
 
 ### Defects found in the same audit
@@ -139,8 +137,6 @@ These are tightly coupled to this case and are fixed by this spec:
   locked. This is the same rule that blocks the new case.
 - **The caregiver app recognises only three of the seven gene diagnosis types.**
   It is missing SLC6A1, EIF2B2 and MEF2C.
-- **Four diagnosis badges reference images that do not exist**: Rett-like
-  syndrome, MECP2 duplication, CDKL5 and unknown. They render as broken images.
 - **The care profile's "MECP2 confirmed" statement is derived from mutation
   count**, not from the diagnosis or the gene. A patient with a validated FOXG1
   variant would be described as MECP2 confirmed.
@@ -187,8 +183,9 @@ These were also found but are **out of scope**. They are tracked separately
   marker.
 - **D4 It is a complete diagnosis.** The patient reaches CONFIRMED without an
   identity lock, exactly as a patient with a validated variant does.
-- **D5 No new visual asset.** The caregiver sees the existing gene badge, plus a
-  localized line explaining that the specific variant was not identified.
+- **D5 No visual asset.** The caregiver sees the gene name, plus a localized
+  line explaining that the specific variant was not identified. Diagnosis
+  badges are retired from the caregiver app and are not shown.
 - **D6 Every report is reviewed by an admin, always.** This is the intended
   process. The admin checks each report and manually records the diagnosis and
   the mutation information. Extraction pre-fills; it never decides an outcome.
@@ -229,7 +226,7 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
    report stating an MECP2 mutation with no variant. It goes to admin review as
    today. An admin reviews it and
    accepts it as "MECP2, variant unspecified". The patient becomes CONFIRMED.
-   The caregiver sees the confirmed banner, the MECP2 badge, and "The specific
+   The caregiver sees the confirmed banner, the gene MECP2, and "The specific
    MECP2 variant was not identified in the genetic report", in their language.
    The caregiver is not asked to upload anything.
 2. **The variant is identified later.** The caregiver cannot upload once the
@@ -242,8 +239,11 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
    does this.
 4. **An existing clinical-only patient** with a current diagnosis now shows as
    CONFIRMED instead of DRAFT.
-5. **Every badge in the caregiver app** renders either a real image or no
-   image, for every diagnosis name and type.
+5. **A confirmed MECP2 patient not yet marked.** A patient is CONFIRMED with an
+   MECP2 diagnosis but no listed variant, and an admin has not set the marker.
+   The caregiver sees the gene MECP2 in the mutation area, not "Mutation
+   details are not available". No "variant not identified" statement is shown
+   until an admin sets the marker.
 
 ## Requirements *(mandatory)*
 
@@ -326,12 +326,11 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
   MUST show the gene and a localized statement that the specific variant was
   not identified in the genetic report. It MUST NOT show "Mutation details are
   not available."
-- **FR-061** The gene badge MUST be shown for this state. No new image asset is
-  added.
+- **FR-061** No diagnosis badge or other image is shown for this state, or
+  anywhere else in the caregiver app. Badges are retired.
 - **FR-062** Copy MUST be factual and non-alarming, and MUST NOT make a medical
   claim, for example about prognosis or severity. The statement MUST name the
-  diagnosed gene in the sentence itself, so it is understandable without the
-  badge. Suggested English: "The genetic report confirms a change in the MECP2
+  diagnosed gene in the sentence itself. Suggested English: "The genetic report confirms a change in the MECP2
   gene but does not name the specific variant. This can happen with reports
   from older testing methods."
 - **FR-063** The caregiver MUST NOT be asked to upload another or a "complete"
@@ -342,12 +341,15 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
   the number of mutations, and MUST name the correct gene.
 - **FR-065** The caregiver app MUST recognise every gene diagnosis type the API
   can return.
-- **FR-066** No diagnosis badge may render a broken image. Every name and type
-  either has an existing image or shows a text-only badge.
+- ~~**FR-066**~~ Withdrawn: badges are retired (FR-061).
 - **FR-067** Every new caregiver string MUST ship in every supported caregiver
   locale, with English fallback (patterns.md §5).
 - **FR-068** The demo/mock tooling MUST include a scenario for this state, so it
   can be shown without real data.
+- **FR-069** A CONFIRMED or LOCKED patient whose current diagnosis is a gene
+  type, who has no listed variant and no marker, MUST see at least that gene in
+  the mutation area, not "Mutation details are not available". The "variant
+  not identified" statement MUST NOT be shown unless the marker is set.
 
 ## Success Criteria *(mandatory)*
 
@@ -355,10 +357,10 @@ Clients MUST tolerate C1 being absent (treat it as `false`) and C2 being unknown
   mutation without a variant. The patient reaches CONFIRMED with no error and no
   identity lock.
 - **SC-2** In every supported locale, that patient's caregiver sees the gene,
-  the "variant not identified" statement and the gene badge. They never see
+  and the "variant not identified" statement. They never see
   "Mutation details are not available", "No diagnosis data", "unknown mutation"
   or a request for another report.
-- **SC-3** No diagnosis badge renders a broken image in the caregiver app.
+- **SC-3** No diagnosis badge is shown anywhere in the caregiver app.
 - **SC-4** The admin overview can say how many confirmed patients have an
   unspecified variant, per gene.
 - **SC-5** No existing patient's diagnosis is changed by deployment. The only
@@ -445,3 +447,9 @@ Also out of scope:
   are dropped. Identity locking needs no change (old FR-030, FR-031, FR-055).
   Rejected reports are unchanged (old FR-012 second clause). Lifecycle
   precedence is unchanged (FR-011).
+- **2026-11-14, after delivery.** The AS IS wrongly treated diagnosis badges as
+  live in the caregiver app; they belong to an older version and are retired.
+  D5, FR-061 and SC-3 now require no badge, FR-066 is withdrawn, and the badge
+  statements in the AS IS are removed. Added FR-069 and Scenario 5: a confirmed
+  gene-type patient with no variant and no marker shows the gene, not an empty
+  mutation card.
