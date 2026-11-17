@@ -135,18 +135,21 @@ are coordinated through a cross-cutting spec.
 - **Entra App Role** — the **source of truth for admin role _membership_**.
   Admin roles are provisioned as App Roles in the Entra app registration and
   delivered in the verified access-token **`roles` claim**; `rettxapi` reads that
-  claim to know *who* is `super_admin` / `admin` / `read_only`. This is
+  claim to know *who* holds which role (`super_admin`, `admin`, `viewer`, …). This is
   deliberately **not** a DB-driven `Principal.role` — admins are Entra principals
   that may have no `Principal` record. What each role can *do* is separate config
   (see *Capability catalog* below and
   [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md)).
-- **Admin role set (MVP)** — the thin admin RBAC vocabulary
-  (specs 042/043, ADR 0012): `super_admin` (owner / break-glass; implicitly holds
-  **all** capabilities; fixed — cannot be edited, diminished, or locked out; the
-  only role that may edit the capability config), `admin` (standard operator), and
-  `read_only` (viewer). Role membership is coarse and Entra-owned; the granular
-  capabilities `admin`/`read_only` grant are super_admin-configurable config (see
-  below). These are **admin authorization** roles, distinct from the caregiver
+- **Admin role set** — an **open set** since
+  [spec 054](../../specs/054-admin-access-control/spec.md) (ADR 0012, amended):
+  a role is just data. `super_admin` (owner / break-glass) is the only fixed
+  role: it implicitly holds **all** capabilities, cannot be edited, diminished,
+  or locked out, and is the only holder of `rbac.manage`. Seeded bundles are
+  `admin` (every capability except `rbac.manage`) and `viewer` (`stats.view`
+  only: aggregate figures, no personal data). `read_only` (spec 043) is
+  retired. Role *definitions* and every person-to-role *assignment* are code in
+  `rettxinfra`, changed only by a review approved by `super_admin`; never
+  assign roles by hand in the portal. These are **admin authorization** roles, distinct from the caregiver
   **Permission level** (`owner`/`edit`/`read`) below and from the
   account-lifecycle `Principal.status` (`PROVISIONAL`/`ACTIVE`/`LOCKED`).
 - **Capability / capability catalog** — the granular, enumerated admin
@@ -154,14 +157,17 @@ are coordinated through a cross-cutting spec.
   `campaigns.send`, `pulse_catalog.manage`, super-only `rbac.manage`), grouped by
   admin area and grounded in the `rettxapi` admin routers. The catalog is the
   server-owned source of truth imported by enforcement; `.view` gates reads,
-  `.manage`/`.send`/`.manage_access` gate mutations.
+  `.manage`/`.send`/`.manage_access` gate mutations. Every admin operation
+  declares **exactly one** capability; an undeclared operation is refused and
+  fails `rettxapi`'s own checks before release (spec 054 FR-001/FR-002).
 - **role→capability config** — a small, rettX-managed document (e.g. an
-  `admin_role_capabilities` store) mapping the `admin` and `read_only` roles to
-  their capability sets. It is **role-level** (one set per role, no per-user
-  tuning, no custom roles in the MVP), editable at runtime **only by
-  `super_admin`**, seeded with safe defaults (`admin` = all capabilities except
-  super-only; `read_only` = all `.view` only; `super_admin` = all, implicit and
-  not stored). It is **product config, not identity** — role membership stays in
+  `admin_role_capabilities` store) mapping each role to its capability bundle.
+  It is **role-level** (one bundle per role, no per-person tuning). `super_admin`
+  creates, edits and deletes bundles at runtime, and concurrent edits never
+  silently overwrite each other; a role in the token with no stored bundle
+  grants nothing, and a caller's roles combine as a union. A deleted bundle is
+  not re-seeded. `super_admin` = all, implicit and not stored.
+  It is **product config, not identity** — role membership stays in
   Entra, `Principal.role` stays unused. Changes are audited. **Data topology:**
   the `admin_role_capabilities` store and all other admin-domain Cosmos
   containers live in the **dedicated `rettxadmindb` database** (same Cosmos
@@ -260,10 +266,10 @@ Authorization is **always** enforced server-side. UI gating is a usability
 courtesy, not a security control.
 
 **Admin authorization (RBAC).** Admin authorization is a **hybrid**: **Entra App
-Roles** own role *membership* (who is `super_admin` / `admin` / `read_only`, via
-the verified token **`roles` claim**), while the granular **capabilities**
-(`area.action`) that `admin`/`read_only` grant are **rettX-managed config** that
-`super_admin` tunes at runtime (see §2). `rettxapi` enforces server-side via a
+Roles** own role *membership* (who holds which role, via the verified token
+**`roles` claim**; definitions and assignments are code in `rettxinfra`), while
+the granular **capabilities** (`area.action`) each role grants are
+**rettX-managed config** that `super_admin` tunes at runtime (see §2). `rettxapi` enforces server-side via a
 `require_capability("area.action")` dependency layered on `get_admin_id`: resolve
 the caller's Entra role → `super_admin` is allowed anything; otherwise allow iff
 the **configured** capability set for that role contains the capability. A thin
@@ -272,9 +278,14 @@ the **configured** capability set for that role contains the capability. A thin
 `Principal` (`Principal.role` stays unused); the persisted role→capability map is
 product config, not identity. Admin is **not** migrated to Auth0 — the backend
 trusts Entra tokens only for admin. Enforcement rolls out behind the
-`RBAC_ENABLED` flag (default OFF) and capability changes are audited. `rettxadmin`
-reflects the `roles` claim to gate nav items/routes and hosts the `super_admin`
-capability editor, but that is **UX only**; the API is the boundary. See
+`RBAC_ENABLED` flag (default OFF) and capability changes are audited. With the
+flag off, sign-in is still enforced on every admin route and `rbac.manage` is
+still checked. Every refusal is audited with its request id and returns a
+structured 403 that clients tell apart from other 403s (e.g. a locked patient).
+`rettxadmin` asks the API for the caller's effective capabilities, gates screens,
+nav entries and actions on them, and hosts the `super_admin` role editor, but
+that is **UX only**; the API is the boundary. See
+[spec 054](../../specs/054-admin-access-control/spec.md),
 [spec 043](../../specs/043-admin-rbac-mvp/spec.md),
 [spec 042](../../specs/042-admin-app-shell/spec.md), and
 [ADR 0012](../../docs/adr/0012-admin-rbac-entra-app-roles.md).
@@ -685,3 +696,4 @@ private repo.
 | 2026-08-05 | §7: a cross-repo clause is provisional until the implementing repo has read it against its own deployment reality — the round trip is the mechanism, not extra care. What such clauses get wrong is reliably a deployment or lifecycle fact rather than a logic error. Corollary: write the clause concretely enough to picture running, since a vague one draws no objection. Prompted by two gaps in spec 050 found this way (FR-001a, and a fixture that also ships). |
 | 2026-08-06 | §11: spec-derived issues and pull requests now carry the spec **number** in the title — `[spec/<NNN>-<slug>]` for fan-out issues, `[<NNN>]` for pull requests and hand-opened issues. The `Spec:` body line remains the sole basis for attribution; the prefix is a navigation aid only. `spec-fanout.yml` updated to emit the new form and to match **both** forms when checking for an existing issue, since a format-sensitive check would open duplicate squad issues for specs fanned out before this change. Its duplicate check also stopped using `--search`, whose false negatives would have the same effect. Prompted by a maintainer being unable to tell which spec any open issue or pull request belonged to without opening each one. |
 | 2026-11-13 | §1: registered **`rettxinfra`** as a sixth repo kind, *Infrastructure*. It is private, holds the cloud resources, identities, role assignments and deploy federation for every rettX environment, and lets app repos deploy their own code into named environments it provides. §6: added the `route:infra` label. §7: put `rettxinfra` in the fan-out allow-list and required specs needing a new cloud resource, identity or permission to fan a slice out to it. §8: listed its private docs. The fan-out, routing and triage workflows and `scripts/status.mjs` are updated to match. This had to land before [spec 052](../../specs/052-rettxinfra/spec.md) flips to `ready`, or its main slice would be silently skipped. See [ADR 0016](../../docs/adr/0016-infrastructure-as-code-private-repo.md). |
+| 2026-11-17 | §2/§4: brought the admin RBAC conventions in line with [spec 054](../../specs/054-admin-access-control/spec.md), now live. The role set is **open** (roles are data; `super_admin` is the only fixed role and sole holder of `rbac.manage`); the seeded bundles are `admin` and `viewer` (`stats.view` only), and `read_only` is retired. Every admin operation declares exactly one capability. Role definitions and person-to-role assignments are code in `rettxinfra`, approved by `super_admin`. Recorded that sign-in stays enforced with `RBAC_ENABLED` off, that refusals are structured and audited, and that `rettxadmin` gates on the caller's effective capabilities rather than the `roles` claim. This **supersedes** the MVP wording ("no custom roles", `read_only` = views only) from the 2026-07-26 entries. |
