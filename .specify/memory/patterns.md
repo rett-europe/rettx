@@ -232,6 +232,25 @@ are the terms a newcomer — or an AI assistant — will otherwise misread.
   deploy. Used as established vocabulary in
   [spec 034](../../specs/034-auth-observability/spec.md).
 
+### Personas and coverage
+
+Who rettX serves, what each persona does, and whether the platform covers them.
+Specs that touch a persona link to its row; a persona changes status here, in
+the same PR that delivers it.
+
+| Persona | What they do | Identity | Status |
+|---|---|---|---|
+| **Caregiver** | Registers and stewards the patient, uploads diagnosis documents, answers information requests, reads messages | Auth0 | **Available** |
+| **Admin** | Verifies identity and diagnosis, validates variants, sends messages and information requests, operates the registry | Entra ID | **Available.** Role set per spec 043. May split into narrower roles over time (see Support / operations) |
+| **Expert reviewer** | Reviews redacted snippets of a diagnosis and answers a specific ask, never sees identity | Entra ID (internal or guest) | **New, in design** |
+| **Second caregiver** | Contributes to a patient owned by another caregiver, with a narrow scope | Auth0 | **Planned, not available.** Specified in [spec 041](../../specs/041-multi-caregiver-sharing/spec.md) |
+| **Clinician** | Authorised medical professional with scoped access to patients | Not defined | **Planned, not available.** Clinicians have no way into rettX today |
+| **Support / operations** | Operational help for caregivers without full admin power | Entra ID | **Planned, not available.** Expected as a role under spec 043, with its own screens and capabilities |
+| **Researcher / partner** | Receives research invitations or data | Not defined | **Planned, not available.** No data sharing until the data governance process lands |
+
+Not applicable: a patient or adult self-registrant. Rett syndrome is the
+condition, and the caregiver acts for the patient.
+
 ## 3. API contract ownership
 
 - The canonical API contract is owned by **`rettxapi`** and published at
@@ -685,3 +704,4 @@ private repo.
 | 2026-08-05 | §7: a cross-repo clause is provisional until the implementing repo has read it against its own deployment reality — the round trip is the mechanism, not extra care. What such clauses get wrong is reliably a deployment or lifecycle fact rather than a logic error. Corollary: write the clause concretely enough to picture running, since a vague one draws no objection. Prompted by two gaps in spec 050 found this way (FR-001a, and a fixture that also ships). |
 | 2026-08-06 | §11: spec-derived issues and pull requests now carry the spec **number** in the title — `[spec/<NNN>-<slug>]` for fan-out issues, `[<NNN>]` for pull requests and hand-opened issues. The `Spec:` body line remains the sole basis for attribution; the prefix is a navigation aid only. `spec-fanout.yml` updated to emit the new form and to match **both** forms when checking for an existing issue, since a format-sensitive check would open duplicate squad issues for specs fanned out before this change. Its duplicate check also stopped using `--search`, whose false negatives would have the same effect. Prompted by a maintainer being unable to tell which spec any open issue or pull request belonged to without opening each one. |
 | 2026-11-13 | §1: registered **`rettxinfra`** as a sixth repo kind, *Infrastructure*. It is private, holds the cloud resources, identities, role assignments and deploy federation for every rettX environment, and lets app repos deploy their own code into named environments it provides. §6: added the `route:infra` label. §7: put `rettxinfra` in the fan-out allow-list and required specs needing a new cloud resource, identity or permission to fan a slice out to it. §8: listed its private docs. The fan-out, routing and triage workflows and `scripts/status.mjs` are updated to match. This had to land before [spec 052](../../specs/052-rettxinfra/spec.md) flips to `ready`, or its main slice would be silently skipped. See [ADR 0016](../../docs/adr/0016-infrastructure-as-code-private-repo.md). |
+| 2026-11-17 | §2: added **Personas and coverage** — who rettX serves (caregiver, admin, expert reviewer, second caregiver, clinician, support/operations, researcher/partner), what each does, and whether it is covered. Specs now reference this table. Prompted by the expert review use case. |
