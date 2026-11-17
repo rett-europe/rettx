@@ -175,6 +175,20 @@ any record. A signed-in caregiver sees only the patients explicitly
 granted to them; an admin token, once revoked at the identity
 provider, can no longer be used against the API.
 
+Admin access follows least privilege. Every admin operation requires
+a named permission, and an operation without one is refused.
+Permissions are grouped into roles: an owner role that holds every
+permission, an admin role for day-to-day registry work, and a
+view-only role that sees aggregate figures and no personal data. An
+account with no role, or a role the API does not recognise, is granted
+nothing. Who holds which role is recorded as code and changed only
+through a reviewed change, never by hand. Only the owner role can
+change which permissions a role carries, and those changes take
+effect within minutes. If the API cannot confirm a caller's
+permissions, it refuses the request rather than guessing. The admin
+app hides actions the signed-in person cannot perform, but the API is
+what enforces the rule.
+
 ### 2. Data at rest
 
 Identifiable patient data lives only in the backend tier. It is held
@@ -242,6 +256,12 @@ timestamp, the acting principal, a correlation identifier that joins
 events from the same request, the outcome, and a domain-specific
 payload. Records are stored in an append-only container partitioned
 per patient; the repository layer exposes no update or delete path.
+
+Access control is audited too. Every refused admin request is
+recorded with the person who made it, the roles they held, the
+permission that was missing, the operation, and a request identifier
+that traces it end to end. Every change to what a role permits is
+recorded with who made it and the permissions before and after.
 
 The web surfaces emit operational telemetry — page views, error
 traces, named user events — to Application Insights for diagnostics,
@@ -362,7 +382,8 @@ This page is the public answer to four principles of the
   end-to-end account of how the registry protects what it holds,
   citing each ecosystem repository's own posture.
 - **[VI — Security baseline](/governance/constitution/#vi-security-baseline).**
-  Federated identity, server-side authorisation, secrets in Key Vault,
+  Federated identity, server-side authorisation with least-privilege
+  admin roles, secrets in Key Vault,
   TLS everywhere, and a tamper-resistant audit log are the baseline
   this principle requires; the controls above are how that baseline
   is realised.
