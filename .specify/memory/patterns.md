@@ -248,7 +248,7 @@ the same PR that delivers it.
 |---|---|---|---|
 | **Caregiver** | Registers and stewards the patient, uploads diagnosis documents, answers information requests, reads messages | Auth0 | **Available** |
 | **Admin** | Verifies identity and diagnosis, validates variants, sends messages and information requests, operates the registry | Entra ID | **Available.** Roles are an open set per [spec 054](../../specs/054-admin-access-control/spec.md) (seeded: `super_admin`, `admin`, `viewer`), so narrower roles can be added as data (see Support / operations) |
-| **Expert reviewer** | Reviews redacted snippets of a diagnosis and answers a specific ask, never sees identity | Entra ID (internal or guest) | **New, in design** |
+| **Expert reviewer** | Reviews redacted snippets of a diagnosis and answers a specific ask, never sees identity | Entra ID (internal or guest) | **New, in design** ([spec 055](../../specs/055-expert-review-snippets/spec.md)) |
 | **Second caregiver** | Contributes to a patient owned by another caregiver, with a narrow scope | Auth0 | **Planned, not available.** Specified in [spec 041](../../specs/041-multi-caregiver-sharing/spec.md) |
 | **Clinician** | Authorised medical professional with scoped access to patients | Not defined | **Planned, not available.** Clinicians have no way into rettX today |
 | **Support / operations** | Operational help for caregivers without full admin power | Entra ID | **Planned, not available.** Expected as a new role in the open role set (spec 054), with its own screens and capabilities |
