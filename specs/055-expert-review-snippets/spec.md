@@ -1,12 +1,12 @@
 <!--
-  DRAFT. Nothing fans out while status is `draft`. Iterate in the open.
+  READY. Fans out to the repos below on merge.
   Outcome-level only: how each repo achieves this is that repo's decision.
 -->
 ---
 spec_id: "055"
 slug: "expert-review-snippets"
 title: "Expert review of diagnoses via redacted snippets"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-11-17"
 author: "perocha"
 relates_to: "patterns.md §2 Personas and coverage (Expert reviewer, Admin, Caregiver), specs/054-admin-access-control/ (open role set; new role), specs/048-admin-access-audit/ (access audit), specs/032-message-center/ (caregiver requests)"
@@ -38,7 +38,7 @@ fanout:
 
 # Feature Specification: Expert review of diagnoses via redacted snippets
 
-**Status**: Draft  
+**Status**: Ready  
 **Input**: Onboarding workflow: caregiver uploads a Rett diagnosis; admin verifies
 identity and diagnosis; hard cases go to expert review.
 

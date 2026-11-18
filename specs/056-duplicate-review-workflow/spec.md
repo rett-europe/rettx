@@ -15,7 +15,7 @@
 spec_id: "056"
 slug: "duplicate-review-workflow"
 title: "Duplicate review workflow for unconfirmed patients"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-11-18"
 author: "perocha"
 relates_to: "patterns.md §1 Repositories and roles; patterns.md §2 Personas and coverage; specs/048-admin-access-audit/; specs/054-admin-access-control/"
@@ -48,9 +48,9 @@ fanout:
 
 # Feature Specification: Duplicate review workflow for unconfirmed patients
 
-**Feature Branch**: `spec-056-duplicate-review-workflow`
+**Feature Branch**: `spec-056-ready`
 **Created**: 2026-11-18
-**Status**: Draft
+**Status**: Ready
 **Input**: "Let's go then with the spec for this MVP": an admin-triggered
 duplicate review workflow for active patients without a confirmed diagnosis,
 cross-cutting rettxapi and rettxadmin without new infrastructure.
