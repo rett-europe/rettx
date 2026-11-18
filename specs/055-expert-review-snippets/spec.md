@@ -14,23 +14,22 @@ fanout:
   - repo: rettxapi
     summary: |
       PRIMARY IMPLEMENTER AND CONTRACT OWNER. Introduce the expert review
-      request and its lifecycle, the reviewer-facing restricted view, the new
-      reviewer role and capability, auditing, and the path by which an expert
-      proposes a variant using the existing variant validation.
+      request and its lifecycle, storage and serving of region snippets (new
+      images only, never the original), the reviewer-facing restricted view,
+      the new reviewer role and capability, auditing, and the path by which an
+      expert proposes a variant using the existing variant validation. Link a
+      caregiver upload made in answer to an information request back to the
+      review request that prompted it.
   - repo: rettxadmin
     summary: |
-      Admin (persona A) creates a review request from a patient's uploaded
-      documents by selecting snippets and writing the ask, and follows its
-      status. Expert (persona B) gets two new screens and nothing else of the
+      Admin (persona A) creates a review request by viewing a patient's
+      uploaded documents, selecting regions to crop as snippets, and writing a
+      free-text note with the ask; then follows its status. Expert (persona B)
+      gets two new screens and nothing else of the
       admin surface: a review queue (pending / ongoing / replied) and a
       request detail page showing only the request reference, the asks,
-      snippets and thread (US-6, US-7).
-  - repo: rettxweb
-    summary: |
-      Only if the existing admin-triggered "more information" request cannot
-      carry an expert-originated question. The request is always triggered by
-      the admin, and the caregiver is never told who the expert is. Drop this
-      entry if the existing request fits (to be confirmed from code).
+      snippets and thread (US-6, US-7). The admin's caregiver information
+      request accepts a free-text reason, not only predefined ones.
   - repo: rettxmutation
     summary: |
       Make existing variant extraction and validation reusable for an
@@ -61,9 +60,10 @@ from "in design" to available when delivered.
 ## User Scenarios & Testing
 
 ### User Story 1 - Admin asks an expert a specific question (P1)
-Admin selects one or more snippets from the patient's uploaded documents, writes
-a specific ask, and sends it. The patient moves to expert review.
-**Acceptance**: the expert sees only the ask and the snippets.
+Admin crops one or more snippets from the patient's uploaded documents (US-5),
+writes a free-text note to the expert with the specific ask, and sends it. The
+patient moves to expert review.
+**Acceptance**: the expert sees only the note and the snippets.
 
 ### User Story 2 - Expert answers (P1)
 Expert reviews, then confirms, disagrees, or comments, optionally with a
@@ -84,13 +84,14 @@ entered variant (including external variant validator) before it can be applied.
 **Acceptance**: an invalid variant cannot be accepted; the admin explicitly
 applies a validated proposal to the patient.
 
-### User Story 5 - Snippets from existing documents (P1, feasibility to confirm)
-Admin builds snippets from documents already on file, without re-upload.
-Two forms are in scope, and either may ship first:
-- **Region snippet**: admin selects a region of the original document.
-- **Structured snippet**: admin selects already-extracted fields (variant, lab,
-  report date, diagnosis statement).
-**Acceptance**: neither form carries the original document or its hidden data.
+### User Story 5 - Region snippets from existing documents (P1)
+Admin opens a document already on file (PDF or image, scanned or digital),
+moves to the relevant page, and selects a rectangular region. That region
+becomes a snippet. Several snippets may come from the same document or from
+different documents. No re-upload is needed.
+**Acceptance**: each snippet is a new image containing only the pixels of the
+selected region; it carries nothing else from the original file (no metadata,
+no hidden text layer, no other pages, nothing outside the region).
 
 ### User Story 6 - Expert review queue (P1)
 On sign-in the expert lands on a shared queue of all open requests. Nothing is
@@ -134,8 +135,11 @@ the thread; any withdrawn snippet is gone.
 - **FR-002b**: Nothing shown to the expert may reveal that a request maps to a
   patient record. The request reference MUST NOT be, contain, or be derivable
   from the patient id, the rettX ID, or any other patient identifier.
-- **FR-003**: A snippet MUST NOT carry file metadata or content outside the
-  selected region/fields.
+- **FR-003**: A snippet MUST be a newly produced image of the selected region
+  only. It MUST NOT carry file metadata, a text layer, or any content outside
+  the selected region. The original document is never served to the expert.
+- **FR-003a**: Every request carries a free-text note from the admin to the
+  expert stating the ask. Each new round (FR-002a) adds a new note.
 - **FR-004**: Before sending, the admin MUST confirm that no personal data is
   visible in any snippet. The confirmation is recorded.
 - **FR-005**: A review request has a lifecycle: requested, needs more
@@ -146,8 +150,10 @@ the thread; any withdrawn snippet is gone.
   returns it to Pending in the shared pool.
 - **FR-006**: The expert role is a role in the open admin role set of spec 054, with
   capabilities limited to reading open requests in the pool, replying, asking
-  for more information, and proposing variants. Experts are Entra identities
-  (internal or guest).
+  for more information, and proposing variants. Experts are members of the
+  organisation's own Entra tenant, added and given the role through the same
+  role-assignment process as every other admin role (spec 054). No guest or
+  external identities.
 - **FR-007**: Every expert access and admin action on a request MUST be audited,
   consistent with spec 048. Audit entries contain identifiers, not snippet
   content.
@@ -179,21 +185,33 @@ the thread; any withdrawn snippet is gone.
   to them.
 
 ## Assumptions and Open Questions
-- Feasibility of region snippets (non-uniform document formats, scans, PDFs)
-  is unconfirmed. Structured snippets are the fallback and must work alone.
+- Region snippets are feasible: uploaded originals are retained, and a crop can
+  be produced from the rendered page without relying on text positions from
+  document processing. It needs new document viewing and selection in the admin
+  surface and new snippet storage and serving in the API. Snippets built from
+  extracted data, and admin-typed excerpts, are not in this version; the free-
+  text note (FR-003a) covers context the crop cannot carry.
 - Automatic personal-data detection is out of scope for the first version.
-- Legal basis for sharing health data with external experts (GDPR processing
-  agreement, expert terms) must be settled before guest experts are enabled; an
-  ADR is expected.
-- Whether the existing "more information" request (spec 032 message center
-  plus the lifecycle information-request state) fits this use case is
-  unconfirmed. Prefer reuse over a new mechanism.
-- The personas this spec relies on (admin, expert, caregiver) should be
-  defined first in a program-level personas reference; see the follow-up.
+- A "move to expert review" action and a matching document status already
+  exist but carry only an explanation message. This spec replaces that with
+  the review request; implementers should reuse or align with the existing
+  status rather than add a parallel one.
+- Experts are organisation members, not external parties, so no separate
+  data-sharing basis or ADR is needed beyond the existing admin access model.
+- The existing admin-triggered "more information" request is reused for the
+  first version, document-only. The caregiver answers by uploading a document,
+  as today. Two gaps must close: the admin must be able to write a free-text
+  reason, not only pick a predefined one; and a document uploaded in answer
+  must be linked to the review request that prompted it, so the admin can crop
+  new snippets from it. No caregiver-facing change is needed. A free-text
+  caregiver answer is a later addition.
 - Success measures: share of expert reviews completed, time to answer, zero
   personal-data leaks to experts.
 
 ## Out of Scope
 - Direct expert access to patient records.
 - Expert communication with caregivers.
+- Free-text answers from caregivers (first version is document-only).
 - Automatic redaction.
+- Snippets built from extracted data, and admin-typed excerpts (possible
+  later additions).
