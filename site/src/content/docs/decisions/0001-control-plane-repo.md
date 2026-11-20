@@ -67,7 +67,7 @@ releases continue to flow through PyPI and are pinned by `rettxapi`.
 
 ### Spec & issue flow
 
-> **Amended by [ADR 0002](https://github.com/rett-europe/rettx/blob/main/docs/adr/0002-cross-cutting-gap-analysis-pipeline.md)**: the
+> **Amended by [ADR 0002](/decisions/0002-cross-cutting-gap-analysis-pipeline/)**: the
 > `/route confirm` fan-out below is now reserved for **single-repo** work.
 > Cross-cutting issues go through gap analysis → umbrella spec → `spec-fanout`
 > instead of a raw fan-out.

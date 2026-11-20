@@ -8,7 +8,7 @@ sidebar:
 - **Status**: Accepted (2026-07-11)
 - **Date**: 2026-07-11
 - **Decision-makers**: rettX maintainers
-- **Relates to**: [ADR 0003](https://github.com/rett-europe/rettx/blob/main/docs/adr/0003-message-channel-content-model.md) (channel
+- **Relates to**: [ADR 0003](/decisions/0003-message-channel-content-model/) (channel
   content model), [`specs/032-message-center/`](https://github.com/rett-europe/rettx/blob/main/specs/032-message-center/spec.md),
   [`specs/033-message-center-push/`](https://github.com/rett-europe/rettx/blob/main/specs/033-message-center-push/spec.md)
   (push channel), [`patterns.md` §1 *Content* / §5](https://github.com/rett-europe/rettx/blob/main/.specify/memory/patterns.md)

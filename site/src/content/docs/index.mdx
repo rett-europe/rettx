@@ -1,6 +1,6 @@
 ---
 title: rettX
-description: The Rett Syndrome Europe patient registry — engineering and governance documentation.
+description: The Rett Syndrome Europe patient registry — who it serves, how it works, and how it protects data.
 template: splash
 hero:
   title: ' '
@@ -8,13 +8,13 @@ hero:
     alt: rettX — Unveiling hope for Rett Syndrome
     file: ../../assets/logo-tagline.svg
   actions:
-    - text: Explore the architecture
-      link: /architecture/overview/
+    - text: Discover rettX
+      link: /product/personas/
       icon: right-arrow
       variant: primary
-    - text: View on GitHub
-      link: https://github.com/rett-europe/rettx
-      icon: external
+    - text: Security & privacy
+      link: /architecture/security/
+      icon: approve-check
       variant: minimal
 ---
 
@@ -25,14 +25,17 @@ import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 **rettX** is the patient registry of
 [Rett Syndrome Europe](https://www.rettsyndrome.eu) — a European
 network of Rett Syndrome associations. The registry collects, with
-full consent, structured information about people living with Rett
-Syndrome so that researchers, clinicians, and patient organisations
-can better understand the condition and accelerate therapies.
+consent, structured information about people living with Rett
+Syndrome. Its purpose is to support families and build a better
+understanding of the condition.
 
-This site documents *how* rettX is built: its architecture, the
-governance constitution that all of its repositories share, the
-specifications that drive new work, and the decisions we have made
-along the way.
+Today, caregivers maintain records and RSE administrators operate
+the registry. Clinician access is planned, not available today.
+Data will not be shared with researchers or partners until the
+registry's data governance process is in place.
+
+This site explains who rettX serves, how its components work together,
+and how the registry protects the data entrusted to it.
 
 The patient-facing public site lives at
 [**rettx.eu**](https://www.rettx.eu). The caregiver app lives at
@@ -40,24 +43,19 @@ The patient-facing public site lives at
 
 <CardGrid>
   <LinkCard
-    title="Architecture"
-    description="The six-repository ecosystem and how data flows through it."
+    title="Who rettX is for"
+    description="Caregivers and RSE administrators today; a clear distinction between available and planned access."
+    href="/product/personas/"
+  />
+  <LinkCard
+    title="How rettX works"
+    description="The caregiver app, the local admin tool, and the API that enforces access to registry data."
     href="/architecture/overview/"
   />
   <LinkCard
-    title="Governance"
-    description="The program constitution that governs every rettX repository."
-    href="/governance/constitution/"
-  />
-  <LinkCard
-    title="Specifications"
-    description="Cross-cutting specs that drive new features across the stack."
-    href="/specs/"
-  />
-  <LinkCard
-    title="Decisions"
-    description="Architecture decision records (ADRs) capturing why we built it this way."
-    href="/decisions/"
+    title="Security & privacy"
+    description="Authentication, permissions, consent, and the controls that protect registry records."
+    href="/architecture/security/"
   />
 </CardGrid>
 
@@ -65,16 +63,17 @@ The patient-facing public site lives at
 
 <CardGrid>
   <Card title="Patient-first" icon="heart">
-    Every decision is anchored in a constitution that puts patient
-    well-being, consent, and dignity ahead of engineering convenience.
+    rettX is built around people living with Rett Syndrome and their
+    families, with consent, dignity, and accessible experiences at its core.
   </Card>
-  <Card title="Open by default" icon="open-book">
-    This site, the program governance, and our libraries are public.
-    Application code that touches patient data is private — see the
-    [ecosystem map](/welcome/ecosystem/).
+  <Card title="Access is limited" icon="approve-check">
+    Caregiver access is scoped to their records. The admin tool is
+    available only to RSE administrators and runs locally; it is not
+    publicly deployed or available to clinicians.
   </Card>
-  <Card title="Built in the open" icon="github">
-    All work is tracked in GitHub. Cross-cutting changes flow through
-    a public spec process before any code is written.
+  <Card title="Understandable by design" icon="open-book">
+    Public documentation explains the architecture and security posture.
+    Development principles, specifications, and historical decisions are
+    kept separately under **For contributors**.
   </Card>
 </CardGrid>

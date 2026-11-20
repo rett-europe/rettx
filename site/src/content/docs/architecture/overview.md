@@ -5,8 +5,10 @@ sidebar:
   order: 1
 ---
 
-This page is a high-level orientation. Deeper dives live alongside it
-under the **Architecture** section as they are written.
+rettX has a caregiver app, a local tool for RSE administrators, and an API
+that enforces access to registry data. This page explains how those
+components fit together; the [security and privacy overview](/architecture/security/)
+describes the controls in more detail.
 
 ## Layers
 
@@ -16,10 +18,10 @@ runtime layers and two supporting libraries:
 ```mermaid
 flowchart TD
     Caregivers(["👤 Caregivers"]):::actor
-    Admins(["🏥 Admins / clinicians"]):::actor
+    Admins(["🏥 RSE admins"]):::actor
 
     rettxweb["rettxweb<br/><small>Angular PWA · app.rettx.eu</small>"]:::surface
-    rettxadmin["rettxadmin<br/><small>admin web app</small>"]:::surface
+    rettxadmin["rettxadmin<br/><small>admin web app · local only</small>"]:::surface
 
     rettxapi["rettxapi<br/><small>Python service · consent · access control</small>"]:::backend
 
@@ -41,30 +43,30 @@ flowchart TD
 
 ## Trust boundaries
 
-- The **caregiver app** and the **admin app** never see another
-  patient's data. All authorisation is enforced server-side in
-  `rettxapi`.
+- **Caregivers** can access only the patient records explicitly granted
+  to them. **RSE administrators** have role-scoped permissions for registry
+  operations. All authorisation is enforced server-side in `rettxapi`.
+- The **admin app** runs locally and is not publicly deployed.
+  It is available only to RSE administrators, not clinicians.
+  Local operation does not replace authentication or API permission checks.
 - `rettxapi` is the only component that touches identifiable data at
   rest. Pseudonymous identifiers come from `rettxid`; mutation strings
   are normalised through `rettxmutation`.
 - The **docs site** (this site) and the **WordPress landing site** at
   `rettx.eu` are static and have no access to patient data.
 
-## How changes flow
+## From caregiver to registry
 
-For anything that crosses a trust boundary or affects more than one
-component, we write a **specification** in
-[`specs/`](https://github.com/rett-europe/rettx/tree/main/specs)
-before any code is written. The spec must pass a constitution check
-(see [governance](/governance/constitution/)) before tasks are fanned
-out to the relevant repositories.
+Caregivers register a person, upload diagnosis documents, respond to
+requests for more information, and receive messages from the registry.
+RSE administrators review those submissions through their separate tool.
+Both surfaces use the API; they do not communicate directly with each other.
+
+The API checks the caller's identity and permissions before providing
+access to records. Supporting libraries normalise genetic variant
+descriptions and generate pseudonymous registry identifiers.
 
 ## What lives where
 
 See the [ecosystem map](/welcome/ecosystem/) for which repository
 holds what, and which are public versus private.
-
-## More to come
-
-This section will grow as we publish ADRs and architecture deep dives.
-Watch the [decisions](/decisions/) section for newly-merged ADRs.

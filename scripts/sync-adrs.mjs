@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Build-time sync: publish every ADR in docs/adr/ as a Starlight page under
+// Build-time sync: publish eligible ADRs in docs/adr/ as Starlight pages under
 // site/src/content/docs/decisions/, and regenerate the decisions index table.
 //
 // docs/adr/ is the single source of truth. The site pages are a generated view.
@@ -18,6 +18,14 @@ const outDir = path.join(root, 'site', 'src', 'content', 'docs', 'decisions');
 const indexPath = path.join(outDir, 'index.md');
 
 const REPO_BLOB_BASE = 'https://github.com/rett-europe/rettx/blob/main/';
+// These records are not part of the docs site.
+const unpublishedAdrs = new Set([
+  '0009-pulse-menstrual-period-duration-model.md',
+  '0010-pulse-sleep-entry-duration-quality-model.md',
+  '0011-pulse-contributor-access-scope.md',
+  '0013-admin-data-dedicated-cosmos-database.md',
+  '0015-medication-regimen-not-pulse-event.md',
+]);
 
 /** Quote a string as a safe double-quoted YAML scalar. */
 function yamlQuote(value) {
@@ -35,20 +43,31 @@ function stripBackticks(value) {
  * untouched. A trailing #anchor on a relative link is preserved.
  */
 function rewriteTarget(target) {
-  if (/^(https?:\/\/|#|mailto:)/.test(target)) {
+  const blobAdr = target.startsWith(REPO_BLOB_BASE + 'docs/adr/')
+    ? target.slice((REPO_BLOB_BASE + 'docs/adr/').length)
+    : null;
+  if (blobAdr === null && /^(https?:\/\/|#|mailto:)/.test(target)) {
     return target;
   }
-  const hashIndex = target.indexOf('#');
-  const pathPart = hashIndex === -1 ? target : target.slice(0, hashIndex);
-  const anchor = hashIndex === -1 ? '' : target.slice(hashIndex);
+  const relative = blobAdr ?? target;
+  const hashIndex = relative.indexOf('#');
+  const pathPart = hashIndex === -1 ? relative : relative.slice(0, hashIndex);
+  const anchor = hashIndex === -1 ? '' : relative.slice(hashIndex);
   const resolved = path.posix.normalize('docs/adr/' + pathPart);
+  // Links between ADRs stay on the site; links to unpublished ADRs are dropped.
+  const adrMatch = resolved.match(/^docs\/adr\/(\d{4}-[^/]+\.md)$/);
+  if (adrMatch) {
+    if (unpublishedAdrs.has(adrMatch[1])) return null;
+    return '/decisions/' + adrMatch[1].replace(/\.md$/i, '') + '/' + anchor;
+  }
   return REPO_BLOB_BASE + resolved + anchor;
 }
 
-/** Rewrite all relative markdown links in a body of text. */
+/** Rewrite all markdown links in a body of text. */
 function rewriteLinks(body) {
-  return body.replace(/\]\(([^)]+)\)/g, (match, target) => {
-    return '](' + rewriteTarget(target) + ')';
+  return body.replace(/\[([^\]]*)\]\(([^)]+)\)/g, (match, text, target) => {
+    const rewritten = rewriteTarget(target);
+    return rewritten === null ? text : '[' + text + '](' + rewritten + ')';
   });
 }
 
@@ -56,6 +75,7 @@ function readAdrs() {
   const files = fs
     .readdirSync(adrDir)
     .filter((name) => name.toLowerCase().endsWith('.md'))
+    .filter((name) => !unpublishedAdrs.has(name))
     .sort();
 
   return files.map((filename) => {
@@ -136,6 +156,10 @@ function regenerateIndex(adrs) {
 
 function main() {
   fs.mkdirSync(outDir, { recursive: true });
+  for (const filename of unpublishedAdrs) {
+    const pagePath = path.join(outDir, filename);
+    if (fs.existsSync(pagePath)) fs.unlinkSync(pagePath);
+  }
   const adrs = readAdrs();
   for (const adr of adrs) {
     writePage(adr);

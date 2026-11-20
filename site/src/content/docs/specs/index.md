@@ -1,5 +1,5 @@
 ---
-title: Specifications
+title: Development specifications
 description: Cross-cutting specifications that drive new work in the rettX ecosystem.
 sidebar:
   order: 1
@@ -11,10 +11,8 @@ above any single repository.
 
 ## Where specs live
 
-Specifications live under
-[`specs/`](https://github.com/rett-europe/rettx/tree/main/specs) in
-this repository, one folder per spec, named `NNNN-slug/`. Each spec
-folder contains:
+Specifications live in this repository, one folder per spec, named
+`NNNN-slug/`. Each spec folder contains:
 
 - `spec.md` — the **what** and the **why**, including a
   constitution check.
@@ -32,18 +30,20 @@ folder contains:
    under `specs/`.
 4. The draft is iterated on until it passes the constitution check.
    Stakeholders for each affected repository review their slice.
-5. On merge, the **Iris** automation creates linked issues in each
+5. When a spec marked **ready** or **accepted** is merged, the
+   **spec-fanout** automation creates linked issues in each
    target repository with the `squad` label, where the work is
    actually executed.
 
 ## Templates
 
-The empty templates that every new spec starts from are at
-[`specs/template/`](https://github.com/rett-europe/rettx/tree/main/specs/template).
+The specification template is at
+[`.specify/templates/spec-template.md`](https://github.com/rett-europe/rettx/blob/main/.specify/templates/spec-template.md).
 Copy them, don't symlink them.
 
-## Currently live specs
+## Specifications are not a feature catalogue
 
-There are no merged specifications yet. Watch this space — and the
-[issues with the `spec` label](https://github.com/rett-europe/rettx/issues?q=is%3Aissue+label%3Aspec)
-in the meantime.
+Specifications include drafts and planned work as well as accepted
+requirements.
+A merged specification does not mean that its feature is publicly
+available. For current and planned access, see [who rettX is for](/product/personas/).

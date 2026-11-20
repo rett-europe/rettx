@@ -1,12 +1,17 @@
 ---
-title: Program constitution
-description: The principles that govern every rettX repository.
+title: Development principles
+description: The program constitution that guides rettX's software development.
 sidebar:
   order: 1
 ---
 
-The rettX program is governed by a **constitution** that applies to
-every repository in the ecosystem. The full versioned text lives in
+rettX's software development is guided by a **program constitution**
+that applies to every repository in the ecosystem. This is development
+governance, not the registry's patient data governance framework. It does
+not define approval of research access or replace consent and data-sharing
+policies.
+
+The full versioned text lives in
 the source tree at
 [`.specify/memory/constitution.md`](https://github.com/rett-europe/rettx/blob/main/.specify/memory/constitution.md);
 this page summarises the principles for readers who want a quick
@@ -24,7 +29,7 @@ Three reasons:
 1. **Patient safety and dignity** are not a feature; they are the
    floor. Codifying that in writing makes it harder to compromise
    them under deadline pressure.
-2. **Multiple repositories, one program.** Six repositories that
+2. **Multiple repositories, one program.** Seven repositories that
    evolve independently still need to behave like one product to the
    people we serve.
 3. **Continuity.** Volunteers and contributors come and go. A written
@@ -38,16 +43,17 @@ NON-NEGOTIABLE — they cannot be relaxed by any individual change:
 
 | # | Principle | Status |
 |---|---|---|
-| I | Patient-first by design | NON-NEGOTIABLE |
-| II | Consent and lawful basis | NON-NEGOTIABLE |
-| III | Privacy and minimal data | NON-NEGOTIABLE |
-| IV | Specification-driven development | Strong |
-| V | Test and verification discipline | Strong |
-| VI | Observable in production | Strong |
-| VII | Open by default for governance, closed by default for application code | Strong |
-| VIII | Internationalisation as a first-class concern | Strong |
+| I | Patients & caregivers come first | NON-NEGOTIABLE |
+| II | Privacy by design | NON-NEGOTIABLE |
+| III | Transparency above all | NON-NEGOTIABLE |
+| IV | Clinical accuracy and accountability | Required |
+| V | Accessibility and inclusion | Required |
+| VI | Security baseline | Required |
+| VII | Open by default, private only when justified | Required |
+| VIII | Sustainability and stewardship | Required |
 
-Read the full text for each principle in the
+These are development commitments, not a claim that every planned
+registry capability is already available. Read the full text for each principle in the
 [constitution itself](https://github.com/rett-europe/rettx/blob/main/.specify/memory/constitution.md).
 
 ## Constitution checks

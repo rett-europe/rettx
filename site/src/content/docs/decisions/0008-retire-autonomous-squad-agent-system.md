@@ -8,7 +8,7 @@ sidebar:
 - **Status**: Accepted (2026-07-11)
 - **Date**: 2026-07-11
 - **Decision-makers**: rettX maintainers
-- **Relates to**: [ADR 0002](https://github.com/rett-europe/rettx/blob/main/docs/adr/0002-cross-cutting-gap-analysis-pipeline.md)
+- **Relates to**: [ADR 0002](/decisions/0002-cross-cutting-gap-analysis-pipeline/)
   (gap-analysis → umbrella spec → `spec-fanout` orchestration pipeline),
   [`patterns.md` §6](https://github.com/rett-europe/rettx/blob/main/.specify/memory/patterns.md) (issue routing labels)
 
@@ -34,7 +34,7 @@ side by side, and the Squad path frequently acted on issues in ways a maintainer
 then had to correct.
 
 Meanwhile the program adopted a **session-based orchestration** model. Under
-[ADR 0002](https://github.com/rett-europe/rettx/blob/main/docs/adr/0002-cross-cutting-gap-analysis-pipeline.md), cross-cutting work is
+[ADR 0002](/decisions/0002-cross-cutting-gap-analysis-pipeline/), cross-cutting work is
 gap-analysed and specced in the control plane, then fanned out; a human coordinator
 opens the resulting issues/specs and **spawns one working session per repo**, each
 landing its own PR. That model already covers everything the Squad system was meant
