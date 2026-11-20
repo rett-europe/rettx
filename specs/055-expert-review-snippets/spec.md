@@ -88,10 +88,13 @@ applies a validated proposal to the patient.
 Admin opens a document already on file (PDF or image, scanned or digital),
 moves to the relevant page, and selects a rectangular region. That region
 becomes a snippet. Several snippets may come from the same document or from
-different documents. No re-upload is needed.
+different documents. No re-upload is needed. When a page is sideways or upside
+down, the admin can rotate the view in quarter turns before selecting; the
+snippet is then produced the right way up, as the admin saw it.
 **Acceptance**: each snippet is a new image containing only the pixels of the
 selected region; it carries nothing else from the original file (no metadata,
-no hidden text layer, no other pages, nothing outside the region).
+no hidden text layer, no other pages, nothing outside the region). A snippet
+taken from a rotated view shows the same pixels, turned to match that view.
 
 ### User Story 6 - Expert review queue (P1)
 On sign-in the expert lands on a shared queue of all open requests. Nothing is
