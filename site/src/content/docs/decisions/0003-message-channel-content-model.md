@@ -9,7 +9,7 @@ sidebar:
 - **Date**: 2026-06-23
 - **Decision-makers**: rettX maintainers
 - **Relates to**: [`specs/032-message-center/`](https://github.com/rett-europe/rettx/blob/main/specs/032-message-center/spec.md)
-  (rendering & content-snapshot requirements), [ADR 0001](https://github.com/rett-europe/rettx/blob/main/docs/adr/0001-control-plane-repo.md)
+  (rendering & content-snapshot requirements), [ADR 0001](/decisions/0001-control-plane-repo/)
 
 ## Context
 

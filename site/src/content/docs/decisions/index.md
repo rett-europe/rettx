@@ -1,18 +1,27 @@
 ---
-title: Architecture decision records
-description: Why we built rettX the way we did.
+title: Development decision archive
+description: Historical product, architecture, and development decisions for contributors.
 sidebar:
   order: 1
 ---
+
+This archive is for contributors looking for the reasoning behind a past
+decision. It includes product design, architecture, and software delivery
+processes; it is not an introduction to the registry or a statement of
+patient data governance.
+
+For the current system, start with [how rettX works](/architecture/overview/)
+and [security and privacy](/architecture/security/). Historical decisions
+may describe proposals, pilots, or behaviour that has since changed.
+Their status does not by itself mean a feature is available today.
 
 An **architecture decision record** (ADR) captures a significant
 decision, the alternatives we considered, and why we chose what we
 chose. ADRs are immutable once merged — if we change our mind, we
 write a new ADR that supersedes the old one.
 
-ADRs live under
-[`docs/adr/`](https://github.com/rett-europe/rettx/tree/main/docs/adr)
-in the source tree.
+The site publishes a selection of these records; records about
+unpublished prototypes are not included.
 
 ## Currently merged ADRs
 
@@ -26,5 +35,6 @@ in the source tree.
 | [0006](/decisions/0006-message-center-template-store-layout/) | Message Center template store: multi-channel layout & naming | Accepted (2026-07-11) |
 | [0007](/decisions/0007-ai-code-review-custom-instructions/) | AI code-review custom instructions across the ecosystem | Accepted (2026-07-11) |
 | [0008](/decisions/0008-retire-autonomous-squad-agent-system/) | Retire the autonomous Squad/Ralph agent system | Accepted (2026-07-11) |
-| [0009](/decisions/0009-pulse-menstrual-period-duration-model/) | Pulse menstrual period modelled as start + duration | Proposed (2026-07-22) |
-| [0010](/decisions/0010-pulse-sleep-entry-duration-quality-model/) | Pulse sleep entry: total duration + quality, with input-only bedtime/wake | Proposed (2026-07-22) |
+| [0012](/decisions/0012-admin-rbac-entra-app-roles/) | Admin RBAC: Entra App Roles for membership + super_admin-configurable capabilities | Proposed (2026-07-26) |
+| [0014](/decisions/0014-ios-app-via-capacitor-github-actions/) | iOS app via Capacitor, built on GitHub Actions macOS runners | Proposed (2026-07-28) |
+| [0016](/decisions/0016-infrastructure-as-code-private-repo/) | Infrastructure as code in a dedicated private repository (rettxinfra) | Accepted (2026-11-13); scope of third-party services amended |

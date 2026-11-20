@@ -90,7 +90,7 @@ export default defineConfig({
     starlight({
       title: 'rettX',
       description:
-        'Engineering and governance documentation for the rettX patient registry — an initiative of Rett Syndrome Europe.',
+        'The rettX patient registry: who it serves, how it works, and how it protects data — an initiative of Rett Syndrome Europe.',
       logo: {
         light: './src/assets/logo.svg',
         dark: './src/assets/logo-dark.svg',
@@ -111,7 +111,6 @@ export default defineConfig({
           label: 'Welcome',
           items: [
             { label: 'What is rettX?', link: '/' },
-            { label: 'The ecosystem', link: '/welcome/ecosystem/' },
           ],
         },
         {
@@ -120,19 +119,26 @@ export default defineConfig({
         },
         {
           label: 'Architecture',
-          autogenerate: { directory: 'architecture' },
+          items: [
+            { label: 'How rettX works', link: '/architecture/overview/' },
+            { label: 'The ecosystem', link: '/welcome/ecosystem/' },
+          ],
         },
         {
-          label: 'Governance',
-          autogenerate: { directory: 'governance' },
+          label: 'Security & privacy',
+          items: [
+            { label: 'How data is protected', link: '/architecture/security/' },
+          ],
         },
         {
-          label: 'Specifications',
-          autogenerate: { directory: 'specs' },
-        },
-        {
-          label: 'Decisions (ADRs)',
-          autogenerate: { directory: 'decisions' },
+          label: 'For contributors',
+          collapsed: true,
+          items: [
+            { label: 'Development principles', link: '/governance/constitution/' },
+            { label: 'Contributing', link: '/governance/contributing/' },
+            { label: 'Development specifications', link: '/specs/' },
+            { label: 'Decision archive', link: '/decisions/' },
+          ],
         },
       ],
       head: [

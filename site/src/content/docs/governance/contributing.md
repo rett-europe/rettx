@@ -13,9 +13,8 @@ in the source tree. The short version:
   [`rett-europe/rettx`](https://github.com/rett-europe/rettx/issues/new/choose).
   Iris classifies them and a maintainer routes them.
 - **Cross-cutting features** start as a spec proposal here, get
-  triaged, then become a written specification under
-  [`specs/`](https://github.com/rett-europe/rettx/tree/main/specs)
-  before any code is written.
+  triaged, then become a written specification before any code is
+  written.
 - **Documentation and ADRs** are PRs against this repository directly.
 - **Application code** changes happen in the relevant downstream
   repository — usually after a spec lands here.

@@ -12,10 +12,8 @@ records to it are the reason the program exists. This page is the
 program-level statement of how that data is protected: the controls
 that are in place, the boundaries those controls defend, and the way
 the pieces of the system fit together. It is the public answer to
-constitution principles
-[II — Privacy by design](/governance/constitution/#ii-privacy-by-design-non-negotiable),
-[III — Transparency above all](/governance/constitution/#iii-transparency-above-all-non-negotiable),
-and [VI — Security baseline](/governance/constitution/#vi-security-baseline),
+the principles of privacy by design, transparency, and a mandatory
+security baseline,
 and it is intended to be readable end to end by a clinician, an
 auditor, or a security-minded family in under ten minutes.
 
@@ -30,20 +28,20 @@ and authorisation is re-checked.
 flowchart TD
     subgraph Public["🌍 Public internet"]
         Caregivers(["👤 Caregivers"]):::actor
-        Admins(["🏥 Admins / clinicians"]):::actor
     end
 
     subgraph IdP["🔐 Identity providers"]
         Auth0["Auth0<br/><small>caregiver identity</small>"]:::idp
-        Entra["Microsoft Entra ID<br/><small>admin / clinician identity</small>"]:::idp
+        Entra["Microsoft Entra ID<br/><small>admin identity</small>"]:::idp
     end
 
     subgraph Caregiver["Caregiver-trust zone"]
         rettxweb["rettxweb<br/><small>Angular PWA · app.rettx.eu</small>"]:::surface
     end
 
-    subgraph Admin["Admin-trust zone"]
-        rettxadmin["rettxadmin<br/><small>admin web app</small>"]:::surface
+    subgraph Admin["Local admin-trust zone"]
+        Admins(["🏥 RSE admins"]):::actor
+        rettxadmin["rettxadmin<br/><small>admin web app · local only</small>"]:::surface
     end
 
     subgraph Backend["Backend-trust zone"]
@@ -70,9 +68,12 @@ flowchart TD
 ```
 
 The caregiver app and the admin app sit in distinct trust zones and
-never speak to each other. Each one establishes its user's identity
+never speak to each other. The admin app is not deployed publicly: it
+is run locally by Rett Syndrome Europe administrators only. Local
+operation limits exposure of the admin interface; it does not replace
+authentication or server-side authorisation. Each app establishes its user's identity
 through a federated provider — Auth0 for caregivers, Microsoft Entra
-ID for admins and clinicians — and then presents a short-lived bearer
+ID for admins — and then presents a short-lived bearer
 token to `rettxapi`. The API is the only component that crosses into
 the backend-trust zone where patient records live. No client-side
 component is ever the authoritative source of an authorisation
@@ -160,8 +161,9 @@ files.
 
 Identity is federated. Caregivers authenticate against Auth0 using the
 Authorisation Code flow with PKCE, with sign-in options that include
-passwordless email, password, and Google social login. Admins and
-clinicians authenticate against Microsoft Entra ID, also using
+passwordless email, password, and Google social login. Admins
+(Rett Syndrome Europe staff only; clinicians have no access to the
+admin app) authenticate against Microsoft Entra ID, also using
 Authorisation Code with PKCE, and must be explicitly provisioned in
 the program's tenant before they can sign in at all. Neither web
 surface holds a client secret; PKCE removes the need for one.

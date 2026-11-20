@@ -8,7 +8,7 @@ sidebar:
 - **Status**: Accepted (2026-07-11)
 - **Date**: 2026-07-11
 - **Decision-makers**: rettX maintainers
-- **Relates to**: [ADR 0001](https://github.com/rett-europe/rettx/blob/main/docs/adr/0001-control-plane-repo.md) (control plane &
+- **Relates to**: [ADR 0001](/decisions/0001-control-plane-repo/) (control plane &
   per-repo ownership), [`patterns.md` §10](https://github.com/rett-europe/rettx/blob/main/.specify/memory/patterns.md),
   [program constitution](https://github.com/rett-europe/rettx/blob/main/.specify/memory/constitution.md) (PHI / privacy
   non-negotiables), GitHub docs:

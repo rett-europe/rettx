@@ -8,7 +8,7 @@ sidebar:
 - **Status**: Accepted
 - **Date**: 2026-06-22
 - **Decision-makers**: rettX maintainers
-- **Amends**: [ADR 0001](https://github.com/rett-europe/rettx/blob/main/docs/adr/0001-control-plane-repo.md) (the *cross-cutting* portion of
+- **Amends**: [ADR 0001](/decisions/0001-control-plane-repo/) (the *cross-cutting* portion of
   its "Spec & issue flow"; single-repo routing is unchanged)
 
 ## Context
