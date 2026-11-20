@@ -21,7 +21,7 @@
 spec_id: "057"
 slug: "mobile-release-pipeline"
 title: "A repeatable, documented release path for the native mobile apps"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-11-19"
 author: "perocha"
 source_issue: ""
