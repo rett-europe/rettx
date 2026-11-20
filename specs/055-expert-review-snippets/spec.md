@@ -96,11 +96,13 @@ no hidden text layer, no other pages, nothing outside the region).
 ### User Story 6 - Expert review queue (P1)
 On sign-in the expert lands on a shared queue of all open requests. Nothing is
 assigned: any expert can pick any request and reply to as many as they choose.
-Requests are grouped or filterable by state:
-- **Pending**: new or reopened, no expert reply yet.
+Requests are grouped or filterable by whose turn it is:
+- **Pending**: the expert's turn. The request is new or reopened, or the admin
+  has followed up (added snippets, replied, or supplied requested information)
+  since the latest expert reply.
 - **Ongoing**: an expert has asked for more information and it has not arrived
   yet (shown as "waiting for information").
-- **Replied**: at least one expert has answered; the admin has not closed it.
+- **Replied**: an expert spoke last; the admin has not followed up or closed it.
 
 Each row shows the request reference, the first line of the current ask, its
 state, when it last changed, how many expert replies it has, and whether there
@@ -144,10 +146,13 @@ the thread; any withdrawn snippet is gone.
   visible in any snippet. The confirmation is recorded.
 - **FR-005**: A review request has a lifecycle: requested, needs more
   information, answered, closed. Each transition records actor and time. The
-  expert queue shows these as Pending (requested, or reopened, with no expert
-  reply yet), Ongoing (needs more information), and Replied (at least one
-  expert reply). Closed requests leave the queue; an admin can reopen one, which
-  returns it to Pending in the shared pool.
+  expert queue shows these by whose turn it is: Pending (requested, reopened,
+  or the admin followed up after the latest expert reply), Ongoing (needs more
+  information), and Replied (an expert spoke last). An admin follow-up on an
+  open request — further snippets, a reply, or the requested information —
+  returns it to Pending, whether it was Ongoing or Replied. Closed requests
+  leave the queue; an admin can reopen one, which returns it to Pending in the
+  shared pool.
 - **FR-006**: The expert role is a role in the open admin role set of spec 054, with
   capabilities limited to reading open requests in the pool, replying, asking
   for more information, and proposing variants. Experts are members of the
@@ -176,6 +181,9 @@ the thread; any withdrawn snippet is gone.
 - Patient is deleted or consent withdrawn: open requests are closed and
   snippets removed.
 - Same document has multiple variants: each ask references its own snippet.
+- Admin follows up on a Replied request without closing it (for example, one
+  more snippet): it returns to Pending in the same round. Earlier replies stay
+  on the thread and still count.
 - Request reopened for a new round: it returns to Pending in the shared pool
   with its earlier thread intact. Earlier snippets are visible again unless
   withdrawn.
