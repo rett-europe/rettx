@@ -79,6 +79,39 @@ the backend-trust zone where patient records live. No client-side
 component is ever the authoritative source of an authorisation
 decision.
 
+## Security by design
+
+Most of rettX's protection comes from how the system is shaped, not
+from controls added afterwards. Each architectural choice below
+helps reduce risk rather than merely watching for it.
+
+| Design choice | What it protects against |
+|---|---|
+| **Federated identity** (Auth0 for caregivers, Microsoft Entra ID for administrators) | rettX itself never handles or stores passwords. Sign-in, account recovery, and credential protection are delegated to dedicated identity providers. |
+| **Authorisation Code flow with PKCE, no client secrets** | The apps do not need to hold a shared client secret that could be extracted from their bundles. |
+| **The API is the single enforcement point** | The server checks authorisation rather than relying on what a client chooses to display. Modifying an app does not grant additional access. |
+| **Admin tool runs locally only** | The admin interface is not publicly deployed, reducing its exposure. Authentication and server-side authorisation still apply. |
+| **Separate trust zones** | The caregiver app and the admin tool do not communicate directly, limiting direct exposure between the two surfaces. |
+| **Least-privilege roles, deny by default** | Each administrator gets only the permissions their job needs. An unknown role, or a permission that cannot be confirmed, means no access. |
+| **Secrets in Azure Key Vault, read through a managed identity** | Backend secrets are kept out of source code and build artefacts, and can be rotated without changing code. |
+| **Pseudonymous identifiers (`rettxid`)** | Exports, analytics, and links refer to people by an opaque identifier, never by name or date of birth. |
+| **Short-lived, signed file links** | Blob containers are private; signed links limit the scope and duration of access to medical files. |
+| **Append-only audit trail** | Privilege-relevant actions and refused admin requests are recorded to support accountability and investigation. |
+| **Infrastructure and role assignments as reviewed code** | Reviewed changes provide oversight of the platform and administrator role assignments. |
+| **EU/EEA data residency** | Patient data is held in EU/EEA regions, supporting the registry's residency policy. |
+
+## Confidentiality at a glance
+
+| Who | What they can see |
+|---|---|
+| **Caregiver** | Only the records of the people they have been explicitly granted access to. |
+| **RSE administrator** | Only what their role permits, through the local admin tool, for registry operations. |
+| **View-only role** | Aggregate figures only, with no personal data. |
+| **Expert reviewer (in design)** | Only the parts of a document needed to answer one question, without the person's name or date of birth. |
+| **Researchers and partners** | Nothing. No data is shared until the registry's data governance process is in place. |
+| **Web app telemetry** | No personal or clinical data. It is redacted before anything leaves the browser. |
+| **The device** | No patient records are kept on the device beyond the session. |
+
 ## How personal data flows
 
 Personal data moves between these zones only along a small number of
@@ -250,7 +283,7 @@ metadata is forwarded to observability backends.
 
 ### 5. Audit logging
 
-The API writes a tamper-resistant audit record for every
+The API writes an append-only audit record for every
 privilege-relevant action on patient data: file uploads, validation
 decisions, identity locking and unlocking, care-profile generation,
 patient lifecycle events, and email dispatch. Each record carries a
@@ -341,17 +374,18 @@ files below are the source of truth for each component's specifics.
 | `rettxmutation` | HGVS parsing library (PyPI) | <https://github.com/rett-europe/rettxmutation/blob/main/SECURITY.md> |
 | `rettxid` | Pseudonymous identifier library (PyPI) | <https://github.com/rett-europe/rettxid/blob/main/SECURITY.md> |
 
-The five ecosystem repositories are currently private, in line with
-constitution principle VII; the linked `SECURITY.md` files are
-visible to those with access to the repositories, and this page is
-the public reference. The two pure libraries (`rettxmutation` and
+The application repositories (`rettxweb`, `rettxadmin`, `rettxapi`)
+and the infrastructure repository (`rettxinfra`) are private, in line
+with constitution principle VII; their `SECURITY.md` files are visible
+to those with access, and this page is the public reference. The two
+pure libraries (`rettxmutation` and
 `rettxid`) hold no personal data and run no servers; their security
 posture is dependency hygiene and a careful API surface.
 
 ## How to report a vulnerability
 
 If you believe you have found a security issue anywhere in the rettX
-program — in any of the five ecosystem repositories or in the public
+program — in any ecosystem repository or in the public
 documentation site — please email **<dpo@rettx.eu>** rather
 than opening a public issue. A short report is fine; the more of the
 following you can include, the faster we can act:
@@ -386,7 +420,7 @@ This page is the public answer to four principles of the
 - **[VI — Security baseline](/governance/constitution/#vi-security-baseline).**
   Federated identity, server-side authorisation with least-privilege
   admin roles, secrets in Key Vault,
-  TLS everywhere, and a tamper-resistant audit log are the baseline
+  TLS everywhere, and an append-only audit log are the baseline
   this principle requires; the controls above are how that baseline
   is realised.
 - **[VII — Open by default, private only when justified](/governance/constitution/#vii-open-by-default-private-only-when-justified).**
