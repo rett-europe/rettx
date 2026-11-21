@@ -12,7 +12,7 @@
 spec_id: "058"
 slug: "push-delivery-self-test"
 title: "A safe way to prove a push notification reaches a real device"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-11-21"
 author: "perocha"
 source_issue: ""
