@@ -12,11 +12,11 @@
 spec_id: "059"
 slug: "store-listing-as-code"
 title: "App store listings kept as versioned, reviewed content"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-11-22"
 author: "perocha"
 source_issue: ""
-relates_to: "specs/057-mobile-release-pipeline/ (release path, release notes, store runbook); docs/adr/0016-infrastructure-as-code-private-repo.md (app-store scope, amendment proposed with this spec)"
+relates_to: "specs/057-mobile-release-pipeline/ (release path, release notes, store runbook); docs/adr/0016-infrastructure-as-code-private-repo.md (app-store scope)"
 fanout:
   - repo: rettxweb
     summary: |
@@ -125,12 +125,17 @@ cheapest moment to set it up from a reviewed source rather than migrate later.
 
 ## Decision record
 
-This spec depends on a proposed amendment to
-[ADR 0016](../../docs/adr/0016-infrastructure-as-code-private-repo.md). Today
-that ADR keeps app stores **documented, not managed**. The amendment brings
-store listing content under management by the app repository, and leaves store
-accounts and access documented. The amendment is proposed with this draft and
-is ratified when this spec moves to `ready`.
+This spec amends
+[ADR 0016](../../docs/adr/0016-infrastructure-as-code-private-repo.md), which
+previously kept app stores **documented, not managed**. The amendment brings
+supported store listing content under management by the app repository, while
+store accounts and access remain documented.
+
+## Constitution check
+
+The spec supports caregiver communication and inclusion (I, V), requires
+synthetic media and protects credentials (II, VI), records the decision openly
+(III, VII), and preserves operational knowledge in repositories (VIII).
 
 ## Responsibilities
 
