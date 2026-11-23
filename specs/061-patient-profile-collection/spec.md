@@ -12,7 +12,7 @@
 spec_id: "061"
 slug: "patient-profile-collection"
 title: "Caregivers complete the patient profile of the rettX dataset"
-status: draft   # draft | ready | accepted | superseded
+status: ready   # draft | ready | accepted | superseded
 authored: "2026-11-22"
 author: "perocha"
 source_issue: ""
@@ -45,6 +45,18 @@ fanout:
       format, pseudonymised, with field versions and sources.
       (7) COMPLETENESS. The API can report how complete each profile is, per
       section.
+      (8) PILOT FIRST. Collection can be enabled for a named pilot cohort
+      of about 20 families before it is enabled for everyone, without a
+      release in between.
+      (9) VERSION CHANGES APPLIED, NOT GUESSED. When a new definition version
+      arrives, existing answers follow the dataset's published change records:
+      unchanged fields carry over, renamed or merged codes are mapped, answers
+      to a split option are flagged for the family to update, and answers to
+      a rejected field are deleted. Nothing is reinterpreted without a change
+      record.
+      (10) SAME ACCESS AS THE PATIENT. Anyone who can view or edit the patient
+      can view or edit the profile, and nobody else. Each answer records its
+      author.
   - repo: rettxweb
     summary: |
       Caregivers can complete their patient's profile in the app.
@@ -65,6 +77,14 @@ fanout:
       their source, until the caregiver confirms or corrects them.
       (5) ONE SURVEYJS VERSION. The app uses the same SurveyJS major version
       as the admin app.
+      (6) APPROVED LANGUAGES ONLY. The profile is offered in a language only
+      when the definition marks that language complete. The pilot runs in
+      English and Spanish.
+      (7) ASK AGAIN WHEN THE DATASET SPLITS AN ANSWER. Answers flagged after a
+      dataset change are shown to the family as "please update", with the
+      previous answer for reference.
+      (8) SHARED PATIENTS. Everyone with access to the patient sees the same
+      profile and can see who gave each answer.
   - repo: rettxadmin
     summary: |
       Staff can see the patient profile and its quality.
@@ -79,6 +99,15 @@ fanout:
       in the dataset's format, pseudonymised. The export is audited.
       (4) ONE SURVEYJS VERSION. The admin app uses the same SurveyJS major
       version as the caregiver app.
+      (5) PILOT COHORT. Staff with the right role can choose which families
+      are in the pilot, and can then open collection to everyone.
+  - repo: templates
+    summary: |
+      Families are told about the patient profile before they are asked to
+      fill it in. A short notice, in English and Spanish for the pilot and in
+      every supported language afterwards, explains what is asked, why, that
+      every question is optional, and that it falls under the registry consent
+      they already gave.
   - repo: rettxinfra
     summary: |
       Provision the registry database decided in ADR 0018 in every
@@ -132,12 +161,15 @@ to change least, which makes it the right first collection.
 ## Requirements
 
 - **FR-001 Live-field selection.** Exactly the fields in the reviewed
-  selection are collected. Before 1.0 that means named fields from the
-  patient-profile part that a caregiver can reasonably answer; afterwards,
-  agreed fields. Nothing is collected just because it appears in the dataset.
+  selection are collected. The first selection is the 27 caregiver-answerable
+  fields of the patient profile: diagnosis, first signs and regression,
+  pregnancy and birth, and family history. RSE maintainers sign off each
+  selection. WG6 is informed with each dataset release. Nothing is collected
+  just because it appears in the dataset.
 - **FR-002 Versioned meaning.** Every answer is pinned to the dataset version
   it was given under. If a later version changes a field's meaning or codes,
-  existing answers are kept and marked, never silently reinterpreted.
+  existing answers are handled only as the published change records say
+  (FR-007), never silently reinterpreted.
 - **FR-003 Source and confirmation.** Every answer records whether it came from
   a caregiver, a document or a clinician. Answers drawn from documents are
   proposals until a person confirms them.
@@ -148,6 +180,31 @@ to change least, which makes it the right first collection.
   diagnosis and the dataset's genetic fields.
 - **FR-006 Minimal identifiers.** Registry records carry no direct identifiers.
   Exports are pseudonymised by default (constitution II).
+- **FR-007 Machine-readable dataset changes.** Each dataset release publishes,
+  alongside its human changelog, a machine-readable record of what changed
+  for every field: added, renamed, codes merged, a code split, meaning changed
+  (always a new identifier, as identifiers are never reused), or rejected. The
+  apps apply these records; they never infer changes by comparing versions.
+- **FR-008 Approved wording, per field and language.** The dataset carries
+  three layers for every field:
+  - the clinical meaning, agreed by WG6;
+  - caregiver wording in English, approved by a clinician;
+  - a translation per language, approved by a native speaker.
+
+  Each approval is recorded per field and tied to the exact text it approved.
+  If that text changes, the approval lapses for that field only. A language is
+  offered to families only when every live field has an approved translation.
+  AI may draft wording and translations, but a person approves them. The pilot
+  needs English and Spanish.
+- **FR-009 Optional and non-identifying.** Every profile question is optional.
+  Family-history answers record relationship and condition, never a
+  relative's name or other identifying detail.
+- **FR-010 Same access as the patient.** The profile is visible and editable
+  to exactly those who can view or edit the patient. Each answer records its
+  author.
+- **FR-011 Pilot, then everyone.** Collection opens first to a pilot cohort of
+  about 20 families, then to all families. Lessons from the pilot are reported
+  to WG6.
 
 ## Decision record
 
@@ -160,18 +217,24 @@ form definition generated from the dataset, and SurveyJS as the renderer.
 - **I. Caregivers come first.** The profile is optional and resumable,
   "not known" is always accepted, and nothing in the app is blocked behind it.
 - **II. Privacy by design.**
-  - A documented lawful basis and consent coverage for this data category are
-    required before collection starts.
-  - Only the fields in the live selection are collected (minimisation).
+  - Lawful basis: the existing registry consent explicitly covers health data
+    (medical history and genetic information) for the registry and research,
+    under GDPR Article 9(2)(a). Families are informed before they are asked.
+    Every question is optional.
+  - Only the fields in the live selection are collected (minimisation), and
+    family history holds no identifying detail about relatives.
   - Registry data is kept apart from identity data.
   - Exports are pseudonymised.
 - **III. Transparency.** Families see what is asked and why, and can see and
   correct their answers.
 - **IV. Clinical accuracy.**
-  - Question wording follows the dataset agreed with clinicians.
+  - Clinical meaning comes from the dataset agreed with clinicians, and
+    caregiver wording is approved by a clinician.
   - AI-pre-filled answers need human confirmation.
   - No question implies a diagnosis.
-- **V. Inclusion.** Every supported locale is covered.
+- **V. Inclusion.** A language is offered once all its live fields are approved
+  by a native speaker. The pilot covers English and Spanish; other supported
+  languages follow before the general rollout.
 
 ## Responsibilities
 
@@ -181,7 +244,8 @@ form definition generated from the dataset, and SurveyJS as the renderer.
 | Caregiver collection experience | rettxweb |
 | Staff view, completeness, audited export | rettxadmin |
 | Registry database and scoped access | rettxinfra |
-| Form definition generated from the dataset; field selection; caregiver wording | rettX dataset maintainers (RSE) |
+| Notice to families | templates |
+| Form definition generated from the dataset; field selection and sign-off; caregiver wording, translations and their approvals; machine-readable change records; change requests to WG6 | rettX dataset maintainers (RSE) |
 | Cross-cutting outcomes; ADR 0018 | this spec |
 
 ## Acceptance
@@ -201,20 +265,37 @@ form definition generated from the dataset, and SurveyJS as the renderer.
 - The registry data holds no names, contact details or user identifiers.
 - A staff export produces pseudonymised profiles in the dataset's format, and
   the export is audited.
+- Only pilot families are offered the profile until staff open it to
+  everyone.
+- A language without approved wording for every live field is not offered.
+- After a dataset change that splits an answer, affected families see a
+  "please update" prompt. Answers to a rejected field are gone.
+- A second caregiver with access to the patient sees the first caregiver's
+  answers, marked with who gave them. Someone without patient access sees
+  nothing.
 
-## Open questions
+## Decisions (2026-11-23)
 
-- **Live fields before 1.0.** Which patient-profile fields are collected before
-  the dataset reaches 1.0, and who signs off the selection: RSE maintainers or
-  WG6?
-- **Wording and translations.** Where caregiver wording and translations live:
-  with the dataset or with the other templates. Who reviews them clinically in
-  each locale?
-- **Consent.** Whether existing consent covers this data category, or caregivers
-  must give renewed consent first.
-- **Date or age.** Whether the date of diagnosis is asked as a date or, like
-  the other milestones, as an age. Age is easier for families to recall.
-- **"Other" answers.** Several dataset questions allow "Other" without a
-  free-text "please specify". Whether to ask WG6 to add one.
-- **Visibility to contributors.** Whether contributors with patient access see
-  the profile, or only the caregiver who owns it.
+These resolve the open questions of the first draft.
+
+- **Live fields.** All 27 caregiver-answerable fields, first to a pilot of
+  about 20 families, then to everyone. RSE maintainers sign off the selection;
+  WG6 is informed with each release (FR-001, FR-011).
+- **Moving between dataset versions.** Answers stay pinned to their version.
+  The dataset publishes machine-readable change records, and the API applies
+  them: carry over, map, ask again on a split, delete on rejection (FR-007).
+- **Wording and translations.** The dataset is self-contained in three layers,
+  with approvals per field and per language (FR-008). Pilot languages: English
+  and Spanish.
+- **Consent.** The existing registry consent covers this data. Families are
+  informed, every question is optional and family history is non-identifying
+  (FR-009).
+- **Diagnosis as an age.** Diagnosis is asked as the child's age (years and
+  months), like the other milestones. RSE asks WG6 to change the dataset field
+  accordingly.
+- **"Other" answers.** RSE asks WG6 to add a "please specify" free-text field
+  wherever "Other" is offered (first warning sign, reason for first
+  consultation, regression areas, pregnancy complications). rettX collects no
+  extra fields until WG6 adds them.
+- **Visibility.** The profile follows patient access, and each answer records
+  its author (FR-010).

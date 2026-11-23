@@ -1,6 +1,6 @@
 # ADR 0018 — Registry data lives in its own pseudonymous store, and the rettX dataset drives how it is collected
 
-- **Status**: Proposed (2026-11-22)
+- **Status**: Accepted (2026-11-23)
 - **Date**: 2026-11-22
 - **Decision-makers**: rettX maintainers (Pedro)
 - **Relates to**: [spec 061 — caregiver patient profile](../../specs/061-patient-profile-collection/spec.md)
@@ -86,17 +86,30 @@ was re-examined.
 
    Nobody re-types dataset fields in an app.
 
+   The dataset is self-contained in three layers: clinical meaning agreed by
+   WG6, caregiver wording approved by a clinician, and a translation per
+   language approved by a native speaker. Approvals are recorded per field and
+   tied to the exact text approved, so a release that touches a few fields
+   re-opens review for those fields only. A language is published only when
+   every live field is approved in it.
+
 5. **Live fields are an explicit selection.** Until 1.0 nearly every field is
    `proposed`. Which fields are collected in production is an explicit,
-   reviewed selection. It is not inferred from status.
+   reviewed selection, signed off by RSE maintainers and shared with WG6. It
+   is not inferred from status.
 
-6. **Keep SurveyJS as the renderer.** The free form library is already in both
+6. **Dataset changes are published as data.** Each release carries a
+   machine-readable record of field changes (added, renamed, merged, split,
+   meaning changed, rejected) next to its changelog. Stored answers are moved
+   forward by applying these records, never by comparing versions.
+
+7. **Keep SurveyJS as the renderer.** The free form library is already in both
    apps. It handles conditional questions, multiple languages and
    save-and-resume. Because the definition is generated, lock-in is low: the
    same source could later produce other formats, for example FHIR
    Questionnaire or REDCap.
 
-7. **Generative AI proposes; people confirm.** AI may pre-fill answers from
+8. **Generative AI proposes; people confirm.** AI may pre-fill answers from
    uploaded documents, offer conversational entry and draft translations. A
    pre-filled answer is marked as proposed until a caregiver or clinician
    confirms it. Its source stays visible.
@@ -115,9 +128,12 @@ was re-examined.
   definition, and shows the definition version on every answer.
 - **The two apps need one SurveyJS major version.** They are on different ones
   today.
-- **Collection needs a lawful basis.** A new category of special-category data
-  must have a documented lawful basis and consent coverage before collection
-  starts (constitution II).
+- **Collection needs a lawful basis.** For the patient profile, the existing
+  registry consent covers it: health data, medical history and genetic
+  information, Article 9(2)(a). Each later part of the dataset must confirm
+  its own coverage before collection starts (constitution II).
+- **The dataset repo grows.** It now owns caregiver wording, translations,
+  their approvals and change records, not only clinical meaning.
 
 ## Alternatives considered
 
