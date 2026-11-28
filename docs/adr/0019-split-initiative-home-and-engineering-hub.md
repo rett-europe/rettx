@@ -1,6 +1,6 @@
 # ADR 0019 — Split the initiative home (`rettx-initiative`) from the engineering hub (`rettx-engineering`)
 
-- **Status**: Accepted (2026-11-28); amended 2026-11-28 (see [Amendment](#amendment-2026-11-28))
+- **Status**: Accepted (2026-11-28); amended 2026-11-28 (see Amendment below)
 - **Date**: 2026-11-28
 - **Decision-makers**: rettX maintainers
 - **Supersedes**: the scope of [ADR 0001](0001-control-plane-repo.md). Its
