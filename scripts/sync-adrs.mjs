@@ -17,7 +17,7 @@ const adrDir = path.join(root, 'docs', 'adr');
 const outDir = path.join(root, 'site', 'src', 'content', 'docs', 'decisions');
 const indexPath = path.join(outDir, 'index.md');
 
-const REPO_BLOB_BASE = 'https://github.com/rett-europe/rettx/blob/main/';
+const REPO_BLOB_BASE = 'https://github.com/rett-europe/rettx-engineering/blob/main/';
 // These records are not part of the docs site.
 const unpublishedAdrs = new Set([
   '0009-pulse-menstrual-period-duration-model.md',
@@ -25,6 +25,8 @@ const unpublishedAdrs = new Set([
   '0011-pulse-contributor-access-scope.md',
   '0013-admin-data-dedicated-cosmos-database.md',
   '0015-medication-regimen-not-pulse-event.md',
+  // Keep the source available without republishing its operational details.
+  '0018-registry-data-store-and-dataset-driven-forms.md',
 ]);
 
 /** Quote a string as a safe double-quoted YAML scalar. */

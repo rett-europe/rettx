@@ -22,7 +22,7 @@ Specifications live in this repository, one folder per spec, named
 
 ## How a spec gets written
 
-1. Someone opens a **Spec proposal** issue in `rettx` describing the
+1. Someone opens a **Spec proposal** issue in `rettx-engineering` describing the
    problem.
 2. A maintainer triages it and decides whether it needs a full spec
    or a smaller fix in a single downstream repo.
@@ -38,7 +38,7 @@ Specifications live in this repository, one folder per spec, named
 ## Templates
 
 The specification template is at
-[`.specify/templates/spec-template.md`](https://github.com/rett-europe/rettx/blob/main/.specify/templates/spec-template.md).
+[`.specify/templates/spec-template.md`](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/templates/spec-template.md).
 Copy them, don't symlink them.
 
 ## Specifications are not a feature catalogue

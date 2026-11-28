@@ -8,11 +8,11 @@ sidebar:
 - **Status**: Proposed (2026-07-26)
 - **Date**: 2026-07-26
 - **Decision-makers**: rettX maintainers (Pedro)
-- **Relates to**: [spec 043 — Admin RBAC MVP](https://github.com/rett-europe/rettx/blob/main/specs/043-admin-rbac-mvp/spec.md)
+- **Relates to**: [spec 043 — Admin RBAC MVP](https://github.com/rett-europe/rettx-engineering/blob/main/specs/043-admin-rbac-mvp/spec.md)
   (the enforcement + rollout this ADR governs),
-  [spec 042 — Admin app shell](https://github.com/rett-europe/rettx/blob/main/specs/042-admin-app-shell/spec.md)
+  [spec 042 — Admin app shell](https://github.com/rett-europe/rettx-engineering/blob/main/specs/042-admin-app-shell/spec.md)
   (the config-driven nav whose `requiredRoles` slot consumes these roles on the
-  client), [patterns.md §4](https://github.com/rett-europe/rettx/blob/main/.specify/memory/patterns.md)
+  client), [patterns.md §4](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/patterns.md)
   (authentication & authorization), and the program constitution
   **Principle VI (Security baseline)** — server-side authorization and least
   privilege.
@@ -168,7 +168,7 @@ directory change and without ever attaching a role to a caregiver `Principal`.
 
 ## Amendment — 2026-11-16: open role set and one capability per operation
 
-[Spec 054](https://github.com/rett-europe/rettx/blob/main/specs/054-admin-access-control/spec.md) keeps the hybrid model
+[Spec 054](https://github.com/rett-europe/rettx-engineering/blob/main/specs/054-admin-access-control/spec.md) keeps the hybrid model
 and changes three things in the decision above:
 
 1. **The role set is data, not fixed.** Decision 2's "no custom roles" is
@@ -189,9 +189,9 @@ API, rather than raw role names (decision 8 otherwise stands).
 
 ## Cross-links
 
-- [spec 054 — Admin access control](https://github.com/rett-europe/rettx/blob/main/specs/054-admin-access-control/spec.md) (amendment)
-- [spec 043 — Admin RBAC MVP](https://github.com/rett-europe/rettx/blob/main/specs/043-admin-rbac-mvp/spec.md)
-- [spec 042 — Admin app shell](https://github.com/rett-europe/rettx/blob/main/specs/042-admin-app-shell/spec.md)
-- [patterns.md §4 — Authentication & authorization](https://github.com/rett-europe/rettx/blob/main/.specify/memory/patterns.md)
+- [spec 054 — Admin access control](https://github.com/rett-europe/rettx-engineering/blob/main/specs/054-admin-access-control/spec.md) (amendment)
+- [spec 043 — Admin RBAC MVP](https://github.com/rett-europe/rettx-engineering/blob/main/specs/043-admin-rbac-mvp/spec.md)
+- [spec 042 — Admin app shell](https://github.com/rett-europe/rettx-engineering/blob/main/specs/042-admin-app-shell/spec.md)
+- [patterns.md §4 — Authentication & authorization](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/patterns.md)
 - Constitution **Principle VI (Security baseline)** — server-side authorization,
   least privilege, auditability.

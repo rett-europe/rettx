@@ -27,7 +27,7 @@ fanout:
       and how a vulnerability report should reach the maintainers.
       Where a section does not apply, mark it "Not applicable" with a
       one-line reason. Link the resulting `SECURITY.md` from this issue
-      when merged so the rettx aggregate can cite it.
+      when merged so the rettx-engineering aggregate can cite it.
   - repo: rettxadmin
     summary: |
       Publish `SECURITY.md` at the repo root answering the canonical
@@ -99,7 +99,7 @@ constitution principles II (Privacy by design), III (Transparency
 above all), and VI (Security baseline). Without it, the rest of the
 work has no shop window.
 
-**Independent Test**: Open `docs.rettx.eu/architecture/security` in
+**Independent Test**: Open `engineering.rettx.eu/architecture/security` in
 a fresh browser. The page loads and contains: (a) a one-paragraph
 summary of the program's security model, (b) three mermaid diagrams
 (trust boundaries, data flow, secret flow), (c) a per-repo section
@@ -119,7 +119,7 @@ end to end takes a knowledgeable visitor under ten minutes.
    retention rule, and the data-subject-rights workflow.
 3. **Given** a maintainer answering a security question on social
    media or email, **When** they want to point the asker at an
-   authoritative source, **Then** a single URL on `docs.rettx.eu`
+   authoritative source, **Then** a single URL on `engineering.rettx.eu`
    covers it.
 
 ---
@@ -128,14 +128,14 @@ end to end takes a knowledgeable visitor under ten minutes.
 
 Each downstream repo squad — rettxweb, rettxadmin, rettxapi,
 rettxmutation, rettxid — owns a `SECURITY.md` at the root of their
-own repository. The aggregate page on `docs.rettx.eu` cites that
+own repository. The aggregate page on `engineering.rettx.eu` cites that
 file. When a squad changes anything that materially affects their
 security posture, they update their own `SECURITY.md` in the same PR
 that introduces the change, and an aggregate-side review picks it
 up.
 
 **Why this priority**: Centralising the answers in a single
-hand-edited document on rettx would rot fast — the people closest
+hand-edited document on rettx-engineering would rot fast — the people closest
 to the change are in the downstream repos. Putting the source of
 truth next to the code is the only way the answers stay accurate.
 
@@ -144,7 +144,7 @@ displays a `SECURITY.md` link in the repository sidebar. Each file
 follows the same canonical questionnaire structure (same eight
 sections, same headings) and answers each question, marking
 inapplicable sections explicitly with a one-line reason rather than
-leaving them blank. The aggregate page on rettx links to each of
+leaving them blank. The aggregate page on rettx-engineering links to each of
 those files at a stable URL.
 
 **Acceptance Scenarios**:
@@ -179,9 +179,9 @@ materialises on the second use.
 
 **Independent Test**: A second cross-cutting governance spec
 authored later (e.g., `accessibility-deep-dive`) reuses the same
-mechanics: spec authored on rettx with `fanout:` frontmatter, Iris
+mechanics: spec authored on rettx-engineering with `fanout:` frontmatter, Iris
 fans out a `squad` issue per affected repo, each repo publishes a
-canonical answer file at a known root path, rettx aggregates into
+canonical answer file at a known root path, rettx-engineering aggregates into
 a docs page. No new infrastructure is invented.
 
 **Acceptance Scenarios**:
@@ -204,7 +204,7 @@ a docs page. No new infrastructure is invented.
 - Two repos give contradictory answers to the same question (e.g.,
   different lawful-basis claims for the same category of data):
   the aggregate page MUST surface the contradiction, and a
-  follow-up issue MUST be opened on rettx to resolve it before the
+  follow-up issue MUST be opened on rettx-engineering to resolve it before the
   aggregate is marked complete.
 - A repo's `SECURITY.md` link rots after a refactor: the aggregate
   links MUST point at a stable path (`<repo>/blob/main/SECURITY.md`),
@@ -231,9 +231,9 @@ a docs page. No new infrastructure is invented.
   canonical questionnaire defined below — the same eight section
   headings, in the same order, even when a section reduces to "Not
   applicable" with a one-line reason.
-- **FR-003**: The control-plane repo (rettx) MUST publish an
+- **FR-003**: The control-plane repo (rettx-engineering) MUST publish an
   aggregate page at `site/src/content/docs/architecture/security.md`
-  that renders publicly at `docs.rettx.eu/architecture/security`.
+  that renders publicly at `engineering.rettx.eu/architecture/security`.
 - **FR-004**: The aggregate page MUST contain three mermaid
   diagrams: a trust-boundary diagram, a data-flow diagram showing
   where personal data lives and crosses boundaries, and a secret-flow
@@ -252,20 +252,20 @@ a docs page. No new infrastructure is invented.
   rather than inventing its own per repo.
 - **FR-008**: When any downstream `SECURITY.md` materially
   changes, the squad responsible MUST flag the change in the PR
-  description so the rettx aggregate page is reviewed in the same
+  description so the rettx-engineering aggregate page is reviewed in the same
   iteration.
 - **FR-009**: Each `SECURITY.md` MUST identify which sections of
   itself are reviewed during incident response and which during
   routine periodic review, so a maintainer reading it knows which
   parts are "load-bearing" in an incident.
 - **FR-010**: **Public / internal split.** The aggregate page on
-  the public rettx repo (and its rendering on `docs.rettx.eu`) MUST
+  the public rettx-engineering repo (and its rendering on `engineering.rettx.eu`) MUST
   describe **controls in place** only — what the program does to
   protect the data. Improvement areas, unmitigated risks, scanner
   findings, threat-model details that hand an attacker a roadmap, and
   remediation backlog MUST NOT appear there. Each downstream repo is
   currently private and MAY (and SHOULD) record its own gap analysis
-  in its `SECURITY.md` or an adjacent file; the rettx aggregate
+  in its `SECURITY.md` or an adjacent file; the rettx-engineering aggregate
   references those repos but does not inline the gap content.
   Constitution Principle VII (Open by default, private only when
   justified) is the governing rule.
@@ -352,7 +352,7 @@ in this order, with these exact headings:
 - **SC-006**: When a downstream squad changes a security-relevant
   property and updates their `SECURITY.md` in the same PR, the
   aggregate page can be brought back into agreement with a single
-  follow-up edit on rettx — no structural rework required.
+  follow-up edit on rettx-engineering — no structural rework required.
 
 ## Assumptions
 
@@ -362,7 +362,7 @@ in this order, with these exact headings:
   matches the program's transparency-above-all principle and is
   also where GitHub's built-in security UI surfaces the file most
   prominently.
-- The aggregate page is published openly on `docs.rettx.eu`. No
+- The aggregate page is published openly on `engineering.rettx.eu`. No
   redactions are applied at the aggregate layer; if a fact is too
   sensitive to publish, the corresponding `SECURITY.md` omits it
   with an explicit "withheld for operational security" note rather

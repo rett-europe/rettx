@@ -48,11 +48,11 @@ This covers, non-exhaustively:
   - Anything under specs/ (cross-cutting specifications and templates)
   - Anything under docs/ (architecture decision records and other
     program documentation)
-  - Rendered prose published to https://docs.rettx.eu
+  - Rendered prose published to https://engineering.rettx.eu
 
 When reusing this material, please attribute "Rett Syndrome Europe —
-rettX" with a link to https://github.com/rett-europe/rettx (or to the
-specific document on https://docs.rettx.eu).
+rettX" with a link to https://github.com/rett-europe/rettx-engineering
+(or to the specific document on https://engineering.rettx.eu).
 
 Files contributed under CC-BY-4.0 should carry the SPDX identifier:
 
@@ -74,7 +74,8 @@ affiliation with Rett Syndrome Europe that does not exist.
 
 Permitted uses:
 
-  - Linking to https://www.rettx.eu, https://docs.rettx.eu, or to
+  - Linking to https://www.rettx.eu, https://docs.rettx.eu,
+    https://engineering.rettx.eu, or to
     Rett Syndrome Europe content using the wordmark unmodified.
   - Quoting the marks in editorial, journalistic, academic, or
     factual references to the rettX registry.

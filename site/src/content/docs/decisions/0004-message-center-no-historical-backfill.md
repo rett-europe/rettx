@@ -8,7 +8,7 @@ sidebar:
 - **Status**: Accepted
 - **Date**: 2026-06-24
 - **Decision-makers**: rettX maintainers
-- **Relates to**: [`specs/032-message-center/`](https://github.com/rett-europe/rettx/blob/main/specs/032-message-center/),
+- **Relates to**: [`specs/032-message-center/`](https://github.com/rett-europe/rettx-engineering/blob/main/specs/032-message-center/),
   [ADR 0003](/decisions/0003-message-channel-content-model/) (channel content model)
 
 ## Context

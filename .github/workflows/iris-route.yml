@@ -48,7 +48,7 @@ jobs:
           app-id: ${{ secrets.IRIS_APP_ID }}
           private-key: ${{ secrets.IRIS_PRIVATE_KEY }}
           owner: rett-europe
-          repositories: rettx,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid,templates,rettxinfra
+          repositories: rettx-engineering,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid,templates,rettxinfra
 
       - name: Fan out sub-issues
         env:

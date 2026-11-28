@@ -9,12 +9,12 @@ sidebar:
 - **Date**: 2026-07-28
 - **Decision-makers**: rettX maintainers
 - **Relates to**: [ADR 0001](/decisions/0001-control-plane-repo/) (control plane &
-  per-repo ownership), [spec 033](https://github.com/rett-europe/rettx/blob/main/specs/033-message-center-push/spec.md)
+  per-repo ownership), [spec 033](https://github.com/rett-europe/rettx-engineering/blob/main/specs/033-message-center-push/spec.md)
   (Message Center push — froze the device-token contract and the FCM HTTP v1
-  backend path), [spec 045](https://github.com/rett-europe/rettx/blob/main/specs/045-ios-app/spec.md) (this decision's
-  implementation spec), [`patterns.md` §1](https://github.com/rett-europe/rettx/blob/main/.specify/memory/patterns.md)
+  backend path), [spec 045](https://github.com/rett-europe/rettx-engineering/blob/main/specs/045-ios-app/spec.md) (this decision's
+  implementation spec), [`patterns.md` §1](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/patterns.md)
   (surfaces / delivery-mechanism pre-flight),
-  [program constitution](https://github.com/rett-europe/rettx/blob/main/.specify/memory/constitution.md) (PHI / privacy
+  [program constitution](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/constitution.md) (PHI / privacy
   non-negotiables). External:
   [Capacitor iOS docs](https://capacitorjs.com/docs/ios),
   [Apple — Distributing your app for beta testing](https://developer.apple.com/testflight/),
@@ -91,7 +91,7 @@ Concretely:
 
 This ADR records the **decision and its shape**; the executable detail —
 platform add, config reconciliation, Auth0 iOS callback, push wiring, CI, and
-the secrets checklist — lives in **[spec 045](https://github.com/rett-europe/rettx/blob/main/specs/045-ios-app/spec.md)**
+the secrets checklist — lives in **[spec 045](https://github.com/rett-europe/rettx-engineering/blob/main/specs/045-ios-app/spec.md)**
 and fans out to `rettxweb` when the spec is flipped to `ready`.
 
 ## Options considered

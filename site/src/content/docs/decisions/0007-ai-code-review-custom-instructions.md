@@ -9,8 +9,8 @@ sidebar:
 - **Date**: 2026-07-11
 - **Decision-makers**: rettX maintainers
 - **Relates to**: [ADR 0001](/decisions/0001-control-plane-repo/) (control plane &
-  per-repo ownership), [`patterns.md` §10](https://github.com/rett-europe/rettx/blob/main/.specify/memory/patterns.md),
-  [program constitution](https://github.com/rett-europe/rettx/blob/main/.specify/memory/constitution.md) (PHI / privacy
+  per-repo ownership), [`patterns.md` §10](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/patterns.md),
+  [program constitution](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/constitution.md) (PHI / privacy
   non-negotiables), GitHub docs:
   [Adding repository custom instructions](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions)
 

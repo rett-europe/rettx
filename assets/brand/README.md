@@ -2,7 +2,7 @@
 
 This directory holds the canonical rettX brand assets used in this
 repository's README and on the engineering docs site at
-`docs.rettx.eu`.
+`engineering.rettx.eu`.
 
 The master brand kit lives in the Rett Syndrome Europe SharePoint
 (`General/Branding/rettX/`). The files here are a pinned snapshot — if

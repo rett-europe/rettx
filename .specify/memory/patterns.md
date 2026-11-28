@@ -34,12 +34,11 @@ redirect old links to the engineering hub. See
 
 | Repo | Visibility | Stack |
 |---|---|---|
-| [`rettx-engineering`](https://github.com/rett-europe/rettx) (named `rettx` until cutover) | 🌍 Public | Markdown, Astro Starlight, GitHub Actions |
+| [`rettx-engineering`](https://github.com/rett-europe/rettx-engineering) | 🌍 Public | Markdown, Astro Starlight, GitHub Actions |
 
 Holds the engineering constitution, this document, cross-cutting specs,
 ADRs, Iris intake and routing, and delivery accounting for all rettX
-software. Its site moves to `engineering.rettx.eu` at cutover. Until then,
-automation, links and the site keep the current `rettx` name and domain.
+software. Its site is `engineering.rettx.eu`.
 
 ### Surfaces (deployed user-facing applications)
 
@@ -288,8 +287,8 @@ condition, and the caregiver acts for the patient.
 - Both frontends configure the API base URL via their environment files
   (`environment.apiConfig.uri`) — no hardcoded hostnames in services.
 - A breaking contract change requires:
-  1. A cross-cutting spec authored in `rettx/specs/`.
-  2. An ADR in `rettx/docs/adr/`.
+  1. A cross-cutting spec authored in `rettx-engineering/specs/`.
+  2. An ADR in `rettx-engineering/docs/adr/`.
   3. A migration plan visible on the public docs site.
   4. Coordinated PRs across affected repos before deprecation of the old
      contract.
@@ -376,7 +375,7 @@ that is **UX only**; the API is the boundary. See
 
 ## 6. Issue routing labels
 
-These labels are managed (largely) by **Iris** in the `rettx` repo. They
+These labels are managed (largely) by **Iris** in the `rettx-engineering` repo. They
 form the contract between intake and execution.
 
 | Label | Meaning | Set by |
@@ -422,7 +421,7 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 
 ## 7. Spec authoring
 
-- Cross-cutting specs live in `rettx/specs/NNNN-slug/` and follow the
+- Cross-cutting specs live in `rettx-engineering/specs/NNNN-slug/` and follow the
   spec-kit structure: `spec.md`, `plan.md`, plus supporting docs
   (`research.md`, `contracts/`) as needed.
 - **Gap analysis first.** Before authoring a cross-cutting spec, run a
@@ -503,10 +502,10 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 
 | Where | What lives there |
 |---|---|
-| `rettx/.specify/memory/` | Program constitution, this patterns doc |
-| `rettx/specs/` | Cross-cutting specifications |
-| `rettx/docs/adr/` | Architectural Decision Records (program-level) |
-| `rettx/site/` | Source for the public docs site (Astro Starlight) |
+| `rettx-engineering/.specify/memory/` | Engineering constitution, this patterns doc |
+| `rettx-engineering/specs/` | Cross-cutting specifications |
+| `rettx-engineering/docs/adr/` | Architectural Decision Records |
+| `rettx-engineering/site/` | Source for the engineering docs site (Astro Starlight) |
 | `rettxapi/docs` (Swagger) | API contract |
 | `rettx{web,admin,api}/.specify/memory/` | Per-repo technical constitution (surfaces & backend) |
 | `rettx{web,admin,api}/specs/` | Per-repo specs (typically derived from a cross-cutting spec) |
@@ -521,7 +520,7 @@ issue is `cross-cutting`, it goes through gap analysis → umbrella spec →
 - Feature branches in downstream repos: `NNN-feature-slug` (number aligned
   with the originating spec ID where applicable).
 - Atomic commits with descriptive messages; reference the originating
-  issue in `rettx/` for cross-cutting work (e.g. `Refs rett-europe/rettx#42`).
+  issue in `rettx-engineering/` for cross-cutting work (e.g. `Refs rett-europe/rettx-engineering#42`).
 - Releases follow semantic versioning per repo. Cross-repo coordinated
   releases are documented in an ADR or release note here.
 
@@ -701,7 +700,7 @@ recurred, and nothing in the programme noticed. The age comes from git rather
 than from a date the author has to remember to write down, so it cannot itself
 go stale. It is a prompt, never a gate.
 
-**It is a local script and must never become a workflow in this repo.** `rettx`
+**It is a local script and must never become a workflow in this repo.** `rettx-engineering`
 is public; the five downstream repos are private, and the report carries their
 issue and pull-request titles, which describe unfixed weaknesses in a codebase
 handling caregiver data. Two consequences: the output (`status.local.md`) is

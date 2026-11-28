@@ -13,7 +13,7 @@ ADR 0001 established `rettx` as the control plane and defined two flows: a
 target repos) and a `spec-fanout` for cross-cutting specs. In practice the first
 flow was being used for cross-cutting features too — and that exposed two
 structural problems, both observed concretely on
-[rettx#10](https://github.com/rett-europe/rettx/issues/10) ("rettX Message Center"):
+[rettx-engineering#10](https://github.com/rett-europe/rettx-engineering/issues/10) ("rettX Message Center"):
 
 1. **Triage is blind to code.** `iris-triage` classifies from the issue *text*
    only (a GitHub Models call). It has no visibility into the downstream

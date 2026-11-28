@@ -6,11 +6,11 @@ sidebar:
 ---
 
 The full contributing guide lives at
-[`CONTRIBUTING.md`](https://github.com/rett-europe/rettx/blob/main/CONTRIBUTING.md)
+[`CONTRIBUTING.md`](https://github.com/rett-europe/rettx-engineering/blob/main/CONTRIBUTING.md)
 in the source tree. The short version:
 
 - **Bug reports and ideas** start as issues in
-  [`rett-europe/rettx`](https://github.com/rett-europe/rettx/issues/new/choose).
+  [`rett-europe/rettx-engineering`](https://github.com/rett-europe/rettx-engineering/issues/new/choose).
   Iris classifies them and a maintainer routes them.
 - **Cross-cutting features** start as a spec proposal here, get
   triaged, then become a written specification before any code is
@@ -20,7 +20,7 @@ in the source tree. The short version:
   repository — usually after a spec lands here.
 
 All participation is bound by the
-[Code of Conduct](https://github.com/rett-europe/rettx/blob/main/CODE_OF_CONDUCT.md).
+[Code of Conduct](https://github.com/rett-europe/rettx-engineering/blob/main/CODE_OF_CONDUCT.md).
 
 ## Licensing
 
@@ -32,10 +32,10 @@ This repository uses **split licensing**:
   are owned by Rett Syndrome Europe.
 
 Full terms are in
-[`NOTICE`](https://github.com/rett-europe/rettx/blob/main/NOTICE).
+[`NOTICE`](https://github.com/rett-europe/rettx-engineering/blob/main/NOTICE).
 
 ## Reporting a security issue
 
 Please **don't** open a public issue. See the
-[security policy](https://github.com/rett-europe/rettx/blob/main/SECURITY.md)
+[security policy](https://github.com/rett-europe/rettx-engineering/blob/main/SECURITY.md)
 for the disclosure flow.

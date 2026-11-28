@@ -4,7 +4,7 @@
 //
 // WHY THIS IS A LOCAL SCRIPT AND NOT A WORKFLOW
 // --------------------------------------------
-// `rettx` is PUBLIC. `rettxweb`, `rettxapi`, `rettxadmin`, `rettxmutation`,
+// `rettx-engineering` is PUBLIC. `rettxweb`, `rettxapi`, `rettxadmin`, `rettxmutation`,
 // `rettxid` and `rettxinfra` are PRIVATE. The report this produces contains private issue and
 // pull-request titles, which describe unfixed weaknesses in a codebase that
 // handles caregiver data. That must never become public.
@@ -40,7 +40,7 @@ const specsDir = path.join(root, 'specs');
 const outPath = path.join(root, 'status.local.md');
 
 const OWNER = 'rett-europe';
-const CONTROL_PLANE = 'rettx';
+const CONTROL_PLANE = 'rettx-engineering';
 const DOWNSTREAM = ['rettxweb', 'rettxapi', 'rettxadmin', 'rettxmutation', 'rettxid', 'rettxinfra'];
 
 // A spec whose delivery has been quiet for longer than this is called out.
@@ -48,7 +48,7 @@ const DEFAULT_STALE_DAYS = 21;
 
 if (process.env.GITHUB_ACTIONS || process.env.CI) {
   console.error(
-    'refusing to run: this report contains PRIVATE repo titles and `rettx` is a\n' +
+    'refusing to run: this report contains PRIVATE repo titles and `rettx-engineering` is a\n' +
       'PUBLIC repo, so Actions logs would publish it. Run it locally, or move the\n' +
       'workflow to a private repo.'
   );
@@ -249,7 +249,7 @@ const say = s => L.push(s);
 say('# rettX programme status');
 say('');
 say('> **PRIVATE — do not commit or paste this anywhere public.** It contains issue');
-say('> and pull-request titles from private repositories. `rettx` is a public repo;');
+say('> and pull-request titles from private repositories. `rettx-engineering` is a public repo;');
 say('> this file is gitignored. Regenerate with `node scripts/status.mjs`.');
 say('');
 say(`Generated ${new Date().toISOString().slice(0, 16).replace('T', ' ')}Z · ` +

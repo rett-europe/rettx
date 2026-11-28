@@ -89,7 +89,7 @@ Backend P7 ────(both frontends ready)─────────► enab
 - **Coordination mechanism**: the two `contracts/*.md` files in this slot are the single source of
   truth for the API surface; the consuming lanes use them rather than redefining shapes. The
   `spec-fanout` issues opened in each repo are cross-linked to the parent
-  [rettx#10](https://github.com/rett-europe/rettx/issues/10); changes to a frozen contract require a
+  [rettx-engineering#10](https://github.com/rett-europe/rettx-engineering/issues/10); changes to a frozen contract require a
   noted version bump and a heads-up to the consuming lane.
 
 ## 6. Testing strategy

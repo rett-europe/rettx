@@ -8,7 +8,7 @@ sidebar:
 - **Status**: Accepted — implemented 2026-06-25
 - **Date**: 2026-06-24 (implementation outcome appended 2026-06-25)
 - **Decision-makers**: rettX maintainers
-- **Relates to**: [`specs/032-message-center/`](https://github.com/rett-europe/rettx/blob/main/specs/032-message-center/),
+- **Relates to**: [`specs/032-message-center/`](https://github.com/rett-europe/rettx-engineering/blob/main/specs/032-message-center/),
   [ADR 0004](/decisions/0004-message-center-no-historical-backfill/) (no historical backfill)
 
 ## Context

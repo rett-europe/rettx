@@ -2,18 +2,15 @@
 ═══════════════════════════════════════════════════════════════════════════════
 SYNC IMPACT REPORT
 ═══════════════════════════════════════════════════════════════════════════════
-Version Change: 2.0.0 → 2.0.1 (PATCH — factual correction)
-Action: Record, per the amended ADR 0019, that the initiative home is the
-        private `rettx-initiative` repository with a public site at
-        docs.rettx.eu.
-Principles changed: none. I–III (NON-NEGOTIABLE) unchanged word for word.
-Sections changed:
-  - "Relationship to the rettX initiative": where the initiative home lives
-Downstream impact: none.
+Version Change: 2.0.1 → 2.0.2 (PATCH — cutover domain update)
+Action: Update the engineering documentation domain in Principle VII for
+        the repository split recorded in ADR 0019.
+Principles changed: VII's domain reference only; I–VIII are unchanged in
+        substance and I–III (NON-NEGOTIABLE) are unchanged word for word.
+Downstream impact: no change to downstream obligations or constitutions.
 Templates Status:
   ✅ No template change required
 Follow-up TODOs:
-  - Cutover: repository rename and links (separate PR, ADR 0019 §7)
   - Downstream constitutions update their back-link after cutover
   - Revisit Authority once the steering group adopts initiative principles
 ═══════════════════════════════════════════════════════════════════════════════
@@ -216,7 +213,7 @@ This position is intended to be revisited as the project
 matures, in line with this principle.
 
 **Posture vs. gaps — applied to security and other reviews**:
-public-facing artefacts in this repo and on `docs.rettx.eu` (specs,
+public-facing artefacts in this repo and on `engineering.rettx.eu` (specs,
 ADRs, aggregate pages such as `architecture/security.md`) describe
 the controls and posture **in place**. Gap analyses, unmitigated risks,
 remediation backlog, scanner findings, and any content that would hand
@@ -339,9 +336,12 @@ the amendment process below.
 This constitution evolves with the project. Maintainers SHOULD review it
 at least annually and after any major incident or scope change.
 
-**Version**: 2.0.1 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-11-28
+**Version**: 2.0.2 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-11-28
 
 <!--
+2.0.2 (PATCH): Updated the engineering documentation domain in Principle VII
+for the repository split. No principle changed in substance.
+
 2.0.1 (PATCH): Per the amended ADR 0019, the initiative home is the private
 `rettx-initiative` repository; only its site at docs.rettx.eu is public. No
 principle changed.
