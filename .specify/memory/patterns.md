@@ -11,14 +11,33 @@ adopted, and reference it from cross-cutting specs.
 
 ## 1. Repositories and roles
 
-The ecosystem has **six kinds** of repository. They are governed by the same
-program constitution but differ in lifecycle and deployment model.
+The ecosystem has **six kinds** of software repository, plus the initiative
+home. The software repositories are governed by the same engineering
+constitution but differ in lifecycle and deployment model.
 
-### Control plane
+### Initiative home
 
 | Repo | Visibility | Stack |
 |---|---|---|
-| [`rettx`](https://github.com/rett-europe/rettx) | 🌍 Public | Markdown, Astro Starlight, GitHub Actions |
+| `rettx` (after cutover; prepared privately until then) | 🌍 Public | Markdown, plain-language site at `docs.rettx.eu` |
+
+The rettX initiative's home: vision, mission, principles, governance,
+roadmap and the initiative specifications (Identity, Data Standard,
+Exchange, Trust). It holds no software, Iris, Spec Kit or delivery ledger,
+and has no automated fan-out. Engineering specs that implement an initiative
+specification cite it; hand-offs are manual. See
+[ADR 0019](../../docs/adr/0019-split-initiative-home-and-engineering-hub.md).
+
+### Engineering hub (control plane)
+
+| Repo | Visibility | Stack |
+|---|---|---|
+| [`rettx-engineering`](https://github.com/rett-europe/rettx) (named `rettx` until cutover) | 🌍 Public | Markdown, Astro Starlight, GitHub Actions |
+
+Holds the engineering constitution, this document, cross-cutting specs,
+ADRs, Iris intake and routing, and delivery accounting for all rettX
+software. Its site moves to `engineering.rettx.eu` at cutover. Until then,
+automation, links and the site keep the current `rettx` name and domain.
 
 ### Surfaces (deployed user-facing applications)
 
@@ -717,3 +736,4 @@ private repo.
 | 2026-11-13 | §1: registered **`rettxinfra`** as a sixth repo kind, *Infrastructure*. It is private, holds the cloud resources, identities, role assignments and deploy federation for every rettX environment, and lets app repos deploy their own code into named environments it provides. §6: added the `route:infra` label. §7: put `rettxinfra` in the fan-out allow-list and required specs needing a new cloud resource, identity or permission to fan a slice out to it. §8: listed its private docs. The fan-out, routing and triage workflows and `scripts/status.mjs` are updated to match. This had to land before [spec 052](../../specs/052-rettxinfra/spec.md) flips to `ready`, or its main slice would be silently skipped. See [ADR 0016](../../docs/adr/0016-infrastructure-as-code-private-repo.md). |
 | 2026-11-17 | §2/§4: brought the admin RBAC conventions in line with [spec 054](../../specs/054-admin-access-control/spec.md), now live. The role set is **open** (roles are data; `super_admin` is the only fixed role and sole holder of `rbac.manage`); the seeded bundles are `admin` and `viewer` (`stats.view` only), and `read_only` is retired. Every admin operation declares exactly one capability. Role definitions and person-to-role assignments are code in `rettxinfra`, approved by `super_admin`. Recorded that sign-in stays enforced with `RBAC_ENABLED` off, that refusals are structured and audited, and that `rettxadmin` gates on the caller's effective capabilities rather than the `roles` claim. This **supersedes** the MVP wording ("no custom roles", `read_only` = views only) from the 2026-07-26 entries. |
 | 2026-11-17 | §2: added **Personas and coverage** — who rettX serves (caregiver, admin, expert reviewer, second caregiver, clinician, support/operations, researcher/partner), what each does, and whether it is covered. Specs now reference this table. Prompted by the expert review use case. |
+| 2026-11-28 | §1: renamed the control plane to the **engineering hub** (`rettx-engineering`, named `rettx` until cutover) and added **`rettx`** as the **initiative home** — the plain-language home of the rettX initiative, with no software, Iris or fan-out. Automation, links and the site domain are unchanged until the cutover. See [ADR 0019](../../docs/adr/0019-split-initiative-home-and-engineering-hub.md) and engineering constitution 2.0.0. |

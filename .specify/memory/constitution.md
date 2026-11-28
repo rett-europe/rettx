@@ -2,28 +2,33 @@
 ═══════════════════════════════════════════════════════════════════════════════
 SYNC IMPACT REPORT
 ═══════════════════════════════════════════════════════════════════════════════
-Version Change: Initial → 1.0.0 → 1.0.1 → 1.0.2
-Action: Establish program-level constitution for the rettX patient registry,
-        sitting above the per-repo technical constitutions in rettxweb,
-        rettxadmin, and rettxapi.
-New principles added: 8 program principles
-New sections added:
-  - Cross-Repository Conventions
-  - Spec & Issue Flow
-  - Governance
+Version Change: 1.0.2 → 2.0.0 (MAJOR — structural redefinition)
+Action: Redefine this document as the engineering constitution for all
+        rettX software, per ADR 0019 (split of the initiative home `rettx`
+        from the engineering hub `rettx-engineering`).
+Principles changed: none. I–VIII are unchanged in substance; I–III
+        (NON-NEGOTIABLE) are unchanged word for word.
+Sections changed:
+  - Title and preamble: program constitution → engineering constitution;
+    scope covers current and future rettX software
+  - New "Relationship to the rettX initiative" section
+  - Governance › Authority: deferral to initiative principles once adopted
+    by the initiative's steering group
 Templates Status:
-  ⚠️ specs/template/* - Authored alongside this constitution
+  ✅ No template change required
 Follow-up TODOs:
-  - Link back from each downstream repo's constitution to this document
-  - Reconcile any conflicts surfaced as downstream repos cite this version
+  - Cutover: repository rename and links (separate PR, ADR 0019 §7)
+  - Downstream constitutions update their back-link after cutover
+  - Revisit Authority once the steering group adopts initiative principles
 ═══════════════════════════════════════════════════════════════════════════════
 -->
 
-# rettX Program Constitution
+# rettX Engineering Constitution
 
-This is the **program-level** constitution for the rettX patient registry.
-It sits above — and is referenced by — the technical constitutions of each
-ecosystem repository:
+This is the **engineering constitution** for all rettX software: the
+patient registry in use today and any future rettX software, such as
+federation pipelines or identity services. It sits above — and is
+referenced by — the technical constitutions of each ecosystem repository:
 
 - **Surfaces**: `rettxweb`, `rettxadmin`
 - **Backend**: `rettxapi`
@@ -38,6 +43,19 @@ program constitution prevails for matters of **mission, ethics, privacy,
 transparency, accessibility, and cross-repository conventions**. Downstream
 constitutions remain authoritative for their stack-specific technical
 choices.
+
+## Relationship to the rettX initiative
+
+rettX is also a wider initiative led by Rett Syndrome Europe, with its own
+public home in the `rettx` repository
+([ADR 0019](../../docs/adr/0019-split-initiative-home-and-engineering-hub.md)).
+The initiative states *what* is agreed and *why*; this constitution governs
+*how* rettX software is built and run. An engineering spec that implements
+an initiative specification cites it.
+
+Once the initiative's steering group adopts its own principles, this
+constitution defers to them on the initiative's direction. Until then, this
+constitution stands as written.
 
 ## Mission
 
@@ -282,10 +300,15 @@ when a maintainer (with `write` permission or higher) comments
 
 ### Authority
 
-This program constitution supersedes downstream technical constitutions on
-matters of mission, ethics, privacy, transparency, accessibility, and
+This engineering constitution supersedes downstream technical constitutions
+on matters of mission, ethics, privacy, transparency, accessibility, and
 cross-repository conventions. Downstream constitutions are authoritative
 for stack-specific technical principles within their own scope.
+
+Once the initiative's steering group adopts the initiative's principles,
+they prevail over this constitution on the initiative's direction. That
+adoption does not weaken Principles I–III; any change to them still follows
+the amendment process below.
 
 ### Amendment process
 
@@ -319,9 +342,16 @@ for stack-specific technical principles within their own scope.
 This constitution evolves with the project. Maintainers SHOULD review it
 at least annually and after any major incident or scope change.
 
-**Version**: 1.0.2 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-11-13
+**Version**: 2.0.0 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-11-28
 
 <!--
+2.0.0 (MAJOR): Structural redefinition per ADR 0019. The program
+constitution becomes the engineering constitution for all rettX software,
+current and future. Added "Relationship to the rettX initiative" and a
+deferral in Governance › Authority to the initiative's principles once its
+steering group adopts them. Principles I–III unchanged word for word; no
+principle weakened.
+
 1.0.2 (PATCH): Added `rettxinfra` (Infrastructure) to the ecosystem
 repo list and to the "Current state" privacy paragraph, per ADR 0016.
 No principle changed.
