@@ -2,8 +2,11 @@
 
 This repository is the **rettX engineering hub and control plane** for all
 rettX software. It is **not** an application code repository. The separate
-`rettx` initiative home explains the initiative's direction and governance;
-its hand-offs to engineering are manual ([ADR 0019](../docs/adr/0019-split-initiative-home-and-engineering-hub.md)).
+initiative home ([docs.rettx.eu](https://docs.rettx.eu), maintained in the
+private `rettx-initiative` repo) explains the initiative's direction and
+governance; its hand-offs to engineering are manual ([ADR 0019](../docs/adr/0019-split-initiative-home-and-engineering-hub.md)).
+Link to its site, never its repo. No repo may be created with the name
+`rettx`: GitHub uses it to redirect old links here.
 
 ## What this repo is for
 

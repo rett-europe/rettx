@@ -11,7 +11,7 @@ initiative's direction and governance.
 
 | Repository | Visibility | Role |
 |---|---|---|
-| `rettx` | 🌍 Public | **Initiative home.** Vision, governance and initiative specifications. |
+| `rettx-initiative` | 🔒 Private (site 🌍 public) | **Initiative home.** Vision, governance and initiative specifications, published at [docs.rettx.eu](https://docs.rettx.eu). |
 | `rettx-engineering` (this one) | 🌍 Public | **Engineering hub.** Constitution, cross-cutting specs, ADRs, this site and issue intake. |
 | `rettxweb` | 🔒 Private | **Caregiver web app.** Angular PWA served at `app.rettx.eu`. The primary surface for caregivers entering registry data. |
 | `rettxadmin` | 🔒 Private | **Admin web app.** Internal tooling for Rett Syndrome Europe (RSE) administrators only, not clinicians. It runs locally and is not publicly deployed. |

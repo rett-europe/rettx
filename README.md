@@ -30,8 +30,8 @@ contributors, clinical partners, and the wider community who want to
 inspect *how* rettX is built and operated.
 
 The separate [initiative home](https://docs.rettx.eu) explains what rettX
-agrees and why. Its [repository](https://github.com/rett-europe/rettx) has
-no automated fan-out to engineering ([ADR 0019](docs/adr/0019-split-initiative-home-and-engineering-hub.md)).
+agrees and why. It has no automated fan-out to engineering
+([ADR 0019](docs/adr/0019-split-initiative-home-and-engineering-hub.md)).
 
 This repo does **not** contain application code.
 

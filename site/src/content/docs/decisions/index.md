@@ -38,4 +38,4 @@ unpublished prototypes are not included.
 | [0012](/decisions/0012-admin-rbac-entra-app-roles/) | Admin RBAC: Entra App Roles for membership + super_admin-configurable capabilities | Proposed (2026-07-26) |
 | [0014](/decisions/0014-ios-app-via-capacitor-github-actions/) | iOS app via Capacitor, built on GitHub Actions macOS runners | Proposed (2026-07-28) |
 | [0016](/decisions/0016-infrastructure-as-code-private-repo/) | Infrastructure as code in a dedicated private repository (rettxinfra) | Accepted (2026-11-13); scope of third-party services amended |
-| [0019](/decisions/0019-split-initiative-home-and-engineering-hub/) | Split the initiative home (rettx) from the engineering hub (rettx-engineering) | Accepted (2026-11-28) |
+| [0019](/decisions/0019-split-initiative-home-and-engineering-hub/) | Split the initiative home (rettx-initiative) from the engineering hub (rettx-engineering) | Accepted (2026-11-28); amended 2026-11-28 (see [Amendment](#amendment-2026-11-28)) |

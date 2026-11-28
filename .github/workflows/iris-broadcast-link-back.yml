@@ -59,7 +59,7 @@ jobs:
           if [[ "$KIND" == "app" ]]; then
             cat > /tmp/block.md <<'EOF'
           <!-- rettx-program-link-back -->
-          > **Part of the [rettX initiative](https://github.com/rett-europe/rettx)** of [Rett Syndrome Europe](https://www.rettsyndrome.eu).
+          > **Part of the [rettX initiative](https://docs.rettx.eu)** of [Rett Syndrome Europe](https://www.rettsyndrome.eu).
           > Architecture and the [engineering constitution](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/constitution.md) are public at **[engineering.rettx.eu](https://engineering.rettx.eu)**.
           > Cross-cutting work starts as a spec in the `rettx-engineering` repo and is fanned out here as `squad`-labeled issues by Iris.
           <!-- /rettx-program-link-back -->
@@ -68,7 +68,7 @@ jobs:
           else
             cat > /tmp/block.md <<EOF
           <!-- rettx-program-link-back -->
-          > Maintained as part of the **[rettX initiative](https://github.com/rett-europe/rettx)** of [Rett Syndrome Europe](https://www.rettsyndrome.eu).
+          > Maintained as part of the **[rettX initiative](https://docs.rettx.eu)** of [Rett Syndrome Europe](https://www.rettsyndrome.eu).
           > The library is general-purpose and can be used standalone. It is also the canonical ${ROLE} component used by \`rettxapi\`.
           <!-- /rettx-program-link-back -->
 
@@ -133,7 +133,7 @@ jobs:
 
           gh pr create \
             --title "chore: add rettX program link-back to README" \
-            --body  "Adds a short header linking to the [rettX initiative](https://github.com/rett-europe/rettx) and, where applicable, the [engineering hub](https://github.com/rett-europe/rettx-engineering).
+            --body  "Adds a short header linking to the [rettX initiative](https://docs.rettx.eu) and, where applicable, the [engineering hub](https://github.com/rett-europe/rettx-engineering).
 
           Part of normalising every repo in the program to point at the constitution as a single source of truth for cross-cutting rules.
 

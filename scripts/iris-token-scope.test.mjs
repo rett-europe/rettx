@@ -24,6 +24,6 @@ for (const name of ['spec-fanout', 'iris-route']) {
     assert.ok(targets?.length, 'workflow targets not found');
     assert.equal(new Set(scope).size, scope.length, 'duplicate token repository');
     assert.deepEqual(new Set(scope), new Set(['rettx-engineering', ...targets]));
-    assert.ok(!scope.includes('rettx'), 'initiative repo must not be in the token scope');
+    assert.ok(!scope.includes('rettx'), 'the old name rettx must not be in the token scope');
   });
 }

@@ -113,7 +113,7 @@ syncBuiltinESMExports();
   const hubPrQueries = calls.filter(args => args[0] === 'pr' && args[1] === 'list' &&
     args.includes('rett-europe/rettx-engineering'));
   check('open hub PRs are queried from the renamed repository', hubPrQueries.length, 1);
-  check('initiative repository is not queried as the hub',
+  check('old repository name is not queried as the hub',
     calls.some(args => args.includes('rett-europe/rettx')), false);
 } finally {
   fs.rmSync(fixture, { recursive: true, force: true });
