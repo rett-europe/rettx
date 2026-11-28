@@ -2,18 +2,14 @@
 ═══════════════════════════════════════════════════════════════════════════════
 SYNC IMPACT REPORT
 ═══════════════════════════════════════════════════════════════════════════════
-Version Change: 1.0.2 → 2.0.0 (MAJOR — structural redefinition)
-Action: Redefine this document as the engineering constitution for all
-        rettX software, per ADR 0019 (split of the initiative home `rettx`
-        from the engineering hub `rettx-engineering`).
-Principles changed: none. I–VIII are unchanged in substance; I–III
-        (NON-NEGOTIABLE) are unchanged word for word.
+Version Change: 2.0.0 → 2.0.1 (PATCH — factual correction)
+Action: Record, per the amended ADR 0019, that the initiative home is the
+        private `rettx-initiative` repository with a public site at
+        docs.rettx.eu.
+Principles changed: none. I–III (NON-NEGOTIABLE) unchanged word for word.
 Sections changed:
-  - Title and preamble: program constitution → engineering constitution;
-    scope covers current and future rettX software
-  - New "Relationship to the rettX initiative" section
-  - Governance › Authority: deferral to initiative principles once adopted
-    by the initiative's steering group
+  - "Relationship to the rettX initiative": where the initiative home lives
+Downstream impact: none.
 Templates Status:
   ✅ No template change required
 Follow-up TODOs:
@@ -47,7 +43,8 @@ choices.
 ## Relationship to the rettX initiative
 
 rettX is also a wider initiative led by Rett Syndrome Europe, with its own
-public home in the `rettx` repository
+public home at `docs.rettx.eu`, maintained in the private `rettx-initiative`
+repository
 ([ADR 0019](../../docs/adr/0019-split-initiative-home-and-engineering-hub.md)).
 The initiative states *what* is agreed and *why*; this constitution governs
 *how* rettX software is built and run. An engineering spec that implements
@@ -342,9 +339,13 @@ the amendment process below.
 This constitution evolves with the project. Maintainers SHOULD review it
 at least annually and after any major incident or scope change.
 
-**Version**: 2.0.0 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-11-28
+**Version**: 2.0.1 | **Ratified**: 2026-05-01 | **Last Amended**: 2026-11-28
 
 <!--
+2.0.1 (PATCH): Per the amended ADR 0019, the initiative home is the private
+`rettx-initiative` repository; only its site at docs.rettx.eu is public. No
+principle changed.
+
 2.0.0 (MAJOR): Structural redefinition per ADR 0019. The program
 constitution becomes the engineering constitution for all rettX software,
 current and future. Added "Relationship to the rettX initiative" and a

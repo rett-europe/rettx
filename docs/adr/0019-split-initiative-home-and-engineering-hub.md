@@ -1,6 +1,6 @@
-# ADR 0019 — Split the initiative home (`rettx`) from the engineering hub (`rettx-engineering`)
+# ADR 0019 — Split the initiative home (`rettx-initiative`) from the engineering hub (`rettx-engineering`)
 
-- **Status**: Accepted (2026-11-28)
+- **Status**: Accepted (2026-11-28); amended 2026-11-28 (see the Amendment section)
 - **Date**: 2026-11-28
 - **Decision-makers**: rettX maintainers
 - **Supersedes**: the scope of [ADR 0001](0001-control-plane-repo.md). Its
@@ -38,19 +38,25 @@ its steering group sets its direction, and the software implements it.
 
 ## Decision
 
-1. **Two public repositories.**
+1. **Two repositories, two public sites.**
 
-   | | `rettx` (initiative home) | `rettx-engineering` (engineering hub) |
+   | | `rettx-initiative` (initiative home) | `rettx-engineering` (engineering hub) |
    |---|---|---|
    | Purpose | The rettX initiative: vision, mission, principles, governance, roadmap, and the initiative specifications (Identity, Data Standard, Exchange, Trust) | All rettX software: today's apps, API, libraries and infrastructure, and future software such as federation pipelines or identity services |
    | Holds | Plain-language pages for families, clinicians, partners and funders | Engineering constitution, `patterns.md`, cross-cutting specs, ADRs, Iris intake and routing, delivery accounting |
    | Site | `docs.rettx.eu` | `engineering.rettx.eu` |
-   | Visibility | Public | Public |
+   | Repository | Private | Public |
+   | Site visibility | Public | Public |
 
    This repository becomes `rettx-engineering` by renaming, so its history,
-   issues, Iris installation and secrets are kept. `rettx` is a new
-   repository with its own history, prepared privately and made public at
-   cutover.
+   issues, Iris installation and secrets are kept.
+
+   The initiative home is the `rettx-initiative` repository. It stays
+   private and keeps its name; only its site at `docs.rettx.eu` is public.
+   The site is the public record of the initiative.
+
+   No repository takes the name `rettx` after the rename. That way GitHub
+   keeps sending old `rett-europe/rettx` links to `rettx-engineering`.
 
 2. **Boundary.** The initiative home states *what* the initiative agrees and
    *why*. The engineering hub decides *how* software delivers it. An
@@ -82,7 +88,7 @@ its steering group sets its direction, and the software implements it.
 
 7. **Sequence.** This ADR records the decision only. Building the initiative
    home, the cutover changes in this repository (automation, links, site
-   domain) and the renames follow as separate, reviewed steps. Before any
+   domain) and its rename follow as separate, reviewed steps. Before any
    subdomain moves, the `rettx.eu` domain is verified for the organisation
    so no subdomain can be taken over in transit.
 
@@ -100,8 +106,10 @@ its steering group sets its direction, and the software implements it.
 ### Negative
 
 - Two repositories and two sites to maintain.
-- Old links and local clones need updating after the renames; GitHub redirects
-  cover the renamed repository only until the new `rettx` takes the name.
+- Local clones need their remote updated after the rename. Old GitHub links
+  keep working only while no repository is created with the name `rettx`.
+- The initiative's source is not open to public review; readers see the
+  published site, not the drafts behind it.
 - Hand-offs between initiative and engineering are manual and need discipline.
 
 ### Neutral
@@ -121,10 +129,23 @@ would have no governance home independent of the software.
 
 Rejected. The public website is the patient-facing landing and follows its own
 publishing process. Initiative specifications and governance need versioned,
-reviewable source in the open.
+reviewable source and a site of their own.
 
 ### Create a new engineering repository and keep this one as the initiative home
 
 Rejected. All engineering history, issues, Iris installation and secrets live
 here. Moving them is riskier than renaming, and the initiative home benefits
 from a clean history.
+
+## Amendment (2026-11-28)
+
+The original decision made the initiative repository public and renamed it
+`rettx` at cutover. That is changed:
+
+- The initiative repository stays **private** and keeps the name
+  **`rettx-initiative`**. Only its site at `docs.rettx.eu` is public.
+- No repository is created with the name `rettx`. This keeps GitHub's
+  redirect from `rett-europe/rettx` to `rettx-engineering` working, so
+  existing links to the engineering hub do not break.
+
+The boundary, governance, domains and sequence are otherwise unchanged.

@@ -19,13 +19,15 @@ constitution but differ in lifecycle and deployment model.
 
 | Repo | Visibility | Stack |
 |---|---|---|
-| `rettx` (after cutover; prepared privately until then) | 🌍 Public | Markdown, plain-language site at `docs.rettx.eu` |
+| `rettx-initiative` | 🔒 Private repo; 🌍 public site | Markdown, plain-language site at `docs.rettx.eu` |
 
 The rettX initiative's home: vision, mission, principles, governance,
 roadmap and the initiative specifications (Identity, Data Standard,
 Exchange, Trust). It holds no software, Iris, Spec Kit or delivery ledger,
 and has no automated fan-out. Engineering specs that implement an initiative
-specification cite it; hand-offs are manual. See
+specification cite it; hand-offs are manual. Link to its site, not its
+repository. No repository may take the name `rettx`: GitHub uses it to
+redirect old links to the engineering hub. See
 [ADR 0019](../../docs/adr/0019-split-initiative-home-and-engineering-hub.md).
 
 ### Engineering hub (control plane)
@@ -737,3 +739,4 @@ private repo.
 | 2026-11-17 | §2/§4: brought the admin RBAC conventions in line with [spec 054](../../specs/054-admin-access-control/spec.md), now live. The role set is **open** (roles are data; `super_admin` is the only fixed role and sole holder of `rbac.manage`); the seeded bundles are `admin` and `viewer` (`stats.view` only), and `read_only` is retired. Every admin operation declares exactly one capability. Role definitions and person-to-role assignments are code in `rettxinfra`, approved by `super_admin`. Recorded that sign-in stays enforced with `RBAC_ENABLED` off, that refusals are structured and audited, and that `rettxadmin` gates on the caller's effective capabilities rather than the `roles` claim. This **supersedes** the MVP wording ("no custom roles", `read_only` = views only) from the 2026-07-26 entries. |
 | 2026-11-17 | §2: added **Personas and coverage** — who rettX serves (caregiver, admin, expert reviewer, second caregiver, clinician, support/operations, researcher/partner), what each does, and whether it is covered. Specs now reference this table. Prompted by the expert review use case. |
 | 2026-11-28 | §1: renamed the control plane to the **engineering hub** (`rettx-engineering`, named `rettx` until cutover) and added **`rettx`** as the **initiative home** — the plain-language home of the rettX initiative, with no software, Iris or fan-out. Automation, links and the site domain are unchanged until the cutover. See [ADR 0019](../../docs/adr/0019-split-initiative-home-and-engineering-hub.md) and engineering constitution 2.0.0. |
+| 2026-11-28 | §1: the initiative home is the **private** `rettx-initiative` repository and keeps that name; only its site at `docs.rettx.eu` is public. Link to the site, not the repository. No repository may take the name `rettx`, so GitHub keeps redirecting old links to `rettx-engineering`. See the amended [ADR 0019](../../docs/adr/0019-split-initiative-home-and-engineering-hub.md). |
