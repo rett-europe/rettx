@@ -1,6 +1,9 @@
 # ADR 0001 — `rettx` is the rettX control-plane repo
 
-- **Status**: Accepted
+- **Status**: Accepted; scope superseded by ADR 0019 (2026-11-28)
+- **Superseded in scope by**:
+  [ADR 0019](0019-split-initiative-home-and-engineering-hub.md); its
+  engineering mechanics remain in force
 - **Date**: 2026-05-01
 - **Decision-makers**: rettX maintainers
 
