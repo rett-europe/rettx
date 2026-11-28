@@ -1,9 +1,12 @@
 # Contributing to rettX
 
 Thank you for your interest in helping the rettX patient registry.
-This repository is the **engineering and governance hub** for rettX —
-it is intentionally a small, prose-heavy repo. Most application code
-lives in other repositories of the [`rett-europe`][org] organisation.
+This repository is the **engineering hub** for all rettX software —
+it is intentionally a small, prose-heavy repo. The separate initiative
+home explains what rettX agrees and why; this hub governs how its software
+is built ([ADR 0019](./docs/adr/0019-split-initiative-home-and-engineering-hub.md)).
+Most application code lives in other repositories of the [`rett-europe`][org]
+organisation.
 
 Before contributing, please read the
 [Code of Conduct](./CODE_OF_CONDUCT.md). All participation in the
@@ -13,15 +16,15 @@ rettX community is bound by it.
 
 ## What this repository is for
 
-`rett-europe/rettx` holds:
+`rett-europe/rettx-engineering` holds:
 
-- The **program constitution** at `.specify/memory/constitution.md`
-  (versioned, governs all six repositories).
+- The **engineering constitution** at `.specify/memory/constitution.md`
+  (versioned, governs current and future rettX software).
 - **Cross-cutting specifications** at `specs/` (anything that touches
   more than one repository in the ecosystem).
 - **Architecture decision records** at `docs/adr/`.
 - The **public engineering docs site** sources at `site/` (Astro
-  Starlight, published to <https://docs.rettx.eu>).
+  Starlight, published to <https://engineering.rettx.eu>).
 - **Issue intake and routing** for the whole ecosystem (handled by the
   Iris bot — see [`docs/adr/0001-control-plane-repo.md`](./docs/adr/0001-control-plane-repo.md)).
 - **Brand assets** at `assets/brand/`.
@@ -45,7 +48,7 @@ Iris (and a human gatekeeper with `write` permission or above) will
 classify each issue and, when appropriate, route it to the right
 downstream repository as a tracked sub-issue.
 
-[templates]: https://github.com/rett-europe/rettx/issues/new/choose
+[templates]: https://github.com/rett-europe/rettx-engineering/issues/new/choose
 
 ### 2. Contributing to a specification
 

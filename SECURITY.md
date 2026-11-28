@@ -9,7 +9,7 @@ the rettX ecosystem.
 Instead, report it privately through GitHub's coordinated disclosure
 flow:
 
-> **<https://github.com/rett-europe/rettx/security/advisories/new>**
+> **<https://github.com/rett-europe/rettx-engineering/security/advisories/new>**
 
 This opens a private security advisory visible only to you and the
 rettX maintainers. If the issue affects another repository in the
@@ -39,11 +39,11 @@ To help us triage quickly, please include where possible:
 
 The following are in scope for this disclosure process:
 
-- All code in this repository (`rett-europe/rettx`).
+- All code in this repository (`rett-europe/rettx-engineering`).
 - All code and infrastructure in the other rettX repositories:
   `rettxweb`, `rettxadmin`, `rettxapi`, `rettxmutation`, `rettxid`.
 - The deployed surfaces: <https://app.rettx.eu>,
-  <https://docs.rettx.eu>, and the rettX API.
+  <https://engineering.rettx.eu>, and the rettX API.
 - The Iris automation (GitHub App and workflows in `.github/`).
 
 The following are **out of scope** here:

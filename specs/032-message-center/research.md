@@ -176,7 +176,7 @@ channel-aware, versioned communication templates (area 2). Everything else is re
 
 ## 5. Cross-repo dependencies
 
-This gap analysis backs the backend (`rettxapi`) slice of [rettx#10](https://github.com/rett-europe/rettx/issues/10).
+This gap analysis backs the backend (`rettxapi`) slice of [rettx-engineering#10](https://github.com/rett-europe/rettx-engineering/issues/10).
 The control plane owns the published API contract; the two frontends consume the contract and own
 their own UI in their derived plans:
 

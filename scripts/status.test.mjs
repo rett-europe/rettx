@@ -7,9 +7,11 @@
 // recognised and — just as importantly — what must NOT be.
 
 import { strict as assert } from 'node:assert';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const src = fs.readFileSync(path.join(__dirname, 'status.mjs'), 'utf8');
@@ -82,6 +84,40 @@ check(
 check('bare "spec 046" in prose', prSlug(pr({ body: 'Related to spec 046 somehow.' })), null);
 check('empty body', prSlug(pr({ body: '' })), null);
 check('unknown id', prSlug(pr({ body: 'Spec: 999' })), null);
+
+const fixture = fs.mkdtempSync(path.join(os.tmpdir(), 'rettx-status-'));
+try {
+  const scriptDir = path.join(fixture, 'scripts');
+  fs.mkdirSync(scriptDir);
+  fs.copyFileSync(path.join(__dirname, 'status.mjs'), path.join(scriptDir, 'status.mjs'));
+  const callsPath = path.join(fixture, 'gh-calls.jsonl');
+  const hookPath = path.join(fixture, 'mock-gh.mjs');
+  fs.writeFileSync(hookPath, `
+import childProcess from 'node:child_process';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
+childProcess.execFileSync = (command, args) => {
+  if (command !== 'gh') throw new Error('Unexpected command: ' + command);
+  fs.appendFileSync(process.env.STATUS_TEST_CALLS, JSON.stringify(args) + '\\n');
+  return '[]';
+};
+syncBuiltinESMExports();
+`);
+  const env = { ...process.env, STATUS_TEST_CALLS: callsPath };
+  delete env.CI;
+  delete env.GITHUB_ACTIONS;
+  execFileSync(process.execPath, ['--import', pathToFileURL(hookPath).href, path.join(scriptDir, 'status.mjs')], {
+    env, stdio: 'pipe'
+  });
+  const calls = fs.readFileSync(callsPath, 'utf8').trim().split('\n').map(line => JSON.parse(line));
+  const hubPrQueries = calls.filter(args => args[0] === 'pr' && args[1] === 'list' &&
+    args.includes('rett-europe/rettx-engineering'));
+  check('open hub PRs are queried from the renamed repository', hubPrQueries.length, 1);
+  check('old repository name is not queried as the hub',
+    calls.some(args => args.includes('rett-europe/rettx')), false);
+} finally {
+  fs.rmSync(fixture, { recursive: true, force: true });
+}
 
 console.log('');
 if (failures) {

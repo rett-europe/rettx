@@ -12,7 +12,7 @@ title: "rettX Pulse — Admin patient overview & pilot insights"
 status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-24"
 author: "perocha"
-source_issue: "rett-europe/rettx#41"
+source_issue: "rett-europe/rettx-engineering#41"
 relates_to: "specs/035-pulse-tracker/"
 fanout:
   - repo: rettxapi

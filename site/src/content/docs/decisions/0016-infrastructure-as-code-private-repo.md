@@ -10,10 +10,12 @@ sidebar:
 - **Date**: 2026-11-13
 - **Decision-makers**: rettX maintainers
 - **Relates to**: [ADR 0001](/decisions/0001-control-plane-repo/) (control plane &
-  per-repo ownership), [spec 052](https://github.com/rett-europe/rettx/blob/main/specs/052-rettxinfra/spec.md) (this
-  decision's implementation spec), [spec 047](https://github.com/rett-europe/rettx/blob/main/specs/047-credential-expiry-monitor/spec.md)
+  per-repo ownership), [spec 052](https://github.com/rett-europe/rettx-engineering/blob/main/specs/052-rettxinfra/spec.md) (this
+  decision's implementation spec), [spec 047](https://github.com/rett-europe/rettx-engineering/blob/main/specs/047-credential-expiry-monitor/spec.md)
   (credential expiry monitor — unchanged by this decision),
-  [program constitution](https://github.com/rett-europe/rettx/blob/main/.specify/memory/constitution.md) principles II
+  [spec 059](https://github.com/rett-europe/rettx-engineering/blob/main/specs/059-store-listing-as-code/spec.md) (app-store
+  listing amendment),
+  [program constitution](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/constitution.md) principles II
   (privacy by design), VI (security baseline), VII (open by default, private
   only when justified) and VIII (sustainability and stewardship).
 
@@ -81,8 +83,17 @@ Describe and operate rettX's Azure infrastructure **as code**, in a new
   - **Email and push** credentials are **provisioned by script** where the
     provider allows it, written straight to the secret store and never to the
     repository. Steps the provider keeps manual stay documented.
-  - **App stores, DNS registrar and package registry** stay **documented, not
-    managed**.
+  - **App-store accounts and access, DNS registrar and package registry** stay
+    **documented, not managed**.
+  - *Amendment (2026-11-22, with
+    [spec 059](https://github.com/rett-europe/rettx-engineering/blob/main/specs/059-store-listing-as-code/spec.md)):* app-store
+    **listing content** is **managed as versioned content in the app
+    repository** (`rettxweb`), not in `rettxinfra`. This covers listing text,
+    media, and declarations where the store offers a supported automated
+    interface. It is reviewed by pull request, previewed before apply, and
+    never submits or releases. Store accounts, agreements, team roles, API
+    keys and tester groups stay **documented, not managed**, and the store
+    identity's permissions stay with `rettxinfra`.
 
   Delivered in phases, identity providers first. Each managing credential this
   adds is held by `rettxinfra` alone, with the narrowest permission the

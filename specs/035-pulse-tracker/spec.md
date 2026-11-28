@@ -28,8 +28,8 @@ title: "rettX Pulse"
 status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-15"
 author: "perocha"
-source_issue: "rett-europe/rettx#9 (Pulse — generalized in place; supersedes)"
-relates_to: "issue rett-europe/rettx#9 (superseded-by 035); rettxweb specs/018-rettx-pulse/ (superseded-by 035); rettxapi spec 031 (Pulse backend)"
+source_issue: "rett-europe/rettx-engineering#9 (Pulse — generalized in place; supersedes)"
+relates_to: "issue rett-europe/rettx-engineering#9 (superseded-by 035); rettxweb specs/018-rettx-pulse/ (superseded-by 035); rettxapi spec 031 (Pulse backend)"
 fanout:
   - repo: rettxapi
     summary: |
@@ -132,7 +132,7 @@ fanout:
 
 **Spec ID**: `035-pulse-tracker` · **Status**: Ready · **Created**: 2026-07-15
 **Product name**: **Pulse** (rettX Pulse — Personal Tracker)
-**Source / supersedes**: [rett-europe/rettx#9](https://github.com/rett-europe/rettx/issues/9) (Pulse — generalized in place, **superseded-by 035**), rettxweb `specs/018-rettx-pulse/` (**superseded-by 035**), rettxapi spec 031 (Pulse backend)
+**Source / supersedes**: [rett-europe/rettx-engineering#9](https://github.com/rett-europe/rettx-engineering/issues/9) (Pulse — generalized in place, **superseded-by 035**), rettxweb `specs/018-rettx-pulse/` (**superseded-by 035**), rettxapi spec 031 (Pulse backend)
 **Owner**: rettX control plane (this repo) — authored and coordinated here; scoped work is fanned out to the affected repos via the `spec-fanout` workflow on merge.
 **Input**: The mobile app needs Pulse to grow from an episode logger into a **generic personal tracker** — flexible, caregiver-owned logging of metrics (medication, side effects, menstrual cycle, bathroom frequency, seizures, …) on a **calendar**, with quantitative **dose tracking** and simple **in-app visualization** for reviewing history. Pulse was scaffolded but **never launched**, so we can generalize it **in place** with no migration risk.
 
@@ -144,7 +144,7 @@ fanout:
 
 **Pulse never launched.** It has **no users, no data, never reached pilot** — it is dead code. That means there is **ZERO migration and ZERO backward-compatibility risk**. The decision is to **converge in place**: generalize the existing episode-centric Pulse model (rettxweb `specs/018-rettx-pulse/` + rettxapi spec 031) into a `MetricDefinition` + `TrackerEntry`/`Measurement` model, keeping the **Pulse** product name. The old seizure "episode" becomes **one seed preset** among several. There is **no parallel or duplicate module** and **no product rename** — "Tracker" was considered and rejected as too technical.
 
-Accordingly, this spec **supersedes** rettxweb `specs/018-rettx-pulse/` and control-plane issue [rett-europe/rettx#9](https://github.com/rett-europe/rettx/issues/9).
+Accordingly, this spec **supersedes** rettxweb `specs/018-rettx-pulse/` and control-plane issue [rett-europe/rettx-engineering#9](https://github.com/rett-europe/rettx-engineering/issues/9).
 
 ### What the existing Pulse substrate already gives us (reused in place)
 

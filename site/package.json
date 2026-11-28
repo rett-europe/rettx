@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "rettX engineering documentation site (docs.rettx.eu) — Astro + Starlight.",
+  "description": "rettX engineering documentation site (engineering.rettx.eu) — Astro + Starlight.",
   "scripts": {
     "dev": "node ../scripts/sync-adrs.mjs && astro dev",
     "start": "astro dev",

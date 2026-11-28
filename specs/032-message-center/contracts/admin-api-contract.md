@@ -2,7 +2,7 @@
 
 **Feature**: `032-message-center` | **Hosted by**: rettX control plane (this spec) · **Implemented + versioned by**: `rettxapi`
 **Consumer**: `rettxadmin` dashboard (§10)
-**Umbrella**: [rettx#10](https://github.com/rett-europe/rettx/issues/10) · **Contract version**: `v1.0 — FROZEN (rettxapi P3+P4+P5 shipped): individual-send + bulk + list/filter all frozen`
+**Umbrella**: [rettx-engineering#10](https://github.com/rett-europe/rettx-engineering/issues/10) · **Contract version**: `v1.0 — FROZEN (rettxapi P3+P4+P5 shipped): individual-send + bulk + list/filter all frozen`
 
 > **Scope of this document.** This is the **published interface** for admin messaging — the
 > single source of truth all sides agree on, hosted in the control plane and implemented +

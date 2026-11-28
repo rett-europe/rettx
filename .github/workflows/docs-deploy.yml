@@ -5,9 +5,8 @@
 #   - manual run via workflow_dispatch
 #
 # Notes:
-#   - Custom domain (docs.rettx.eu) is wired via site/public/CNAME, which
-#     is copied verbatim into the build output. Make sure the same value
-#     is set in repo Settings -> Pages -> Custom domain.
+#   - Set engineering.rettx.eu in repo Settings -> Pages -> Custom domain.
+#     Actions-based Pages deployments do not configure the domain from CNAME.
 #   - The build pulls Node 22 (Astro 6 requires >= 22.12) and uses
 #     `npm ci` with cache for reproducible installs.
 

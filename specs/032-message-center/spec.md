@@ -13,7 +13,7 @@ title: "rettX Message Center"
 status: ready   # draft | ready | accepted | superseded
 authored: "2026-06-22"
 author: "perocha"
-source_issue: "rett-europe/rettx#10"
+source_issue: "rett-europe/rettx-engineering#10"
 fanout:
   - repo: rettxapi
     summary: |
@@ -70,7 +70,7 @@ fanout:
 # Feature Specification: rettX Message Center
 
 **Spec ID**: `032-message-center` · **Status**: Ready · **Created**: 2026-06-22
-**Source issue**: [rett-europe/rettx#10](https://github.com/rett-europe/rettx/issues/10) (cross-cutting)
+**Source issue**: [rett-europe/rettx-engineering#10](https://github.com/rett-europe/rettx-engineering/issues/10) (cross-cutting)
 **Owner**: rettX control plane (this repo) — authored and coordinated here; scoped work is fanned out to the affected repos via the `spec-fanout` workflow on merge.
 **Input**: "Introduce a centralized Message Center that persists caregiver communications inside rettX as the canonical user-facing record, with email as the first delivery channel and the architecture ready for future channels (push, etc.)."
 
@@ -88,7 +88,7 @@ delivery, becoming the canonical user-facing communication record. Email becomes
 delivery channel but models it as a channel, so push and other channels can be added later
 without re-architecting.
 
-The umbrella issue [rettx#10](https://github.com/rett-europe/rettx/issues/10) is
+The umbrella issue [rettx-engineering#10](https://github.com/rett-europe/rettx-engineering/issues/10) is
 **cross-cutting**. This document is the **single program-level specification** for the feature,
 authored and owned in the rettX control plane. It is not scoped to one surface: it covers the
 caregiver app (§8), the backend API & data model (§9), and the admin dashboard (§10) as one

@@ -10,7 +10,7 @@ sidebar:
 - **Decision-makers**: rettX maintainers
 - **Relates to**: [ADR 0002](/decisions/0002-cross-cutting-gap-analysis-pipeline/)
   (gap-analysis → umbrella spec → `spec-fanout` orchestration pipeline),
-  [`patterns.md` §6](https://github.com/rett-europe/rettx/blob/main/.specify/memory/patterns.md) (issue routing labels)
+  [`patterns.md` §6](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/patterns.md) (issue routing labels)
 
 ## Context
 

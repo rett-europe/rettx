@@ -81,16 +81,16 @@ const mermaidClientScript = /* js */ `
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://docs.rettx.eu',
+  site: 'https://engineering.rettx.eu',
   markdown: {
     syntaxHighlight: { excludeLangs: ['mermaid'] },
     remarkPlugins: [remarkMermaid],
   },
   integrations: [
     starlight({
-      title: 'rettX',
+      title: 'rettX Engineering',
       description:
-        'The rettX patient registry: who it serves, how it works, and how it protects data — an initiative of Rett Syndrome Europe.',
+        'Engineering documentation for rettX software: architecture, security, specifications and decisions.',
       logo: {
         light: './src/assets/logo.svg',
         dark: './src/assets/logo-dark.svg',
@@ -99,11 +99,11 @@ export default defineConfig({
       favicon: '/favicon.svg',
       customCss: ['./src/styles/brand.css'],
       social: [
-        { icon: 'github', label: 'GitHub', href: 'https://github.com/rett-europe/rettx' },
+        { icon: 'github', label: 'GitHub', href: 'https://github.com/rett-europe/rettx-engineering' },
       ],
       editLink: {
         baseUrl:
-          'https://github.com/rett-europe/rettx/edit/main/site/',
+          'https://github.com/rett-europe/rettx-engineering/edit/main/site/',
       },
       lastUpdated: true,
       sidebar: [

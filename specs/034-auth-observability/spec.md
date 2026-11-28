@@ -23,7 +23,7 @@ title: "rettX Auth-Failure Observability & Diagnosability"
 status: superseded   # draft | ready | accepted | superseded
 authored: "2026-07-13"
 author: "perocha"
-source_issue: "rett-europe/rettx#31"
+source_issue: "rett-europe/rettx-engineering#31"
 relates_to: "specs/033-message-center-push/"
 fanout:
   - repo: rettxapi
@@ -148,7 +148,7 @@ fanout:
 > The governance lesson is recorded in 049 (OD-6) and in `patterns.md`: a correct
 > spec that nobody rejects can still die of silence, and nothing in the pipeline
 > makes that visible.
-**Source issue**: [rett-europe/rettx#31](https://github.com/rett-europe/rettx/issues/31) (cross-cutting)
+**Source issue**: [rett-europe/rettx-engineering#31](https://github.com/rett-europe/rettx-engineering/issues/31) (cross-cutting)
 **Owner**: rettX control plane (this repo) — authored and coordinated here; scoped work is fanned out to the affected repos via the `spec-fanout` workflow on merge.
 **Input**: A pilot user's native app hangs on cold start; the only signal is a burst of context-free `403 {'detail': 'Not authenticated'}` server exceptions on `GET /v2/patients`. Diagnosing it required hours of code archaeology. "How will we detect when something is going south, when all we see is a cryptic burst of 403?"
 

@@ -7,6 +7,10 @@
 - **Date**: 2026-05-01
 - **Decision-makers**: rettX maintainers
 
+This record describes the original control plane and domain. After the split
+in ADR 0019, the engineering hub is `rettx-engineering` and its site is
+`engineering.rettx.eu`; `docs.rettx.eu` belongs to the initiative home.
+
 ## Context
 
 The rettX ecosystem comprises:
@@ -132,8 +136,8 @@ It is published at **`docs.rettx.eu`**. The site source lives in
 `site/` and is built with **Astro Starlight**, deployed to **GitHub
 Pages** via Actions from the `main` branch (no `gh-pages` branch). DNS
 is configured as a CNAME from `docs.rettx.eu` to the GitHub Pages
-target; the `CNAME` file in the deployed site enforces the custom
-domain.
+target. For an Actions-based deployment the custom domain is configured in
+repository Pages settings; the `CNAME` file does not configure it.
 
 ## Alternatives considered
 

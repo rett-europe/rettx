@@ -12,7 +12,7 @@ title: "rettX Pulse — Global Metric-Catalog Administration"
 status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-17"
 author: "perocha"
-source_issue: "rett-europe/rettx#10"
+source_issue: "rett-europe/rettx-engineering#10"
 relates_to: "specs/035-pulse-tracker/"
 fanout:
   - repo: rettxapi

@@ -2,7 +2,7 @@
 
 **Feature**: `032-message-center` | **Hosted by**: rettX control plane (this spec) · **Implemented + versioned by**: `rettxapi`
 **Consumer**: `rettxweb` caregiver app (§8)
-**Umbrella**: [rettx#10](https://github.com/rett-europe/rettx/issues/10) · **Contract version**: `v1.0 (FROZEN — caregiver surface; rettxapi P1 shipped 2026-06-22)`
+**Umbrella**: [rettx-engineering#10](https://github.com/rett-europe/rettx-engineering/issues/10) · **Contract version**: `v1.0 (FROZEN — caregiver surface; rettxapi P1 shipped 2026-06-22)`
 
 > **Scope of this document.** This is the **published interface** for the caregiver Messages
 > surface — the single source of truth all sides agree on, hosted in the control plane and

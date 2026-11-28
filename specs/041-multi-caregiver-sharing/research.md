@@ -1,7 +1,7 @@
 # Multi-Caregiver Sharing — Design Options & Brainstorm (research for spec 041)
 
 **Status:** design record / research backing `spec.md` in this folder.
-**Repo context:** `rett-europe/rettx` control plane. No downstream repo edits.
+**Repo context:** `rett-europe/rettx-engineering` control plane. No downstream repo edits.
 **Author:** perocha · **Date:** 2026-07-25
 
 ---

@@ -46,9 +46,9 @@ jobs:
           app-id: ${{ secrets.IRIS_APP_ID }}
           private-key: ${{ secrets.IRIS_PRIVATE_KEY }}
           owner: rett-europe
-          repositories: rettx,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid,templates,rettxinfra
+          repositories: rettx-engineering,rettxweb,rettxadmin,rettxapi,rettxmutation,rettxid,templates,rettxinfra
 
-      - name: Check out rettx at the merge commit
+      - name: Check out the engineering hub at the merge commit
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.merge_commit_sha }}

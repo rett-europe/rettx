@@ -27,7 +27,7 @@ unpublished prototypes are not included.
 
 | # | Title | Status |
 |---|---|---|
-| [0001](/decisions/0001-control-plane-repo/) | rettx is the rettX control-plane repo | Accepted |
+| [0001](/decisions/0001-control-plane-repo/) | rettx is the rettX control-plane repo | Accepted; scope superseded by ADR 0019 (2026-11-28) |
 | [0002](/decisions/0002-cross-cutting-gap-analysis-pipeline/) | Gap-analysis-first pipeline for cross-cutting work | Accepted |
 | [0003](/decisions/0003-message-channel-content-model/) | In-app vs email content model for the Message Center | Accepted |
 | [0004](/decisions/0004-message-center-no-historical-backfill/) | Message Center launches with no historical backfill | Accepted |
@@ -38,3 +38,4 @@ unpublished prototypes are not included.
 | [0012](/decisions/0012-admin-rbac-entra-app-roles/) | Admin RBAC: Entra App Roles for membership + super_admin-configurable capabilities | Proposed (2026-07-26) |
 | [0014](/decisions/0014-ios-app-via-capacitor-github-actions/) | iOS app via Capacitor, built on GitHub Actions macOS runners | Proposed (2026-07-28) |
 | [0016](/decisions/0016-infrastructure-as-code-private-repo/) | Infrastructure as code in a dedicated private repository (rettxinfra) | Accepted (2026-11-13); scope of third-party services amended |
+| [0019](/decisions/0019-split-initiative-home-and-engineering-hub/) | Split the initiative home (rettx-initiative) from the engineering hub (rettx-engineering) | Accepted (2026-11-28); amended 2026-11-28 (see the Amendment section) |

@@ -1,19 +1,19 @@
 ---
 title: Development principles
-description: The program constitution that guides rettX's software development.
+description: The engineering constitution that guides rettX's software development.
 sidebar:
   order: 1
 ---
 
-rettX's software development is guided by a **program constitution**
-that applies to every repository in the ecosystem. This is development
+rettX's software development is guided by an **engineering constitution**
+that applies to the software repositories in the ecosystem. This is development
 governance, not the registry's patient data governance framework. It does
 not define approval of research access or replace consent and data-sharing
 policies.
 
 The full versioned text lives in
 the source tree at
-[`.specify/memory/constitution.md`](https://github.com/rett-europe/rettx/blob/main/.specify/memory/constitution.md);
+[`.specify/memory/constitution.md`](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/constitution.md);
 this page summarises the principles for readers who want a quick
 orientation.
 
@@ -29,7 +29,7 @@ Three reasons:
 1. **Patient safety and dignity** are not a feature; they are the
    floor. Codifying that in writing makes it harder to compromise
    them under deadline pressure.
-2. **Multiple repositories, one program.** Seven repositories that
+2. **Multiple repositories, one program.** Repositories that
    evolve independently still need to behave like one product to the
    people we serve.
 3. **Continuity.** Volunteers and contributors come and go. A written
@@ -54,7 +54,7 @@ NON-NEGOTIABLE — they cannot be relaxed by any individual change:
 
 These are development commitments, not a claim that every planned
 registry capability is already available. Read the full text for each principle in the
-[constitution itself](https://github.com/rett-europe/rettx/blob/main/.specify/memory/constitution.md).
+[constitution itself](https://github.com/rett-europe/rettx-engineering/blob/main/.specify/memory/constitution.md).
 
 ## Constitution checks
 

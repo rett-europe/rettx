@@ -18,7 +18,7 @@ title: "rettX Message Center — Push Notifications"
 status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-07"
 author: "perocha"
-source_issue: "rett-europe/rettx#24"
+source_issue: "rett-europe/rettx-engineering#24"
 relates_to: "specs/032-message-center/"
 fanout:
   - repo: rettxapi
@@ -112,7 +112,7 @@ fanout:
 # Feature Specification: rettX Message Center — Push Notifications
 
 **Spec ID**: `033-message-center-push` · **Status**: Ready · **Created**: 2026-07-07
-**Source issue**: [rett-europe/rettx#24](https://github.com/rett-europe/rettx/issues/24) (cross-cutting)
+**Source issue**: [rett-europe/rettx-engineering#24](https://github.com/rett-europe/rettx-engineering/issues/24) (cross-cutting)
 **Builds on**: [`specs/032-message-center/`](../032-message-center/) (Message Center, live in production)
 **Owner**: rettX control plane (this repo) — authored and coordinated here; scoped work is fanned out to the affected repos via the `spec-fanout` workflow on merge.
 **Input**: "When a message is sent from the admin app it must, in addition to the existing email and in-app message, trigger a **push notification** — especially now that the caregiver app (`rettxweb`) is published as a Capacitor native Android pilot, where push is a primary engagement channel."

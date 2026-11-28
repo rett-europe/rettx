@@ -12,7 +12,7 @@ title: "rettX Pulse — confirmed-diagnosis eligibility gate"
 status: ready   # draft | ready | accepted | superseded
 authored: "2026-07-24"
 author: "perocha"
-source_issue: "rett-europe/rettx#44"
+source_issue: "rett-europe/rettx-engineering#44"
 relates_to: "specs/035-pulse-tracker/"
 fanout:
   - repo: rettxapi

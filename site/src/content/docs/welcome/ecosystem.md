@@ -1,21 +1,24 @@
 ---
 title: The rettX ecosystem
-description: The seven repositories that make up rettX, their roles, and their visibility.
+description: The rettX repositories, their roles, and their visibility.
 ---
 
-rettX is a small constellation of repositories. Each has a clear job;
-each follows the same program constitution.
+rettX is a constellation of repositories. The software repositories follow
+the engineering constitution; the separate initiative home describes the
+initiative's direction and governance.
 
 ## Repository map
 
 | Repository | Visibility | Role |
 |---|---|---|
-| `rettx` (this one) | 🌍 Public | **Control plane.** Constitution, cross-cutting specs, ADRs, this docs site, issue intake/triage, brand assets. |
+| `rettx-initiative` | 🔒 Private (site 🌍 public) | **Initiative home.** Vision, governance and initiative specifications, published at [docs.rettx.eu](https://docs.rettx.eu). |
+| `rettx-engineering` (this one) | 🌍 Public | **Engineering hub.** Constitution, cross-cutting specs, ADRs, this site and issue intake. |
 | `rettxweb` | 🔒 Private | **Caregiver web app.** Angular PWA served at `app.rettx.eu`. The primary surface for caregivers entering registry data. |
 | `rettxadmin` | 🔒 Private | **Admin web app.** Internal tooling for Rett Syndrome Europe (RSE) administrators only, not clinicians. It runs locally and is not publicly deployed. |
 | `rettxapi` | 🔒 Private | **Backend API.** Python service that owns the registry data model, consent state, and access controls. |
 | `rettxmutation` | 🌍 Public | **Library.** HGVS-aware mutation parsing and normalisation, published to PyPI; consumed by `rettxapi`. |
 | `rettxid` | 🌍 Public | **Library.** Pseudonymous registry identifier generator, published to PyPI; consumed by `rettxapi`. |
+| `templates` | 🔒 Private | **Content.** Per-locale message templates and related documents. |
 | `rettxinfra` | 🔒 Private | **Infrastructure.** Azure infrastructure as code: the resources, environments, identities and permissions the other repositories deploy into. |
 
 Application repositories that handle patient data (`rettxweb`,
@@ -35,7 +38,7 @@ community.
 
 ## Where does code live?
 
-This repository (`rettx`) **does not contain application code**. Its
+This repository (`rettx-engineering`) **does not contain application code**. Its
 job is to coordinate the others.
 
 When a feature needs work in more than one place — for example, a new

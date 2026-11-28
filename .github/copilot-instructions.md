@@ -1,11 +1,16 @@
-# Copilot / agent instructions for `rettx`
+# Copilot / agent instructions for `rettx-engineering`
 
-This repository is the **rettX control plane**. It is **not** an
-application code repository.
+This repository is the **rettX engineering hub and control plane** for all
+rettX software. It is **not** an application code repository. The separate
+initiative home ([docs.rettx.eu](https://docs.rettx.eu), maintained in the
+private `rettx-initiative` repo) explains the initiative's direction and
+governance; its hand-offs to engineering are manual ([ADR 0019](../docs/adr/0019-split-initiative-home-and-engineering-hub.md)).
+Link to its site, never its repo. No repo may be created with the name
+`rettx`: GitHub uses it to redirect old links here.
 
 ## What this repo is for
 
-- Program-level constitution (`.specify/memory/constitution.md`)
+- Engineering constitution (`.specify/memory/constitution.md`)
 - Cross-repository conventions (`.specify/memory/patterns.md`)
 - Cross-cutting specifications (`specs/`)
 - Architectural Decision Records (`docs/adr/`)
@@ -39,7 +44,8 @@ application code repository.
   which is gitignored and must never be committed or quoted here (it contains
   private repo titles). The script refuses to run in CI for the same reason.
 - When proposing or implementing a cross-cutting feature, scaffold a new
-  spec under `specs/NNNN-slug/` based on `specs/template/`.
+  spec under `specs/NNNN-slug/` from `.specify/templates/spec-template.md`,
+  using a recent spec's fan-out frontmatter.
 - When making an architectural decision that affects more than one repo,
   add an ADR under `docs/adr/`.
 - When updating the public docs site, edit content under `site/src/content/`.
