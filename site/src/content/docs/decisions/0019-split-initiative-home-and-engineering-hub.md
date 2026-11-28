@@ -5,7 +5,7 @@ sidebar:
   order: 20
 ---
 
-- **Status**: Accepted (2026-11-28); amended 2026-11-28 (see [Amendment](#amendment-2026-11-28))
+- **Status**: Accepted (2026-11-28); amended 2026-11-28 (see the Amendment section)
 - **Date**: 2026-11-28
 - **Decision-makers**: rettX maintainers
 - **Supersedes**: the scope of [ADR 0001](/decisions/0001-control-plane-repo/). Its
